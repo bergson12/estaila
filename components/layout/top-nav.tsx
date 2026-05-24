@@ -148,31 +148,26 @@ export function TopNav({
                 alt={orgBrand.name}
                 className="h-8 w-8 shrink-0 rounded-lg object-cover ring-1 ring-border"
               />
-            ) : (
-              <div
-                className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-105",
-                  adminMode
-                    ? "bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/20"
-                    : "bg-gradient-to-br from-primary to-primary/70 shadow-primary/20"
-                )}
-                style={
-                  orgBrand && !adminMode
-                    ? {
-                        background: `linear-gradient(135deg, ${orgBrand.primaryColor}, ${orgBrand.secondaryColor})`,
-                      }
-                    : undefined
-                }
-              >
-                {adminMode ? (
-                  <Shield className="h-4 w-4 text-white" strokeWidth={2} />
-                ) : (
-                  <Building2
-                    className="h-4 w-4 text-primary-foreground"
-                    strokeWidth={2}
-                  />
-                )}
+            ) : adminMode ? (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-sm shadow-amber-500/20 transition-transform group-hover:scale-105">
+                <Shield className="h-4 w-4 text-white" strokeWidth={2} />
               </div>
+            ) : orgBrand ? (
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${orgBrand.primaryColor}, ${orgBrand.secondaryColor})`,
+                }}
+              >
+                <Building2 className="h-4 w-4 text-white" strokeWidth={2} />
+              </div>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/logos/iso-estaila.png"
+                alt="Estaila"
+                className="h-8 w-8 shrink-0 object-contain transition-transform group-hover:scale-105"
+              />
             )}
             <div className="flex flex-col leading-none">
               <span className="text-[15px] font-semibold tracking-tight">

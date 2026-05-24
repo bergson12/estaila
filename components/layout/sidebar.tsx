@@ -186,34 +186,26 @@ export function Sidebar({
               alt={orgBrand.name}
               className="h-8 w-8 shrink-0 rounded-lg object-cover shadow-sm ring-1 ring-border"
             />
-          ) : (
-            <div
-              className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm",
-                adminMode
-                  ? "bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/20"
-                  : !orgBrand && "bg-gradient-to-br from-primary to-primary/60 shadow-primary/20"
-              )}
-              style={
-                orgBrand && !adminMode
-                  ? {
-                      background: `linear-gradient(135deg, ${orgBrand.primaryColor}, ${orgBrand.secondaryColor})`,
-                    }
-                  : undefined
-              }
-            >
-              {adminMode ? (
-                <Shield className="h-4 w-4 text-white" strokeWidth={2} />
-              ) : (
-                <Building2
-                  className={cn(
-                    "h-4 w-4",
-                    orgBrand ? "text-white" : "text-primary-foreground"
-                  )}
-                  strokeWidth={2}
-                />
-              )}
+          ) : adminMode ? (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 shadow-sm shadow-amber-500/20">
+              <Shield className="h-4 w-4 text-white" strokeWidth={2} />
             </div>
+          ) : orgBrand ? (
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, ${orgBrand.primaryColor}, ${orgBrand.secondaryColor})`,
+              }}
+            >
+              <Building2 className="h-4 w-4 text-white" strokeWidth={2} />
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/logos/iso-estaila.png"
+              alt="Estaila"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
           )}
           {!collapsed && (
             <div className="flex flex-col leading-none">

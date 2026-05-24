@@ -209,11 +209,14 @@ export function OnboardingWizard({
         {/* Header — logo + skip */}
         <div className="mb-8 flex items-center justify-between">
           <Link href="/inicio" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/iso-estaila.png"
+              alt="Estaila"
+              className="h-7 w-7 object-contain"
+            />
             <span className="text-sm font-semibold tracking-tight">
-              estaila<span className="text-primary">.</span>
+              estaila
             </span>
           </Link>
           {step < STEPS.length - 1 && (

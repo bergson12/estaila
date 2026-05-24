@@ -1,6 +1,5 @@
 "use client";
 
-import { Building2 } from "lucide-react";
 import Link from "next/link";
 import {
   motion,
@@ -9,6 +8,7 @@ import {
   useTransform,
 } from "motion/react";
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/shared/logo";
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   const reduced = useReducedMotion();
@@ -90,18 +90,12 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       >
         <Link href="/" className="flex items-center gap-2.5">
           <motion.div
-            whileHover={{ rotate: -5, scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30"
           >
-            <Building2 className="h-4 w-4 text-primary-foreground" strokeWidth={2} />
+            <Logo variant="full" className="h-8 w-auto" priority />
           </motion.div>
-          <div className="flex flex-col leading-none">
-            <span className="text-base font-semibold tracking-tight">estaila</span>
-            <span className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-              CRM + Studio IA
-            </span>
-          </div>
+          <span className="sr-only">Estaila — CRM + Studio IA</span>
         </Link>
       </motion.div>
 

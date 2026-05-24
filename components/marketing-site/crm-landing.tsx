@@ -495,12 +495,18 @@ function Topbar({ t }: { t: Copy }) {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-3 md:px-8">
         <Link href="/welcome" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
-          </div>
-          <span className="text-sm font-semibold tracking-tight">
-            estaila<span className="text-primary">.</span>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/web-black-estaila.png"
+            alt="Estaila"
+            className="h-7 w-auto object-contain dark:hidden"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/web-white-estaila.png"
+            alt="Estaila"
+            className="hidden h-7 w-auto object-contain dark:block"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
@@ -1129,10 +1135,19 @@ function Footer({ t }: { t: Copy }) {
       <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-8 px-5 py-14 md:grid-cols-5 md:px-8">
         <div className="col-span-2">
           <Link href="/welcome" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
-            </div>
-            <span className="text-sm font-semibold tracking-tight">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/web-black-estaila.png"
+              alt="Estaila"
+              className="h-7 w-auto object-contain dark:hidden"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logos/web-white-estaila.png"
+              alt="Estaila"
+              className="hidden h-7 w-auto object-contain dark:block"
+            />
+            <span className="sr-only">
               estaila<span className="text-primary">.</span>
             </span>
           </Link>
