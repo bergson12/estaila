@@ -1,0 +1,995 @@
+// estaila — CRM + AI Studio for real estate agents (global)
+// Provider: SQLite (dev local) / Turso libSQL (prod via @prisma/adapter-libsql).
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// AUTH (Better-Auth schema)
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String
+  image         String?
+  role          String   @default("USER") // USER | ADMIN
+  plan          String   @default("FREE") // FREE | PRO | TEAM
+  credits       Int      @default(5)
+  // Billing — PayPal (legacy/fallback)
+  paypalSubId      String?   @unique
+  paypalCustomerId String?
+  // Billing — Lemon Squeezy (primary)
+  lsSubId          String?   @unique
+  lsCustomerId     String?
+  lsVariantId      String?
+  billingProvider  String    @default("NONE") // NONE | LEMONSQUEEZY | PAYPAL
+  planActive       Boolean   @default(true)
+  planRenewsAt     DateTime?
+  suspended        Boolean   @default(false)
+  // Onboarding — null = wizard pendiente; set cuando complete (o haga "skip & explore")
+  onboardedAt   DateTime?
+  // Optional profile fields populated during onboarding
+  agentRole     String?  // "Agente independiente · Miami"
+  agentLocation String?  // "Miami, FL"
+  agentPhone    String?
+  // Notifications
+  notifyOnLead  Boolean  @default(true)
+  notifyEmail   String?  // override email destination for lead notifications
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // App relations
+  properties     Property[]
+  contacts       Contact[]
+  transactions   Transaction[]
+  appointments   Appointment[]
+  pipelineCards  PipelineCard[]
+  aiGenerations  AIGeneration[]
+  photos         Photo[]
+  marketingPosts MarketingPost[]
+  billingEvents  BillingEvent[]
+  digitalCards   DigitalCard[]
+  leads          Lead[]
+  shares         PropertyShare[]
+  pdfsGenerated  PdfGeneration[]
+  marketingKits  MarketingKit[]
+
+  // Better-Auth relations
+  sessions Session[]
+  accounts Account[]
+
+  // Public portal
+  site Site?
+
+  // Organization memberships
+  organizationMemberships OrganizationMember[] @relation("UserMemberships")
+  invitedMembers          OrganizationMember[] @relation("MemberInvitedBy")
+
+  @@map("user")
+}
+
+// ============================================================
+// ORGANIZATIONS (teams + agency-tier accounts)
+// ============================================================
+
+model Organization {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  // ---- Brand identity ----
+  logoUrl        String?
+  primaryColor   String? // hex — main brand color
+  secondaryColor String? // hex — accents
+  accentColor    String? // hex — highlights
+  fontPair       String  @default("ELEGANT") // ELEGANT | MODERN | EDITORIAL | MINIMAL
+
+  // ---- Business info ----
+  legalName String?
+  taxId     String? // RNC / EIN / NIT
+  email     String?
+  phone     String?
+  website   String?
+  address   String?
+
+  // ---- Subscription ----
+  plan            String    @default("TEAM") // TEAM | BUSINESS | AGENCY | ENTERPRISE
+  maxSeats        Int       @default(5)
+  paypalSubId     String?   @unique
+  lsSubId         String?   @unique
+  lsCustomerId    String?
+  lsVariantId     String?
+  billingProvider String    @default("NONE") // NONE | LEMONSQUEEZY | PAYPAL
+  planActive      Boolean   @default(true)
+  planRenewsAt    DateTime?
+
+  // ---- Settings ----
+  customDomain         String?  @unique
+  domainVerifiedAt     DateTime?
+  domainVerifyToken    String?  // generated for DNS TXT verification
+  whiteLabel           Boolean  @default(false)
+  defaultLocale        String   @default("es")
+
+  members OrganizationMember[]
+  teams   Team[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([plan])
+}
+
+// ============================================================
+// TEAMS — sub-equipos dentro de una Organization (plan BUSINESS+)
+// Ej: «Equipo Norte», «Comercial», «Luxury»
+// ============================================================
+
+model Team {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String   // unique per org
+  color          String   @default("#3B82F6")
+  icon           String   @default("Users") // Lucide icon name
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model TeamMember {
+  teamId   String
+  memberId String   // OrganizationMember.id
+  role     String   @default("MEMBER") // LEAD | MEMBER
+  joinedAt DateTime @default(now())
+
+  team   Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, memberId])
+  @@index([memberId])
+}
+
+model OrganizationMember {
+  id              String    @id @default(cuid())
+  organizationId  String
+  userId          String? // null while invitation pending
+  invitedEmail    String? // email for pending invites
+  role            String    @default("MEMBER") // OWNER | ADMIN | MEMBER | VIEWER
+  invitationToken String?   @unique
+  acceptedAt      DateTime?
+  invitedById     String
+  createdAt       DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation("UserMemberships", fields: [userId], references: [id], onDelete: SetNull)
+  invitedBy    User         @relation("MemberInvitedBy", fields: [invitedById], references: [id])
+  teams        TeamMember[]
+
+  @@unique([organizationId, userId])
+  @@unique([organizationId, invitedEmail])
+  @@index([invitationToken])
+  @@index([userId])
+}
+
+// ============================================================
+// APP SETTINGS (singleton — one row)
+// ============================================================
+
+model AppSettings {
+  id              String   @id @default("singleton")
+  // Defaults
+  defaultCredits  Int      @default(5)
+  // Banner
+  bannerMessage   String?
+  bannerType      String   @default("INFO") // INFO | WARN | SUCCESS
+  bannerActive    Boolean  @default(false)
+  // Feature flags
+  studioEnabled    Boolean @default(true)
+  marketingEnabled Boolean @default(true)
+  signupsEnabled   Boolean @default(true)
+  maintenanceMode  Boolean @default(false)
+  // AI provider toggle
+  aiProvider      String   @default("AUTO") // AUTO | GEMINI | MOCK
+  updatedAt       DateTime @updatedAt
+  updatedById     String?
+}
+
+// ============================================================
+// AUDIT LOG (admin actions)
+// ============================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String // changePlan | adjustCredits | setSuspended | setRole | settings.update | refund
+  targetId  String? // target user / entity ID
+  metadata  String? // JSON
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================
+// BILLING (PayPal subscriptions + credit packs)
+// ============================================================
+
+model BillingEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // SUB_ACTIVATED | SUB_CANCELLED | SUB_RENEWED | PACK_PURCHASED | REFUND | ADMIN_GRANT
+  provider  String   @default("PAYPAL") // PAYPAL | LEMONSQUEEZY
+  amount    Decimal  @default(0)
+  currency  String   @default("USD")
+  reference String? // Provider subscription/order ID
+  metadata  String? // JSON extra info
+  credits   Int      @default(0) // credits granted by this event
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([reference])
+}
+
+// ============================================================
+// PUBLIC PORTAL (Site / branding / templates)
+// ============================================================
+
+model Site {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  slug          String   @unique
+  template      String   @default("LUXURY_DARK") // LUXURY_DARK | TROPICAL_BRIGHT | MINIMAL_CLASSIC | MODERN_BOLD
+  title         String?
+  tagline       String?
+  about         String?  // rich text / markdown
+  primaryColor  String?  // hex, optional brand override
+  logoUrl       String?
+  coverUrl      String?  // hero background
+  phone         String?
+  whatsapp      String?
+  email         String?
+  facebookUrl   String?
+  instagramUrl  String?
+  tiktokUrl     String?
+  published     Boolean  @default(false)
+
+  // ---- Customization (Premium tier — paid feature) ----
+  fontPair        String  @default("ELEGANT") // ELEGANT | MODERN | EDITORIAL | MINIMAL
+  language        String  @default("es")      // es | en (portal text)
+  enabledSections String  @default("[\"AMENITIES\",\"FLOOR_PLANS\",\"NEIGHBORHOOD\",\"IMMERSIVE\",\"FINISHES\",\"AGENT\",\"CTA\"]") // JSON keys
+  customDomain    String? @unique             // futuro: example.com → /p/slug
+  customCss       String?                     // advanced tier CSS overrides
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([published])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ============================================================
+// PROPERTIES
+// ============================================================
+
+model Property {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  category      String // CASA | APARTAMENTO | SOLAR | TERRENO | LOCAL_COMERCIAL
+  operation     String // EN_VENTA | EN_ALQUILER | VENDIDA | ALQUILADA | CONSIGNACION
+  status        String   @default("NUEVO") // NUEVO | EN_PLANO | EN_CONSTRUCCION | DESLINDADA
+  priceUSD      Decimal?
+  priceDOP      Decimal?
+  bedrooms      Int?
+  bathrooms     Decimal?
+  parking       Int?
+  metersSquared Int?
+  location      String?
+  address       String?
+  mapsUrl       String?
+  featuredPhoto String?
+  ownerId       String?
+
+  // Geo (Mapbox / map preview)
+  lat           Decimal?
+  lng           Decimal?
+
+  // Propiedad 360 — public landing + SEO
+  slug          String?  @unique // "casa-en-miraflores-santiago"
+  publicEnabled Boolean  @default(true)
+  publicViews   Int      @default(0)
+  shareCount    Int      @default(0)
+
+  // Premium landing fields (luxury showcase)
+  premiumLanding Boolean  @default(false) // toggle premium landing (paid feature)
+  amenities      String   @default("[]") // JSON: array of {key, custom?}
+  finishes       String   @default("[]") // JSON: array of strings
+  floorPlans     String   @default("[]") // JSON: array of {type,beds,baths,m2,units}
+  nearbyPois     String   @default("[]") // JSON: array of {key, distance, custom?}
+  videoUrl       String?
+  walkthroughUrl String?
+  customTagline  String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  owner          Contact?            @relation("PropertyOwner", fields: [ownerId], references: [id])
+  photos         Photo[]
+  transactions   Transaction[]
+  pipelineCards  PipelineCard[]
+  appointments   Appointment[]
+  tenants        Tenant[]
+  rentalPayments RentalPayment[]
+  maintenance    MaintenanceTicket[]
+  pois           PropertyPOI[]
+  shares         PropertyShare[]
+  leads          Lead[]
+  pdfs           PdfGeneration[]
+  marketingKits  MarketingKit[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([operation])
+  @@index([slug])
+}
+
+// ============================================================
+// PROPERTY POI — Points of interest near a property (Mapbox map markers)
+// ============================================================
+
+model PropertyPOI {
+  id          String   @id @default(cuid())
+  propertyId  String
+  name        String   // "Bvlgari Hotel"
+  type        String   @default("OTHER") // RESTAURANT | SCHOOL | HOSPITAL | GYM | PARK | BEACH | MALL | TRANSPORT | CULTURE | OTHER
+  icon        String?  // lucide name or emoji
+  description String?  // short markdown / plain text
+  url         String?  // external link (website / Google Maps / etc)
+  imageUrl    String?  // optional preview
+  lat         Float
+  lng         Float
+  distanceM   Int?     // meters from property (computed haversine, cached)
+  walkMinutes Int?     // optional walk-time estimate
+  carMinutes  Int?     // optional car-time estimate
+  pinned      Boolean  @default(false) // highlighted on the map / property card
+  order       Int      @default(0)
+  color       String?  // optional pin color override (hex)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([type])
+  @@index([pinned])
+}
+
+// ============================================================
+// PROPIEDAD 360 — Shares, public leads, PDF generations
+// ============================================================
+
+model PropertyShare {
+  id          String   @id @default(cuid())
+  propertyId  String
+  userId      String   // agent who shared
+  contactId   String?  // who it was shared with (if known)
+  channel     String   // WHATSAPP | EMAIL | FACEBOOK | INSTAGRAM | LINKEDIN | COPY_LINK | QR
+  trackingId  String   @unique @default(cuid()) // ?ref=trackingId
+  message     String?  // optional message snippet preview
+  clicks      Int      @default(0)
+  lastClickAt DateTime?
+  createdAt   DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([trackingId])
+  @@index([channel])
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  propertyId  String
+  agentId     String   // property owner
+  name        String
+  whatsapp    String?
+  email       String?
+  message     String?
+  source      String?  // PropertyShare.trackingId if tracked
+  referrer    String?  // origin URL
+  userAgent   String?
+  ipHash      String?  // sha256 of IP — for rate-limit / anti-spam
+  status      String   @default("NUEVO") // NUEVO | CONTACTADO | CALIFICADO | DESCARTADO | CONVERTIDO
+  convertedContactId  String?
+  convertedPipelineCardId String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agent    User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================
+// MARKETING KIT — persistent drafts of AI-generated social content
+// per property, with personalization parameters and inline edits.
+// ============================================================
+
+model MarketingKit {
+  id          String   @id @default(cuid())
+  userId      String
+  propertyId  String
+  name        String   // user-given label, e.g. "Kit Q2 Familia"
+
+  // Personalization inputs (preserved so user can re-generate with same params)
+  audience    String?  // FAMILIA | INVESTOR | FOREIGN | FIRST_BUYER | LUXURY | GENERAL
+  tone        String?  // ELEGANT | CASUAL | URGENT | ASPIRATIONAL | TECHNICAL
+  goal        String?  // VISIT | OFFER | AWARENESS | OPEN_HOUSE | PRICE_DROP
+  angle       String?  // free-text custom angle ("cerca playa, recién remodelada")
+  language    String   @default("es") // es | en
+
+  // Generated outputs (JSON-stringified arrays — Prisma SQLite has no Json type)
+  captions    String   @default("[]")
+  hashtags    String   @default("[]")
+  bios        String   @default("[]")
+
+  // User-curated favorites — indices into the arrays above
+  pickedCaption Int?
+  pickedBio     Int?
+
+  status      String   @default("DRAFT") // DRAFT | ACTIVE | ARCHIVED
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PdfGeneration {
+  id              String   @id @default(cuid())
+  propertyId      String
+  userId          String
+  contactId       String?  // recipient (if existing contact)
+  recipientName   String?  // when contact not in CRM
+  recipientEmail  String?
+  recipientPhone  String?
+  template        String   @default("BROCHURE") // BROCHURE | FINANCIAL | INVESTMENT | MINIMAL
+  personalMessage String?
+  customOptions   String   @default("{}") // JSON: which checkboxes were on
+  pdfUrl          String?  // generated PDF path/URL (optional — can stream)
+  downloadCount   Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// RENTAL MANAGER (per-property tenants, payments, maintenance)
+// ============================================================
+
+model Tenant {
+  id            String   @id @default(cuid())
+  propertyId    String
+  userId        String
+  name          String
+  email         String?
+  phone         String?
+  whatsapp      String?
+  identification String? // cédula / RNC / passport
+  // Lease terms
+  monthlyRent   Decimal
+  deposit       Decimal? @default(0)
+  currency      String   @default("USD")
+  startDate     DateTime
+  endDate       DateTime?
+  paymentDay    Int      @default(5) // day of month
+  // Status
+  status        String   @default("ACTIVE") // ACTIVE | PAST | EVICTED
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  payments RentalPayment[]
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([status])
+}
+
+model RentalPayment {
+  id         String   @id @default(cuid())
+  propertyId String
+  tenantId   String?
+  userId     String
+  // Payment
+  amount     Decimal
+  currency   String   @default("USD")
+  concept    String   @default("RENT") // RENT | DEPOSIT | LATE_FEE | OTHER
+  status     String   @default("PENDING") // PENDING | PAID | LATE | PARTIAL
+  dueDate    DateTime
+  paidDate   DateTime?
+  method     String? // CASH | TRANSFER | CHECK | CARD | ZELLE | OTHER
+  reference  String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Document templates — system defaults + user-created + DOCX uploads.
+// "kind" maps to the doc generator (CONTRACT_SALE / SALE_PROMISE / etc).
+// "body" is HTML with {{placeholders}} that get substituted at render time.
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  userId      String?  // null = system template visible to everyone
+  kind        String   // CONTRACT_SALE | SALE_PROMISE | RENTAL_CONTRACT | PAYMENT_RECEIPT
+  name        String
+  description String?
+  body        String   // HTML with {{placeholders}}
+  source      String   @default("MANUAL") // MANUAL | DOCX | SYSTEM
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, kind])
+  @@index([kind])
+}
+
+model MaintenanceTicket {
+  id          String   @id @default(cuid())
+  propertyId  String
+  userId      String
+  title       String
+  description String?
+  category    String   @default("OTHER") // PLUMBING | ELECTRICAL | APPLIANCE | STRUCTURAL | CLEANING | OTHER
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH | URGENT
+  status      String   @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | CANCELLED
+  cost        Decimal?
+  vendor      String? // free-text vendor/contractor name
+  reportedAt  DateTime @default(now())
+  resolvedAt  DateTime?
+  notes       String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([status])
+  @@index([priority])
+}
+
+// ============================================================
+// PHOTOS + AI GENERATIONS
+// ============================================================
+
+model Photo {
+  id          String   @id @default(cuid())
+  propertyId  String?
+  userId      String
+  url         String
+  enhancedUrl String?
+  type        String   @default("ORIGINAL") // ORIGINAL | STAGED | ENHANCED | DECLUTTERED
+  order       Int      @default(0)
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now())
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property?      @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  generations AIGeneration[]
+
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model AIGeneration {
+  id          String    @id @default(cuid())
+  userId      String
+  photoId     String?
+  tool        String // STAGING | DECLUTTER | ENHANCE | STYLE_CHANGE | SKY | TWILIGHT | POOL | LAWN | ADD_OBJECT | REMOVE_OBJECT
+  inputUrl    String
+  outputUrl   String?
+  prompt      String?
+  style       String?
+  roomType    String?
+  options     String? // JSON-stringified extra options
+  status      String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  creditsUsed Int       @default(1)
+  errorMsg    String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo? @relation(fields: [photoId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// CONTACTS
+// ============================================================
+
+model Contact {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  type       String // PROPIETARIO | CLIENTE | INQUILINO | ABOGADO | COLEGA_INMOBILIARIO | PLOMERO | ELECTRICISTA | CONTRATISTA | EMPRESA | UTILITY
+  phone      String?
+  whatsapp   String?
+  email      String?
+  location   String?
+  rnc        String?
+  reference  String?
+  ratings    String   @default("[]") // JSON array of strings
+  profession String   @default("[]") // JSON array of strings
+  favorite   Boolean  @default(false)
+  notes      String?
+  avatar     String?
+  // Lead scoring + engagement
+  score          Int       @default(0) // 0–100 (computed)
+  lastContactedAt DateTime?
+  birthday       DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownedProperties Property[]     @relation("PropertyOwner")
+  pipelineCards   PipelineCard[]
+  activities      ContactActivity[]
+  tags            ContactTag[]
+  customFields    ContactCustomField[]
+
+  @@index([userId])
+  @@index([type])
+  @@index([lastContactedAt])
+}
+
+// ============================================================
+// CONTACT — Timeline activities (calls, emails, WhatsApp, notes, etc.)
+// ============================================================
+
+model ContactActivity {
+  id          String   @id @default(cuid())
+  contactId   String
+  userId      String
+  type        String // CALL | WHATSAPP_SENT | WHATSAPP_RECEIVED | EMAIL | NOTE | VISIT | PROPERTY_VIEWED | STATUS_CHANGE | TAG_ADDED | CUSTOM
+  title       String
+  content     String?
+  durationMin Int?
+  propertyId  String?
+  appointmentId String?
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId, createdAt])
+  @@index([userId])
+  @@index([type])
+}
+
+// ============================================================
+// TAGS (color-coded labels for contacts)
+// ============================================================
+
+model Tag {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#6B7280") // hex
+  icon      String?  // optional Lucide icon name
+  createdAt DateTime @default(now())
+
+  contactTags ContactTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@index([tagId])
+}
+
+// ============================================================
+// CONTACT — Custom fields (k/v store per contact)
+// ============================================================
+
+model ContactCustomField {
+  id        String  @id @default(cuid())
+  contactId String
+  key       String
+  value     String
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, key])
+  @@index([contactId])
+}
+
+// ============================================================
+// SMART LISTS (saved filter combinations)
+// ============================================================
+
+model SmartList {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  icon      String   @default("List") // Lucide icon name
+  color     String   @default("#3B82F6")
+  filters   String   // JSON { type?, tags?, favorite?, daysSinceContact?, ... }
+  pinned    Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================
+// PIPELINE
+// ============================================================
+
+model PipelineCard {
+  id             String    @id @default(cuid())
+  userId         String
+  contactId      String
+  propertyId     String?
+  stage          String    @default("NUEVO") // NUEVO | CONTACTADO | VISITA | NEGOCIACION | CERRADO | PERDIDO
+  value          Decimal?
+  notes          String?
+  nextAction     String?
+  nextActionDate DateTime?
+  order          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact  Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([stage])
+}
+
+// ============================================================
+// FINANCE
+// ============================================================
+
+model Transaction {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String?
+  concept    String
+  amount     Decimal
+  category   String // INGRESO | GASTO
+  type       String // RESERVA | COMISION | MANTENIMIENTO | PUBLICIDAD | MARKETING | SUSCRIPCION | LEGAL | OTRO
+  status     String   @default("PENDIENTE") // PENDIENTE | EN_PROGRESO | PAGADO
+  currency   String   @default("USD") // USD | DOP
+  notes      String?
+  reference  String?
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([category])
+  @@index([date])
+}
+
+// ============================================================
+// CALENDAR / APPOINTMENTS
+// ============================================================
+
+model Appointment {
+  id         String    @id @default(cuid())
+  userId     String
+  propertyId String?
+  contactId  String?
+  title      String
+  startAt    DateTime
+  endAt      DateTime?
+  status     String    @default("PENDIENTE") // PENDIENTE | EN_CURSO | COMPLETADO | CANCELADO
+  location   String?
+  attendees  String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([startAt])
+  @@index([contactId])
+}
+
+// ============================================================
+// MARKETING
+// ============================================================
+
+model MarketingPost {
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  content      String
+  channel      String    @default("INSTAGRAM") // INSTAGRAM | FACEBOOK | WHATSAPP | EMAIL | OTRO
+  status       String    @default("DRAFT") // DRAFT | SCHEDULED | PUBLISHED
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+  imageUrl     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================================
+// MARKETING CARDS — Digital (Linktree-style) + Business (AI gen)
+// ============================================================
+
+model DigitalCard {
+  id          String   @id @default(cuid())
+  userId      String
+  slug        String   @unique // public URL: /c/[slug]
+  title       String   // displayed name
+  role        String?  // "Agente inmobiliario · Mi Ciudad"
+  bio         String?  // short paragraph
+  avatarUrl   String?
+  coverUrl    String?  // optional banner image
+  theme       String   @default("MINIMAL") // MINIMAL | DARK | GLASS | BOLD | TROPICAL
+  primaryColor String  @default("#3B82F6")
+  accentColor  String? // optional secondary
+  isActive    Boolean  @default(true)
+  showProperties Boolean @default(true) // surface featured properties
+  showWhatsapp   Boolean @default(true)
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links CardLink[]
+  cardViews CardView[]
+
+  @@index([userId])
+  @@index([slug])
+}
+
+model CardLink {
+  id          String   @id @default(cuid())
+  cardId      String
+  label       String
+  url         String   // wa.me/..., tel:..., mailto:..., https://...
+  icon        String   @default("Link") // Lucide icon name (fallback)
+  imageUrl    String?  // optional thumbnail image
+  description String?  // optional subtitle/description
+  color       String?  // optional accent color
+  highlight   Boolean  @default(false) // featured/pinned style
+  order       Int      @default(0)
+  clicks      Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  card DigitalCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, order])
+}
+
+model CardView {
+  id        String   @id @default(cuid())
+  cardId    String
+  referrer  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  card DigitalCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+}
+

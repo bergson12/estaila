@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "better-icons": {
+      "source": "better-auth/better-icons",
+      "sourceType": "github",
+      "skillPath": "skills/SKILL.md",
+      "computedHash": "b16a2f5830f3db40695fdd58d415a631e9fb6170a0cc5d3b56469d17e53596bc"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "mobile-ios-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/ui-design/skills/mobile-ios-design/SKILL.md",
+      "computedHash": "30f9f969f4fa664addff529ca3f62352f951cd672e6f10b8a9ea26fb5c55b9b5"
+    },
+    "sleek-design-mobile-apps": {
+      "source": "sleekdotdesign/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/design-mobile-apps/SKILL.md",
+      "computedHash": "8781ac3cb1c8567942c897133c15d74736e5a3acc0f493041d91a5b6b88a7d21"
+    }
+  }
+}

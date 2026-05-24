@@ -1,0 +1,273 @@
+"use client";
+
+import {
+  AlertTriangle,
+  Brain,
+  CheckCircle2,
+  Eye,
+  Loader2,
+  Sparkles,
+  Star,
+  Target,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import {
+  analyzePhoto,
+  type PhotoAnalysis,
+} from "@/lib/actions/analyze-image";
+
+const TOOL_LABEL: Record<string, string> = {
+  STAGING: "Virtual Staging",
+  DECLUTTER: "Eliminar Objetos",
+  ENHANCE: "Mejorar Calidad",
+  STYLE_CHANGE: "Cambiar Estilo",
+  SKY: "Cielo Despejado",
+  TWILIGHT: "Atardecer",
+  POOL: "Piscina",
+  LAWN: "Césped",
+};
+
+export function PhotoAnalysis({ imageUrl }: { imageUrl: string | null }) {
+  const [analysis, setAnalysis] = useState<PhotoAnalysis | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setAnalysis(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setCollapsed(false);
+    analyzePhoto(imageUrl)
+      .then((r) => {
+        if (!cancelled) setAnalysis(r);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageUrl]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <AnimatePresence mode="wait">
+      {(loading || analysis) && (
+        <motion.div
+          initial={{ opacity: 0, y: -8, height: 0 }}
+          animate={{ opacity: 1, y: 0, height: "auto" }}
+          exit={{ opacity: 0, y: -8, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="overflow-hidden"
+        >
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+            {loading ? (
+              <div className="flex items-center gap-3 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <div>
+                  <p className="font-medium">Analizando foto con IA...</p>
+                  <p className="text-xs text-muted-foreground">
+                    Detectando habitación, estilo, y oportunidades de mejora
+                  </p>
+                </div>
+              </div>
+            ) : analysis ? (
+              <AnalysisContent
+                analysis={analysis}
+                collapsed={collapsed}
+                onToggle={() => setCollapsed((c) => !c)}
+              />
+            ) : null}
+          </Card>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function AnalysisContent({
+  analysis,
+  collapsed,
+  onToggle,
+}: {
+  analysis: PhotoAnalysis;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  if (!analysis.available) {
+    const hasError = !!analysis.error;
+    return (
+      <div className="flex items-start gap-3 text-sm">
+        {hasError ? (
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        ) : (
+          <Brain className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-muted-foreground">
+            {hasError ? "No se pudo analizar la foto" : "Análisis IA no configurado"}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {hasError ? (
+              <>{analysis.error}</>
+            ) : (
+              <>
+                Define <code className="rounded bg-muted px-1 text-[10px]">GEMINI_API_KEY</code> en{" "}
+                <code className="rounded bg-muted px-1 text-[10px]">.env</code> para activar análisis automático de fotos.
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Brain className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              Análisis con Gemini Vision
+              <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                Nanobanana
+              </span>
+            </p>
+            <p className="mt-0.5 text-xs italic text-muted-foreground line-clamp-2">
+              {analysis.oneLineDescription}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onToggle}
+          className="shrink-0 rounded px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          {collapsed ? "Detalles" : "Ocultar"}
+        </button>
+      </div>
+
+      {/* Quick chips */}
+      <div className="flex flex-wrap gap-1.5">
+        <Chip icon={Eye} label={analysis.roomType} />
+        {analysis.isEmpty && (
+          <Chip
+            icon={CheckCircle2}
+            label="Vacío · ideal staging"
+            color="emerald"
+          />
+        )}
+        {analysis.currentStyle && (
+          <Chip label={`Estilo: ${analysis.currentStyle}`} />
+        )}
+        <Chip
+          icon={Star}
+          label={`Calidad: ${analysis.qualityScore}/10`}
+          color={
+            analysis.qualityScore >= 8
+              ? "emerald"
+              : analysis.qualityScore >= 5
+                ? "amber"
+                : "rose"
+          }
+        />
+        {analysis.buyerTarget && (
+          <Chip icon={Target} label={analysis.buyerTarget} />
+        )}
+      </div>
+
+      {!collapsed && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden space-y-3 border-t border-primary/15 pt-3"
+        >
+          {/* Issues */}
+          {analysis.qualityIssues.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <AlertTriangle className="-mt-0.5 mr-1 inline h-3 w-3 text-amber-500" />
+                Issues detectados
+              </p>
+              <ul className="space-y-0.5">
+                {analysis.qualityIssues.map((iss) => (
+                  <li
+                    key={iss}
+                    className="flex items-start gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <span className="mt-1 inline-block h-1 w-1 shrink-0 rounded-full bg-amber-500" />
+                    {iss}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Suggestion */}
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+              <Sparkles className="h-3 w-3" />
+              Recomendación de la IA
+            </p>
+            <p className="text-xs leading-relaxed">
+              Aplica{" "}
+              <span className="font-semibold text-primary">
+                {TOOL_LABEL[analysis.suggestedTool] ?? analysis.suggestedTool}
+              </span>
+              {analysis.suggestedStyle && (
+                <>
+                  {" "}con estilo{" "}
+                  <span className="font-semibold text-primary">
+                    {analysis.suggestedStyle}
+                  </span>
+                </>
+              )}{" "}
+              para maximizar el atractivo de esta foto.
+            </p>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function Chip({
+  icon: Icon,
+  label,
+  color,
+}: {
+  icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string;
+  color?: "emerald" | "amber" | "rose";
+}) {
+  const colorClass = {
+    emerald: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    amber: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+    rose: "bg-rose-500/15 text-rose-600 border-rose-500/30",
+  }[color ?? "emerald"];
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        color
+          ? colorClass
+          : "border-border bg-card text-foreground"
+      )}
+    >
+      {Icon && <Icon className="h-2.5 w-2.5" strokeWidth={1.75} />}
+      {label}
+    </span>
+  );
+}

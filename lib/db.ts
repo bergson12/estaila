@@ -1,0 +1,51 @@
+import { PrismaClient } from "./generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+
+/**
+ * Prisma client backed by LibSQL (Turso) — works in Node (Vercel server runtime)
+ * and locally against either a remote Turso URL or a local SQLite file.
+ *
+ * Environment:
+ *   - DATABASE_URL: libsql://<db>-<org>.turso.io  OR  file:./dev.db (local)
+ *   - TURSO_AUTH_TOKEN: required for libsql:// URLs in production
+ *
+ * One global singleton in dev (survives HMR); per-process in prod.
+ */
+
+const SCHEMA_VERSION = "v7-turso-2026-05-24";
+
+type GlobalCache = {
+  prisma: PrismaClient | undefined;
+  prismaSchemaVersion: string | undefined;
+};
+
+const globalForPrisma = globalThis as unknown as GlobalCache;
+
+function buildClient(): PrismaClient {
+  const url = process.env.DATABASE_URL ?? "file:./dev.db";
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+
+  const adapter = new PrismaLibSql({
+    url,
+    ...(authToken && url.startsWith("libsql://") ? { authToken } : {}),
+  });
+
+  return new PrismaClient({ adapter });
+}
+
+if (
+  globalForPrisma.prisma &&
+  globalForPrisma.prismaSchemaVersion !== SCHEMA_VERSION
+) {
+  globalForPrisma.prisma = undefined;
+}
+
+export const prisma: PrismaClient =
+  globalForPrisma.prisma ?? buildClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaSchemaVersion = SCHEMA_VERSION;
+}
+
+export type { Prisma } from "./generated/prisma/client";

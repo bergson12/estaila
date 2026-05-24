@@ -1,0 +1,71 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Megaphone, Share2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type Tab = "posts" | "digital";
+
+export function MarketingHub({
+  postsView,
+  digitalView,
+}: {
+  postsView: React.ReactNode;
+  digitalView: React.ReactNode;
+}) {
+  const [tab, setTab] = useState<Tab>("digital");
+
+  const TABS: { key: Tab; label: string; icon: typeof Share2; desc: string }[] = [
+    {
+      key: "digital",
+      label: "Tarjetas digitales",
+      icon: Share2,
+      desc: "Página pública Linktree-style",
+    },
+    {
+      key: "posts",
+      label: "Posts",
+      icon: Megaphone,
+      desc: "Plantillas y calendario",
+    },
+  ];
+
+  return (
+    <div>
+      {/* Tab pill bar */}
+      <div className="mb-6 -mx-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card/40 p-1">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={cn(
+                  "relative inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-xs font-medium transition-colors",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="marketing-hub-tab-bg"
+                    className="absolute inset-0 rounded-lg bg-background shadow-sm"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon className="relative z-10 h-3.5 w-3.5" strokeWidth={1.75} />
+                <span className="relative z-10">{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {tab === "digital" && digitalView}
+      {tab === "posts" && postsView}
+    </div>
+  );
+}

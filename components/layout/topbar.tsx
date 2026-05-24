@@ -1,0 +1,152 @@
+"use client";
+
+import { Search, Bell, ChevronRight, Home } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { CommandPalette } from "./command-palette";
+import { ThemeToggle } from "./theme-toggle";
+import { MobileNav } from "./mobile-nav";
+
+type TopbarUser = {
+  name: string;
+  email: string;
+  image?: string | null;
+  plan?: string;
+  credits?: number;
+  role?: string;
+};
+type OrgBrand = {
+  name: string;
+  logoUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+} | null;
+
+const SEGMENTS: Record<string, string> = {
+  "": "Dashboard",
+  propiedades: "Propiedades",
+  agenda: "Agenda",
+  contactos: "Contactos",
+  pipeline: "Pipeline",
+  marketing: "Marketing",
+  finanzas: "Finanzas",
+  studio: "Studio IA",
+  sitio: "Mi Sitio",
+  nueva: "Nueva",
+  pricing: "Plan y créditos",
+  settings: "Configuración",
+  staging: "Virtual Staging",
+  declutter: "Eliminar Objetos",
+  enhance: "Mejorar Calidad",
+  style: "Cambiar Estilo",
+  sky: "Cielo Despejado",
+  twilight: "Atardecer",
+  pool: "Piscina",
+  lawn: "Césped",
+};
+
+function humanize(slug: string) {
+  return SEGMENTS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
+export function Topbar({
+  user,
+  branding,
+}: {
+  user?: TopbarUser;
+  branding?: OrgBrand;
+} = {}) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const parts = pathname.split("/").filter(Boolean);
+
+  return (
+    <>
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6">
+        {/* Mobile drawer trigger + Breadcrumb */}
+        <nav className="flex min-w-0 items-center gap-1.5 text-sm">
+          {user && <MobileNav user={user} branding={branding} />}
+          <Link
+            href="/"
+            className="flex shrink-0 items-center text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Home"
+          >
+            <Home className="h-3.5 w-3.5" />
+          </Link>
+          {/* Breadcrumb only on sm+ to save mobile space */}
+          <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
+            {parts.map((p, i) => {
+              const href = "/" + parts.slice(0, i + 1).join("/");
+              const isLast = i === parts.length - 1;
+              return (
+                <span key={href} className="flex min-w-0 items-center gap-1.5">
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                  {isLast ? (
+                    <span className="truncate font-medium">{humanize(p)}</span>
+                  ) : (
+                    <Link
+                      href={href}
+                      className="truncate text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {humanize(p)}
+                    </Link>
+                  )}
+                </span>
+              );
+            })}
+          </div>
+          {/* On mobile show only the last segment as the page title */}
+          {parts.length > 0 && (
+            <span className="ml-1 truncate text-sm font-medium sm:hidden">
+              <ChevronRight className="mr-1 inline h-3 w-3 text-muted-foreground/60" />
+              {humanize(parts[parts.length - 1])}
+            </span>
+          )}
+        </nav>
+
+        {/* Search + actions */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setOpen(true)}
+            className="hidden h-9 w-72 items-center gap-2.5 rounded-lg border border-border bg-card/50 px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground md:flex"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="flex-1">Buscar...</span>
+            <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setOpen(true)}
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          <ThemeToggle />
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+          </Button>
+        </div>
+      </header>
+
+      <CommandPalette open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
