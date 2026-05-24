@@ -8,23 +8,29 @@ export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const isAuthPage = AUTH_PAGES.includes(path);
 
-  // Public portal routes (/p/*), digital cards (/c/*) and marketing (/welcome) are always accessible
+  // Public routes — always accessible (root landing, portal, cards, marketing).
   if (
+    path === "/" ||
     path.startsWith("/p/") ||
     path.startsWith("/c/") ||
     path.startsWith("/welcome") ||
-    path.startsWith("/invitacion")
+    path.startsWith("/invitacion") ||
+    path.startsWith("/propiedad/")
   ) {
+    // If logged-in users hit /welcome, push them into the app.
+    if (session && path.startsWith("/welcome")) {
+      return NextResponse.redirect(new URL("/inicio", req.url));
+    }
     return NextResponse.next();
   }
 
   if (!session && !isAuthPage) {
     const url = new URL("/login", req.url);
-    if (path !== "/") url.searchParams.set("next", path);
+    url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
   if (session && isAuthPage) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/inicio", req.url));
   }
   return NextResponse.next();
 }

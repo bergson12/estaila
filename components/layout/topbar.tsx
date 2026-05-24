@@ -81,7 +81,7 @@ export function Topbar({
         <nav className="flex min-w-0 items-center gap-1.5 text-sm">
           {user && <MobileNav user={user} branding={branding} />}
           <Link
-            href="/"
+            href="/inicio"
             className="flex shrink-0 items-center text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Home"
           >

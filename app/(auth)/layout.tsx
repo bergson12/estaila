@@ -9,7 +9,7 @@ export default async function AuthLayout({
 }) {
   // If user already authenticated, bounce out of /login or /signup.
   const user = await getCurrentUser();
-  if (user) redirect("/");
+  if (user) redirect("/inicio");
 
   return <AuthShell>{children}</AuthShell>;
 }

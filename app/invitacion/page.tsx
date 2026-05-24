@@ -86,7 +86,7 @@ export default async function InvitationPage({
         <div className="mt-6 grid gap-2">
           <AcceptInvitationButton token={token} />
           <Button asChild variant="outline">
-            <Link href="/">Cancelar</Link>
+            <Link href="/inicio">Cancelar</Link>
           </Button>
         </div>
       </Card>
@@ -112,7 +112,7 @@ function ErrorCard({
         <h1 className="mt-4 text-xl font-semibold">{title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{body}</p>
         <Button asChild className="mt-6">
-          <Link href="/">Ir al dashboard</Link>
+          <Link href="/inicio">Ir al dashboard</Link>
         </Button>
       </Card>
     </div>

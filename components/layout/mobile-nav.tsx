@@ -39,7 +39,7 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 const NAV = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
   { label: "Propiedades", href: "/propiedades", icon: Building2 },
   { label: "Agenda", href: "/agenda", icon: Calendar },
   { label: "Contactos", href: "/contactos", icon: Users },

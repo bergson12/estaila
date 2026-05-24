@@ -70,7 +70,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: "Principal",
     items: [
-      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
       { label: "Propiedades", href: "/propiedades", icon: Building2 },
       { label: "Agenda", href: "/agenda", icon: Calendar },
       { label: "Contactos", href: "/contactos", icon: Users },
@@ -109,7 +109,7 @@ const ADMIN_NAV = [
 const STUDIO_HREF = "/studio";
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
+  if (href === "/inicio") return pathname === "/inicio";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -256,7 +256,7 @@ export function Sidebar({
           <>
             {/* Back to CRM */}
             <Link
-              href="/"
+              href="/inicio"
               className={cn(
                 "group mb-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/15",
                 collapsed && "justify-center px-0"
@@ -403,7 +403,7 @@ export function Sidebar({
               <>
                 {pathname.startsWith("/admin") ? (
                   <DropdownMenuItem asChild>
-                    <Link href="/">
+                    <Link href="/inicio">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Cambiar a CRM
                     </Link>

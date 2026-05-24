@@ -188,7 +188,7 @@ export function OnboardingWizard({
         if (skipped) {
           toast.message("Puedes completar el onboarding más tarde.");
         }
-        router.push("/");
+        router.push("/inicio");
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -208,7 +208,7 @@ export function OnboardingWizard({
       <div className="relative mx-auto flex min-h-screen max-w-[860px] flex-col px-5 py-8 md:px-8 md:py-12">
         {/* Header — logo + skip */}
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/inicio" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
             </div>

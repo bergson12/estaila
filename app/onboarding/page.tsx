@@ -23,7 +23,7 @@ export default async function OnboardingPage() {
   // If already completed, send them to the dashboard. They can re-run via /onboarding?force=1
   // (handled at the wizard level if you ever need it).
   if (dbUser?.onboardedAt) {
-    redirect("/");
+    redirect("/inicio");
   }
 
   return (

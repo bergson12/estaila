@@ -31,7 +31,7 @@ export default function LoginPage() {
 function LoginInner() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/";
+  const next = sp.get("next") || "/inicio";
   const [submitting, setSubmitting] = useState(false);
 
   const {

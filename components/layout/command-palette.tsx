@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/command";
 
 const NAV = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
   { label: "Propiedades", href: "/propiedades", icon: Building2 },
   { label: "Agenda", href: "/agenda", icon: Calendar },
   { label: "Contactos", href: "/contactos", icon: Users },

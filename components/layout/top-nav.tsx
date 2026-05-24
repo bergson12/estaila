@@ -64,7 +64,7 @@ type OrgBrand = {
 } | null;
 
 const NAV: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
   { label: "Propiedades", href: "/propiedades", icon: Building2 },
   { label: "Agenda", href: "/agenda", icon: Calendar },
   { label: "Contactos", href: "/contactos", icon: Users },
@@ -84,7 +84,7 @@ const ADMIN_NAV: { label: string; href: string; icon: LucideIcon }[] = [
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
+  if (href === "/inicio") return pathname === "/inicio";
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(href + "/");
 }
@@ -355,7 +355,7 @@ export function TopNav({
               <>
                 <span className="mx-1 h-4 w-px bg-amber-500/30" />
                 <Link
-                  href="/"
+                  href="/inicio"
                   prefetch
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/15"
                 >
@@ -438,7 +438,7 @@ function UserMenu({
           <>
             {adminMode ? (
               <DropdownMenuItem asChild>
-                <Link href="/">
+                <Link href="/inicio">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   Cambiar a CRM
                 </Link>
