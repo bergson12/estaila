@@ -20,21 +20,23 @@ const fileUrl = raw.startsWith("file:")
 
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
-export default defineConfig({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cfg: any = {
   schema: "prisma/schema.prisma",
-  ...(isLibsql
-    ? {
-        migrations: {
-          path: "prisma/migrations",
-          adapter: () =>
-            new PrismaLibSql({
-              url: raw,
-              ...(authToken ? { authToken } : {}),
-            }),
-        },
-      }
-    : {
-        datasource: { url: fileUrl },
-        migrations: { path: "prisma/migrations" },
+};
+
+if (isLibsql) {
+  cfg.migrations = {
+    path: "prisma/migrations",
+    adapter: () =>
+      new PrismaLibSql({
+        url: raw,
+        ...(authToken ? { authToken } : {}),
       }),
-});
+  };
+} else {
+  cfg.datasource = { url: fileUrl };
+  cfg.migrations = { path: "prisma/migrations" };
+}
+
+export default defineConfig(cfg);
