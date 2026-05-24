@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
-import {
-  Inter,
-  JetBrains_Mono,
-  Cormorant_Garamond,
-  Playfair_Display,
-  Fraunces,
-  Instrument_Sans,
-} from "next/font/google";
+import { Raleway, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const raleway = Raleway({
+  variable: "--font-raleway",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -23,35 +17,15 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const instrumentSans = Instrument_Sans({
-  variable: "--font-instrument",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
+// Legacy aliases — older components still reference these variable names.
+// Pointing them at Raleway keeps a unified type system across the app.
+const fontAliases = {
+  "--font-inter": "var(--font-raleway)",
+  "--font-cormorant": "var(--font-raleway)",
+  "--font-playfair": "var(--font-raleway)",
+  "--font-fraunces": "var(--font-raleway)",
+  "--font-instrument": "var(--font-raleway)",
+} as React.CSSProperties;
 
 export const metadata: Metadata = {
   title: "estaila — CRM + Studio IA",
@@ -67,7 +41,8 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${jetbrainsMono.variable} ${cormorant.variable} ${playfair.variable} ${fraunces.variable} ${instrumentSans.variable} antialiased`}
+      className={`${raleway.variable} ${jetbrainsMono.variable} antialiased`}
+      style={fontAliases}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-background text-foreground overflow-x-hidden">
