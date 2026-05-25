@@ -1,8 +1,14 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { ask, chat, type ChatMessage } from "@/lib/ai/deepseek";
+import {
+  CRM_ROUTES,
+  CRM_ENTITIES,
+  RESPONSE_SHAPE,
+} from "@/lib/ai/crm-context";
 
 // ============================================================
 // Agent bio generation
@@ -130,28 +136,76 @@ export type ChatTurn = {
   content: string;
 };
 
+export type ChatAction =
+  | { type: "navigate"; label: string; href: string }
+  | { type: "ai_tool"; label: string; href: string }
+  | { type: "create_contact"; label: string; data: Record<string, string | undefined> }
+  | { type: "create_property"; label: string; data: Record<string, unknown> }
+  | { type: "create_appointment"; label: string; data: Record<string, unknown> };
+
+export type ChatResponse = {
+  text: string;
+  actions: ChatAction[];
+};
+
 export async function realEstateChat(args: {
   history: ChatTurn[];
   message: string;
-}): Promise<string> {
-  await requireUser();
+}): Promise<ChatResponse> {
+  const user = await requireUser();
 
-  const system = `Eres "Estaila Assistant", el asistente IA de un CRM inmobiliario.
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { name: true, plan: true, credits: true, agentLocation: true },
+  });
 
-Ayudas a agentes con:
-- Recomendaciones de pricing (cómo posicionar precio, comparables, estrategia)
-- Sugerencias de contenido (post Instagram, descripción MLS, mensaje WhatsApp)
-- Buyer personas (qué buyer atrae una propiedad)
-- Negociación (qué responder ante objeciones comunes)
-- Marketing inmobiliario (estrategia 30/60/90 días)
-- Onboarding del CRM (cómo usar features estaila)
+  // Live stats to give the bot some grounded context
+  const [propCount, contactCount, todayAppts] = await Promise.all([
+    prisma.property.count({ where: { userId: user.id } }),
+    prisma.contact.count({ where: { userId: user.id } }),
+    prisma.appointment.count({
+      where: {
+        userId: user.id,
+        startAt: {
+          gte: new Date(),
+          lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      },
+    }),
+  ]);
 
-Reglas:
-- Respuestas concisas, prácticas, accionables.
-- Usa bullets cuando ayuden.
-- Si no sabes algo, di "no tengo esa data" — no inventes precios ni listados.
-- Hablas español por defecto. Cambias a inglés si el usuario lo hace.
-- Eres directo, sin floritura corporativa.`;
+  const system = `Eres "Estaila Assistant", el asistente IA del CRM inmobiliario Estaila.
+
+CONTEXTO DEL USUARIO:
+- Nombre: ${dbUser?.name ?? user.name}
+- Zona: ${dbUser?.agentLocation ?? "no especificada"}
+- Plan: ${dbUser?.plan ?? "FREE"}
+- Créditos IA: ${dbUser?.credits ?? 0}
+- Propiedades cargadas: ${propCount}
+- Contactos cargados: ${contactCount}
+- Citas próximas (24h): ${todayAppts}
+
+ROL:
+Ayudas a agentes inmobiliarios con:
+- Estrategia (pricing, posicionamiento, buyer personas, negociación)
+- Contenido (posts, descripciones MLS, WhatsApp, captions)
+- Marketing 30/60/90 días
+- Onboarding del CRM y navegación
+- Crear datos: contactos, propiedades, citas — si el usuario te da los datos.
+
+${CRM_ROUTES}
+
+${CRM_ENTITIES}
+
+${RESPONSE_SHAPE}
+
+REGLAS:
+- Respuestas concisas, accionables. Markdown ligero. Bullets cuando ayuden.
+- No inventes precios ni datos. Si falta info, pregunta concisamente.
+- Hablas español por defecto. Inglés si el usuario lo hace.
+- Hasta 4 acciones por respuesta. Solo las más útiles.
+- Cuando alguien diga "agéndame con Juan mañana 3pm", devuelve create_appointment con la fecha calculada.
+- Cuando hable de un tema (pricing, staging, etc), sugiere ruta navigate relevante.`;
 
   const messages: ChatMessage[] = [
     { role: "system", content: system },
@@ -162,5 +216,110 @@ Reglas:
     { role: "user", content: args.message },
   ];
 
-  return chat(messages, { temperature: 0.7, maxTokens: 600 });
+  const raw = await chat(messages, {
+    temperature: 0.6,
+    maxTokens: 800,
+    jsonMode: true,
+  });
+
+  try {
+    const parsed = JSON.parse(raw) as ChatResponse;
+    return {
+      text: parsed.text ?? "",
+      actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 4) : [],
+    };
+  } catch {
+    // Fallback: treat whole response as text
+    return { text: raw, actions: [] };
+  }
+}
+
+// ============================================================
+// Chatbot tool execution (creates entities from chat actions)
+// ============================================================
+
+export async function chatCreateContact(data: {
+  name: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+}): Promise<{ id: string }> {
+  const user = await requireUser();
+  if (!data.name?.trim()) throw new Error("Nombre requerido");
+  const contact = await prisma.contact.create({
+    data: {
+      userId: user.id,
+      name: data.name.trim(),
+      type: "CLIENTE",
+      phone: data.phone?.trim() ?? null,
+      email: data.email?.trim() ?? null,
+      notes: data.notes?.trim() ?? null,
+    },
+    select: { id: true },
+  });
+  revalidatePath("/contactos");
+  return contact;
+}
+
+export async function chatCreateProperty(data: {
+  title: string;
+  category?: string;
+  operation?: string;
+  priceUSD?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  metersSquared?: number;
+  location?: string;
+  description?: string;
+}): Promise<{ id: string }> {
+  const user = await requireUser();
+  if (!data.title?.trim()) throw new Error("Título requerido");
+  const prop = await prisma.property.create({
+    data: {
+      userId: user.id,
+      title: data.title.trim(),
+      category: data.category ?? "CASA",
+      operation: data.operation ?? "EN_VENTA",
+      priceUSD: data.priceUSD ?? null,
+      bedrooms: data.bedrooms ?? null,
+      bathrooms: data.bathrooms ?? null,
+      metersSquared: data.metersSquared ?? null,
+      location: data.location?.trim() ?? null,
+      description: data.description?.trim() ?? null,
+    },
+    select: { id: true },
+  });
+  revalidatePath("/propiedades");
+  return prop;
+}
+
+export async function chatCreateAppointment(data: {
+  title: string;
+  startAt: string;
+  endAt?: string;
+  contactId?: string;
+  propertyId?: string;
+  location?: string;
+  notes?: string;
+}): Promise<{ id: string }> {
+  const user = await requireUser();
+  if (!data.title?.trim()) throw new Error("Título requerido");
+  if (!data.startAt) throw new Error("Fecha requerida");
+  const startAt = new Date(data.startAt);
+  if (isNaN(startAt.getTime())) throw new Error("Fecha inválida");
+  const appt = await prisma.appointment.create({
+    data: {
+      userId: user.id,
+      title: data.title.trim(),
+      startAt,
+      endAt: data.endAt ? new Date(data.endAt) : null,
+      contactId: data.contactId ?? null,
+      propertyId: data.propertyId ?? null,
+      location: data.location?.trim() ?? null,
+      notes: data.notes?.trim() ?? null,
+    },
+    select: { id: true },
+  });
+  revalidatePath("/agenda");
+  return appt;
 }
