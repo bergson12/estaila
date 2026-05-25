@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { motion } from "motion/react";
+import { useSidebarCollapsed } from "@/lib/stores/sidebar-collapsed";
 import {
   LayoutDashboard,
   Building2,
@@ -13,8 +14,6 @@ import {
   Megaphone,
   Wallet,
   Sparkles,
-  ChevronsLeft,
-  ChevronsRight,
   Settings,
   LogOut,
   CreditCard,
@@ -28,6 +27,8 @@ import {
   Briefcase,
   FileText,
   BarChart3,
+  MessageSquare,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
@@ -125,7 +126,8 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useSidebarCollapsed((s) => s.collapsed);
+  const setCollapsed = useSidebarCollapsed((s) => s.setCollapsed);
   const adminMode = pathname.startsWith("/admin");
   // Branding only applies in CRM mode (not admin)
   const orgBrand = !adminMode && branding ? branding : null;
@@ -233,36 +235,6 @@ export function Sidebar({
         </Link>
       </div>
 
-      {/* Collapse toggle — always visible on the right edge, branded 3D pill */}
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-label={collapsed ? "Expandir menú" : "Plegar menú"}
-        title={collapsed ? "Expandir menú" : "Plegar menú"}
-        className={cn(
-          "group absolute top-[60px] -right-3 z-30 flex h-7 w-7 items-center justify-center rounded-full",
-          // 3D green pill
-          "bg-gradient-to-b from-[#0fd271] to-[#00a553]",
-          "shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_4px_-1px_rgba(0,0,0,0.25),0_0_8px_rgba(0,191,99,0.35)]",
-          "ring-2 ring-background transition-all duration-200",
-          "hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_3px_6px_-1px_rgba(0,0,0,0.3),0_0_14px_rgba(0,191,99,0.55)]",
-          "hover:scale-105 active:scale-95",
-          "hidden md:flex"
-        )}
-      >
-        {collapsed ? (
-          <ChevronsRight
-            className="h-3.5 w-3.5 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
-            strokeWidth={2.5}
-          />
-        ) : (
-          <ChevronsLeft
-            className="h-3.5 w-3.5 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
-            strokeWidth={2.5}
-          />
-        )}
-      </button>
-
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
         {adminMode ? (
@@ -343,29 +315,65 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* Credits + user */}
+      {/* Profile + credits + user */}
       <div className="border-t border-border p-3">
         {!collapsed && (
-          <Link
-            href="/pricing"
-            className="mb-3 block rounded-lg border border-border bg-card/50 p-3 transition-colors hover:border-primary/40 hover:bg-card"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <CreditCard className="h-3.5 w-3.5" />
-                Créditos IA
+          <>
+            {/* Profile section — Shopall-style quick links */}
+            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Perfil
+            </p>
+            <div className="mb-3 space-y-0.5">
+              <ProfileLink
+                href="/contactos"
+                icon={
+                  <MessageSquare className="h-4 w-4" strokeWidth={1.75} />
+                }
+                label="Mensajes"
+                active={pathname === "/contactos"}
+              />
+              <ProfileLink
+                href="/agenda"
+                icon={<Bell className="h-4 w-4" strokeWidth={1.75} />}
+                label="Notificaciones"
+                active={pathname === "/agenda"}
+              />
+              <ProfileLink
+                href="/settings"
+                icon={<Settings className="h-4 w-4" strokeWidth={1.75} />}
+                label="Configuración"
+                active={pathname === "/settings"}
+              />
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={1.75} />
+                Cerrar sesión
+              </button>
+            </div>
+
+            <Link
+              href="/pricing"
+              className="mb-3 block rounded-lg border border-border bg-card/50 p-3 transition-colors hover:border-primary/40 hover:bg-card"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  Créditos IA
+                </div>
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  {user.plan}
+                </span>
               </div>
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                {user.plan}
-              </span>
-            </div>
-            <div className="mt-1.5 flex items-baseline gap-1.5">
-              <span className="font-mono text-2xl font-bold tabular-nums">
-                {user.credits}
-              </span>
-              <span className="text-xs text-muted-foreground">restantes</span>
-            </div>
-          </Link>
+              <div className="mt-1.5 flex items-baseline gap-1.5">
+                <span className="font-mono text-2xl font-bold tabular-nums">
+                  {user.credits}
+                </span>
+                <span className="text-xs text-muted-foreground">restantes</span>
+              </div>
+            </Link>
+          </>
         )}
 
         <DropdownMenu>
@@ -547,6 +555,36 @@ function NavItem({
     );
   }
   return content;
+}
+
+/**
+ * Compact profile row used in the sidebar footer — Shopall-style.
+ */
+function ProfileLink({
+  href,
+  icon,
+  label,
+  active,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+        active
+          ? "bg-sidebar-accent text-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+      )}
+    >
+      {icon}
+      {label}
+    </Link>
+  );
 }
 
 export const SIDEBAR_WIDTH_PX = 240;

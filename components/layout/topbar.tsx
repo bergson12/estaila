@@ -1,6 +1,12 @@
 "use client";
 
-import { Search, ChevronRight, Home } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  Home,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,6 +15,8 @@ import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { MobileNav } from "./mobile-nav";
 import { NotificationBell } from "./notification-bell";
+import { useSidebarCollapsed } from "@/lib/stores/sidebar-collapsed";
+import { cn } from "@/lib/utils";
 
 type TopbarUser = {
   name: string;
@@ -81,6 +89,7 @@ export function Topbar({
         {/* Mobile drawer trigger + Breadcrumb */}
         <nav className="flex min-w-0 items-center gap-1.5 text-sm">
           {user && <MobileNav user={user} branding={branding} />}
+          <CollapseToggle />
           <Link
             href="/inicio"
             className="flex shrink-0 items-center text-muted-foreground transition-colors hover:text-foreground"
@@ -143,5 +152,34 @@ export function Topbar({
 
       <CommandPalette open={open} onOpenChange={setOpen} />
     </>
+  );
+}
+
+/**
+ * Small, subtle pill to fold/unfold the side nav. Sits between MobileNav and
+ * the Home breadcrumb — branded but understated.
+ */
+function CollapseToggle() {
+  const collapsed = useSidebarCollapsed((s) => s.collapsed);
+  const toggle = useSidebarCollapsed((s) => s.toggle);
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={collapsed ? "Expandir menú" : "Plegar menú"}
+      title={collapsed ? "Expandir menú" : "Plegar menú"}
+      className={cn(
+        "hidden md:flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+        "text-muted-foreground transition-all duration-200",
+        "hover:bg-primary/10 hover:text-primary",
+        "active:scale-95"
+      )}
+    >
+      {collapsed ? (
+        <PanelLeftOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
+      ) : (
+        <PanelLeftClose className="h-3.5 w-3.5" strokeWidth={1.75} />
+      )}
+    </button>
   );
 }
