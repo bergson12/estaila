@@ -97,10 +97,17 @@ export function BrandingForm({
   async function onUploadLogo(file: File) {
     setUploading(true);
     try {
+      const { compressImage } = await import("@/lib/compress-image");
+      const compressed = await compressImage(file, "avatar");
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Error al subir");
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(errJson.error ?? "Error al subir");
+      }
       const data = (await res.json()) as { url: string };
       set("logoUrl", data.url);
       toast.success("Logo subido");

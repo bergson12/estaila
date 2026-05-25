@@ -1,19 +1,24 @@
 "use client";
 
-import { Upload, X, Loader2, ImagePlus } from "lucide-react";
+import { X, Loader2, ImagePlus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { compressImage, type CompressMode } from "@/lib/compress-image";
 
 type UploadedFile = {
   url: string;
   filename: string;
 };
 
-async function uploadOne(file: File): Promise<UploadedFile> {
+async function uploadOne(
+  file: File,
+  mode: CompressMode = "default"
+): Promise<UploadedFile> {
+  const compressed = await compressImage(file, mode);
   const form = new FormData();
-  form.append("file", file);
+  form.append("file", compressed);
   const res = await fetch("/api/upload", { method: "POST", body: form });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "Error al subir");
@@ -46,7 +51,7 @@ export function ImageUploader({
       }
       setUploading(true);
       try {
-        const results = await Promise.all(arr.map(uploadOne));
+        const results = await Promise.all(arr.map((f) => uploadOne(f, "default")));
         onChange([...value, ...results.map((r) => r.url)]);
         toast.success(`${results.length} foto${results.length > 1 ? "s" : ""} subida${results.length > 1 ? "s" : ""}`);
       } catch (e) {

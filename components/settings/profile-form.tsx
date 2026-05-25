@@ -3,6 +3,7 @@
 import {
   CheckCircle2,
   CreditCard,
+  ImagePlus,
   Loader2,
   Mail,
   MapPin,
@@ -10,6 +11,7 @@ import {
   Save,
   Shield,
   Sparkles,
+  Trash2,
   User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -189,13 +191,8 @@ export function ProfileForm({ user }: { user: DbUser }) {
             />
           </Field>
 
-          <Field label="URL de tu foto de perfil">
-            <Input
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="https://..."
-              type="url"
-            />
+          <Field label="Foto de perfil" className="sm:col-span-2">
+            <AvatarUploader value={image} onChange={setImage} />
           </Field>
         </div>
 
@@ -279,6 +276,96 @@ function Field({
         {label}
       </Label>
       {children}
+    </div>
+  );
+}
+
+function AvatarUploader({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  async function onPickFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Solo imágenes");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { compressImage, formatBytes } = await import(
+        "@/lib/compress-image"
+      );
+      const originalSize = file.size;
+      const compressed = await compressImage(file, "avatar");
+      const fd = new FormData();
+      fd.append("file", compressed);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) {
+        const errJson = (await res
+          .json()
+          .catch(() => ({}))) as { error?: string };
+        throw new Error(errJson.error ?? "Error al subir");
+      }
+      const data = (await res.json()) as { url: string };
+      onChange(data.url);
+      toast.success("Foto actualizada", {
+        description: `${formatBytes(originalSize)} → ${formatBytes(
+          compressed.size
+        )}`,
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar className="h-16 w-16 ring-1 ring-border">
+        <AvatarImage src={value || undefined} />
+        <AvatarFallback className="bg-muted text-lg">
+          <UserIcon className="h-6 w-6 text-muted-foreground" />
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-2">
+          <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-secondary/40">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) =>
+                e.target.files?.[0] && onPickFile(e.target.files[0])
+              }
+            />
+            {uploading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <ImagePlus className="h-3.5 w-3.5" />
+            )}
+            {uploading ? "Subiendo..." : value ? "Cambiar foto" : "Subir foto"}
+          </label>
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-3 w-3" />
+              Quitar
+            </button>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          JPG / PNG · se redimensiona a 512px y comprime automáticamente
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import {
   Building2,
   Crown,
@@ -155,27 +156,52 @@ export function OrgClient({
       </Card>
 
       {/* Tabs */}
-      <div className="mb-6 flex flex-wrap items-center gap-1 border-b">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={cn(
-              "group inline-flex items-center gap-1.5 border-b-2 px-4 pb-2.5 pt-1 text-sm transition-colors",
-              tab === t.key
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-            )}
-          >
-            <t.icon className="h-3.5 w-3.5" />
-            {t.label}
-            {t.count !== undefined && (
-              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-mono tabular-nums">
-                {t.count}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="mb-6 flex flex-wrap items-center gap-1 border-b border-border">
+        {TABS.map((t) => {
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "group relative inline-flex items-center gap-1.5 px-4 pb-3 pt-2 text-sm font-medium transition-colors",
+                active
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <t.icon
+                className={cn(
+                  "h-3.5 w-3.5 transition-colors",
+                  active ? "text-primary" : ""
+                )}
+              />
+              {t.label}
+              {t.count !== undefined && (
+                <span
+                  className={cn(
+                    "ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-mono tabular-nums transition-colors",
+                    active
+                      ? "bg-primary/15 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {t.count}
+                </span>
+              )}
+              {active && (
+                <motion.span
+                  layoutId="empresa-tab-pin"
+                  className="absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                />
+              )}
+              {!active && (
+                <span className="absolute -bottom-px left-2 right-2 h-0.5 rounded-full bg-primary/0 transition-colors group-hover:bg-primary/20" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {tab === "branding" && (

@@ -1,15 +1,17 @@
 "use client";
 
-import { Upload, Loader2, ImagePlus, ImageIcon } from "lucide-react";
+import { Loader2, ImagePlus, ImageIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStudio } from "./studio-context";
+import { compressImage, formatBytes } from "@/lib/compress-image";
 
 export function UploadZone() {
   const { setImage } = useStudio();
   const [isOver, setIsOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [stage, setStage] = useState<"" | "compress" | "upload">("");
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -19,17 +21,31 @@ export function UploadZone() {
       }
       setUploading(true);
       try {
+        const originalSize = file.size;
+        setStage("compress");
+        const compressed = await compressImage(file, "raw");
+        const saved =
+          compressed.size < originalSize
+            ? `${Math.round(((originalSize - compressed.size) / originalSize) * 100)}% más liviana`
+            : null;
+
+        setStage("upload");
         const form = new FormData();
-        form.append("file", file);
+        form.append("file", compressed);
         const res = await fetch("/api/upload", { method: "POST", body: form });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Error al subir");
         setImage({ url: data.url, filename: data.filename });
-        toast.success("Foto subida");
+        toast.success("Foto subida", {
+          description: saved
+            ? `${formatBytes(originalSize)} → ${formatBytes(compressed.size)} · ${saved}`
+            : `${formatBytes(compressed.size)}`,
+        });
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
         setUploading(false);
+        setStage("");
       }
     },
     [setImage]
@@ -75,7 +91,11 @@ export function UploadZone() {
         )}
       </div>
       <h3 className="text-base font-semibold">
-        {uploading ? "Subiendo..." : "Sube una foto"}
+        {stage === "compress"
+          ? "Comprimiendo imagen..."
+          : stage === "upload"
+            ? "Subiendo..."
+            : "Sube una foto"}
       </h3>
       <p className="mt-1 max-w-xs text-sm text-muted-foreground">
         Arrastra una imagen o haz click para seleccionar.<br />
