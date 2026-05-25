@@ -3,110 +3,110 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* === estaila — Hybrid distinctive: terracotta warm + editorial premium === */
-/* Primary: warm terracotta (sun-baked real estate, distinct from generic blue) */
-/* Accent: forest sage for success, amber for warmth, ink black for buttons */
+/* === estaila — Brand-aligned: Estaila green (#00bf63) primary + editorial neutral === */
+/* Primary: estaila green from logo (vivid emerald) */
+/* Accent: amber for warmth, ink black for buttons */
 
 :root {
-  /* === LIGHT MODE — warm cream, editorial premium === */
-  --background: oklch(0.975 0.006 75); /* warm cream off-white */
-  --foreground: oklch(0.18 0.01 30);   /* ink with warm hint */
+  /* === LIGHT MODE — neutral with estaila green accent === */
+  --background: oklch(0.985 0.002 150); /* near-white with whisper of green */
+  --foreground: oklch(0.18 0.005 150);  /* deep ink */
   --card: oklch(1 0 0);                 /* pure white card */
-  --card-foreground: oklch(0.16 0.01 30);
+  --card-foreground: oklch(0.16 0.005 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.01 30);
-  --primary: oklch(0.58 0.135 38);      /* terracotta warm — estaila signature */
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.008 70);   /* warm muted cream */
-  --secondary-foreground: oklch(0.20 0.01 30);
-  --muted: oklch(0.955 0.008 70);
-  --muted-foreground: oklch(0.48 0.012 40); /* warm gray */
-  --accent: oklch(0.95 0.015 60);       /* peach hint */
-  --accent-foreground: oklch(0.20 0.01 30);
-  --destructive: oklch(0.55 0.18 25);   /* warm burgundy red */
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.58 0.085 150);     /* sage forest (quiet luxury) */
+  --popover-foreground: oklch(0.16 0.005 150);
+  --primary: oklch(0.69 0.18 152);      /* estaila green #00bf63 */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.005 150);   /* cool neutral */
+  --secondary-foreground: oklch(0.20 0.005 150);
+  --muted: oklch(0.96 0.005 150);
+  --muted-foreground: oklch(0.48 0.008 150);
+  --accent: oklch(0.95 0.05 152);       /* mint hint */
+  --accent-foreground: oklch(0.20 0.005 150);
+  --destructive: oklch(0.58 0.20 25);   /* warm red */
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.69 0.18 152);      /* matches primary — estaila green is the success color */
   --warning: oklch(0.78 0.15 65);       /* amber */
-  --border: oklch(0.91 0.008 70);       /* warm border */
-  --input: oklch(0.91 0.008 70);
-  --ring: oklch(0.58 0.135 38);
-  --radius: 1rem;                        /* more rounded by default — friendlier */
-  --dot-color: oklch(0.88 0.01 70);      /* warm dotted pattern */
+  --border: oklch(0.91 0.005 150);
+  --input: oklch(0.91 0.005 150);
+  --ring: oklch(0.69 0.18 152);
+  --radius: 1rem;
+  --dot-color: oklch(0.88 0.008 150);
 
   /* Ink button color — for Arto+ style black pills */
-  --ink: oklch(0.16 0.01 30);
-  --ink-foreground: oklch(0.985 0 0);
+  --ink: oklch(0.18 0.005 150);
+  --ink-foreground: oklch(0.99 0 0);
 
-  /* Real-estate status — warmer palette */
-  --status-venta: oklch(0.58 0.085 150);  /* sage */
-  --status-alquiler: oklch(0.78 0.15 65); /* amber */
-  --status-vendida: oklch(0.50 0.01 30);  /* warm gray */
-  --status-alquilada: oklch(0.55 0.18 25); /* burgundy */
+  /* Real-estate status — keeps green for sale (matches brand), amber rent, etc */
+  --status-venta: oklch(0.69 0.18 152);    /* estaila green */
+  --status-alquiler: oklch(0.78 0.15 65);  /* amber */
+  --status-vendida: oklch(0.50 0.01 150);  /* gray */
+  --status-alquilada: oklch(0.58 0.20 25); /* red */
 
-  /* Chart palette — terracotta + sage + amber + burgundy + plum */
-  --chart-1: oklch(0.58 0.135 38);
-  --chart-2: oklch(0.58 0.085 150);
-  --chart-3: oklch(0.78 0.15 65);
-  --chart-4: oklch(0.55 0.18 25);
-  --chart-5: oklch(0.55 0.12 320);
+  /* Chart palette — green primary + complementary editorial tones */
+  --chart-1: oklch(0.69 0.18 152);  /* estaila green */
+  --chart-2: oklch(0.55 0.15 245);  /* blue */
+  --chart-3: oklch(0.78 0.15 65);   /* amber */
+  --chart-4: oklch(0.58 0.20 25);   /* red */
+  --chart-5: oklch(0.55 0.12 320);  /* plum */
 
-  --sidebar: oklch(0.97 0.008 70);          /* slightly warmer than bg */
-  --sidebar-foreground: oklch(0.18 0.01 30);
-  --sidebar-primary: oklch(0.58 0.135 38);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.95 0.015 60);
-  --sidebar-accent-foreground: oklch(0.20 0.01 30);
-  --sidebar-border: oklch(0.91 0.008 70);
-  --sidebar-ring: oklch(0.58 0.135 38);
+  --sidebar: oklch(0.975 0.003 150);
+  --sidebar-foreground: oklch(0.18 0.005 150);
+  --sidebar-primary: oklch(0.69 0.18 152);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.05 152);
+  --sidebar-accent-foreground: oklch(0.20 0.005 150);
+  --sidebar-border: oklch(0.91 0.005 150);
+  --sidebar-ring: oklch(0.69 0.18 152);
 }
 
 .dark {
-  /* === DARK MODE — warm midnight, terracotta accent for estaila identity === */
-  --background: oklch(0.18 0.008 35);   /* warm dark with hint of brown */
-  --foreground: oklch(0.97 0.005 70);   /* warm white */
-  --card: oklch(0.215 0.01 35);         /* elevated card warm */
-  --card-foreground: oklch(0.97 0.005 70);
-  --popover: oklch(0.215 0.01 35);
-  --popover-foreground: oklch(0.97 0.005 70);
-  --primary: oklch(0.68 0.14 38);       /* brighter terracotta for dark */
-  --primary-foreground: oklch(0.18 0.008 35);
-  --secondary: oklch(0.26 0.012 35);
-  --secondary-foreground: oklch(0.97 0.005 70);
-  --muted: oklch(0.26 0.012 35);
-  --muted-foreground: oklch(0.70 0.012 60); /* warm gray */
-  --accent: oklch(0.28 0.015 40);
-  --accent-foreground: oklch(0.97 0.005 70);
-  --destructive: oklch(0.65 0.18 25);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.65 0.10 150);
+  /* === DARK MODE — deep ink with estaila green accent === */
+  --background: oklch(0.17 0.005 150);   /* near-black with subtle cool tone */
+  --foreground: oklch(0.97 0.003 150);
+  --card: oklch(0.215 0.006 150);
+  --card-foreground: oklch(0.97 0.003 150);
+  --popover: oklch(0.215 0.006 150);
+  --popover-foreground: oklch(0.97 0.003 150);
+  --primary: oklch(0.74 0.18 152);       /* brighter green in dark */
+  --primary-foreground: oklch(0.13 0.005 150);
+  --secondary: oklch(0.26 0.008 150);
+  --secondary-foreground: oklch(0.97 0.003 150);
+  --muted: oklch(0.26 0.008 150);
+  --muted-foreground: oklch(0.70 0.008 150);
+  --accent: oklch(0.28 0.02 152);        /* deeper green-tinted accent */
+  --accent-foreground: oklch(0.97 0.003 150);
+  --destructive: oklch(0.65 0.20 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.74 0.18 152);       /* matches primary */
   --warning: oklch(0.78 0.15 65);
-  --border: oklch(0.30 0.012 40);
-  --input: oklch(0.30 0.012 40);
-  --ring: oklch(0.68 0.14 38);
-  --dot-color: oklch(0.32 0.014 40);
+  --border: oklch(0.30 0.008 150);
+  --input: oklch(0.30 0.008 150);
+  --ring: oklch(0.74 0.18 152);
+  --dot-color: oklch(0.32 0.01 150);
 
-  --ink: oklch(0.97 0.005 70);           /* ink inverted in dark = white */
-  --ink-foreground: oklch(0.18 0.008 35);
+  --ink: oklch(0.97 0.003 150);
+  --ink-foreground: oklch(0.18 0.005 150);
 
-  --status-venta: oklch(0.65 0.10 150);
+  --status-venta: oklch(0.74 0.18 152);
   --status-alquiler: oklch(0.78 0.15 65);
-  --status-vendida: oklch(0.65 0.008 60);
-  --status-alquilada: oklch(0.65 0.18 25);
+  --status-vendida: oklch(0.65 0.008 150);
+  --status-alquilada: oklch(0.65 0.20 25);
 
-  --chart-1: oklch(0.68 0.14 38);
-  --chart-2: oklch(0.65 0.10 150);
+  --chart-1: oklch(0.74 0.18 152);
+  --chart-2: oklch(0.65 0.15 245);
   --chart-3: oklch(0.78 0.15 65);
-  --chart-4: oklch(0.65 0.18 25);
+  --chart-4: oklch(0.65 0.20 25);
   --chart-5: oklch(0.65 0.12 320);
 
-  --sidebar: oklch(0.16 0.008 35);
-  --sidebar-foreground: oklch(0.97 0.005 70);
-  --sidebar-primary: oklch(0.68 0.14 38);
-  --sidebar-primary-foreground: oklch(0.18 0.008 35);
-  --sidebar-accent: oklch(0.26 0.012 35);
-  --sidebar-accent-foreground: oklch(0.97 0.005 70);
-  --sidebar-border: oklch(0.30 0.012 40);
-  --sidebar-ring: oklch(0.68 0.14 38);
+  --sidebar: oklch(0.155 0.005 150);
+  --sidebar-foreground: oklch(0.97 0.003 150);
+  --sidebar-primary: oklch(0.74 0.18 152);
+  --sidebar-primary-foreground: oklch(0.13 0.005 150);
+  --sidebar-accent: oklch(0.26 0.008 150);
+  --sidebar-accent-foreground: oklch(0.97 0.003 150);
+  --sidebar-border: oklch(0.30 0.008 150);
+  --sidebar-ring: oklch(0.74 0.18 152);
 }
 
 @theme inline {

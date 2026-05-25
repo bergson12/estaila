@@ -48,10 +48,10 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground overflow-x-hidden">
         {/* Top progress bar — fires on every Link navigation */}
         <NextTopLoader
-          color="oklch(0.58 0.135 38)"
+          color="#00bf63"
           height={2}
           showSpinner={false}
-          shadow="0 0 8px oklch(0.58 0.135 38 / 0.5)"
+          shadow="0 0 8px #00bf6380"
           easing="cubic-bezier(0.22,1,0.36,1)"
           speed={250}
         />
