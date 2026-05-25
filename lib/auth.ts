@@ -84,10 +84,39 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24, // 1 day
   },
   plugins: [nextCookies()],
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
-  ],
+  trustedOrigins: buildTrustedOrigins(),
 });
+
+/**
+ * Build a list of trusted origins that covers:
+ *   - BETTER_AUTH_URL (canonical)
+ *   - The same host with the `www.` toggled on/off
+ *   - All preview deployments (*.vercel.app)
+ *   - Localhost for dev
+ */
+function buildTrustedOrigins(): string[] {
+  const set = new Set<string>();
+  const canonical = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  set.add(canonical);
+
+  try {
+    const u = new URL(canonical);
+    if (u.hostname.startsWith("www.")) {
+      set.add(`${u.protocol}//${u.hostname.slice(4)}`);
+    } else {
+      set.add(`${u.protocol}//www.${u.hostname}`);
+    }
+  } catch {
+    // ignore
+  }
+
+  // Useful in production for Vercel preview URLs.
+  set.add("https://estaila.com");
+  set.add("https://www.estaila.com");
+  set.add("http://localhost:3000");
+
+  return Array.from(set);
+}
 
 export type Auth = typeof auth;
 export type Session = typeof auth.$Infer.Session;

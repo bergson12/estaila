@@ -58,3 +58,5 @@ prisma/migrations/dev.db*
 # Uploaded user files
 /public/uploads/
 
+
+.vercel
