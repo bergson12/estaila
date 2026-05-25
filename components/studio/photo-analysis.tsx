@@ -34,28 +34,58 @@ export function PhotoAnalysis({ imageUrl }: { imageUrl: string | null }) {
   const [analysis, setAnalysis] = useState<PhotoAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [lastAnalyzedUrl, setLastAnalyzedUrl] = useState<string | null>(null);
 
+  // Reset when image changes — but do NOT auto-run the analysis (saves Gemini tokens
+  // until the user explicitly asks).
   useEffect(() => {
-    if (!imageUrl) {
+    if (!imageUrl || imageUrl !== lastAnalyzedUrl) {
       setAnalysis(null);
-      return;
     }
-    let cancelled = false;
+  }, [imageUrl, lastAnalyzedUrl]);
+
+  async function runAnalysis() {
+    if (!imageUrl || loading) return;
     setLoading(true);
     setCollapsed(false);
-    analyzePhoto(imageUrl)
-      .then((r) => {
-        if (!cancelled) setAnalysis(r);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [imageUrl]);
+    try {
+      const r = await analyzePhoto(imageUrl);
+      setAnalysis(r);
+      setLastAnalyzedUrl(imageUrl);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (!imageUrl) return null;
+
+  // Initial state — show CTA card prompting the user to analyze (no API call yet).
+  if (!analysis && !loading) {
+    return (
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+            <Brain className="h-4 w-4" strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold leading-tight">
+              ¿Analizar foto con IA?
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Detecta habitación, estilo y recomienda la mejor herramienta. Gratis.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={runAnalysis}
+            className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Analizar
+          </button>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">

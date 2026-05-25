@@ -36,6 +36,9 @@ type StudioContextValue = {
   setCredits: (n: number) => void;
   /** True when the input image comes from a prior pipeline step */
   fromPipeline: boolean;
+  /** Optional brush-painted mask (data URL, white-on-black PNG) restricting the AI's effect zone. */
+  maskDataUrl: string | null;
+  setMaskDataUrl: (m: string | null) => void;
 };
 
 const Ctx = createContext<StudioContextValue | null>(null);
@@ -64,6 +67,7 @@ export function StudioProvider({
   const [result, setResult] = useState<StudioResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [credits, setCredits] = useState(initialCredits);
+  const [maskDataUrl, setMaskDataUrl] = useState<string | null>(null);
 
   // After mount, hydrate from pipeline store
   useEffect(() => {
@@ -122,7 +126,10 @@ export function StudioProvider({
         const out = await generate({
           tool,
           inputUrl: image.url,
-          options,
+          options: {
+            ...(options ?? {}),
+            ...(maskDataUrl ? { maskDataUrl } : {}),
+          } as ProcessOptions,
         });
         setResult({
           generationId: out.id,
@@ -159,7 +166,7 @@ export function StudioProvider({
         setIsGenerating(false);
       }
     },
-    [image, credits, cost, tool, toolLabel, pipeline, router]
+    [image, credits, cost, tool, toolLabel, pipeline, router, maskDataUrl]
   );
 
   const reset = useCallback(() => {
@@ -183,6 +190,8 @@ export function StudioProvider({
         credits,
         setCredits,
         fromPipeline,
+        maskDataUrl,
+        setMaskDataUrl,
       }}
     >
       {children}
