@@ -1,8 +1,12 @@
 "use client";
 
+import { Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useEditor } from "@/lib/editor/store";
 import { DrawerShell } from "./DrawerShell";
 import { tag, centerObject } from "@/lib/editor/fabric-init";
+import { suggestText, type TextVariation } from "@/lib/actions/ai-text";
 
 const PRESETS: { label: string; opts: Record<string, unknown> }[] = [
   { label: "Título", opts: { text: "Tu título aquí", fontSize: 60, fontWeight: 800 } },
@@ -38,6 +42,7 @@ export function TextDrawer() {
 
   return (
     <DrawerShell title="Texto">
+      <SmartTextSection />
       <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-white/50">
         Plantillas rápidas
       </p>
@@ -69,5 +74,108 @@ export function TextDrawer() {
         ))}
       </div>
     </DrawerShell>
+  );
+}
+
+const VARIATIONS: { value: TextVariation; label: string; emoji: string }[] = [
+  { value: "salesy", label: "Más vendedor", emoji: "🔥" },
+  { value: "concise", label: "Más conciso", emoji: "✂️" },
+  { value: "professional", label: "Más profesional", emoji: "💼" },
+  { value: "caribbean", label: "Caribeño relajado", emoji: "🌴" },
+  { value: "luxury", label: "Luxury", emoji: "💎" },
+  { value: "english", label: "En inglés", emoji: "🇺🇸" },
+];
+
+function SmartTextSection() {
+  const canvas = useEditor((s) => s.canvas);
+  const selectedIds = useEditor((s) => s.selectedIds);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _tick = useEditor((s) => s.tick);
+  const [loading, setLoading] = useState<TextVariation | null>(null);
+  const [variations, setVariations] = useState<string[]>([]);
+
+  const active = canvas?.getActiveObject() ?? null;
+  const isText =
+    active && (active.type === "Textbox" || active.type === "IText");
+  const original = isText ? ((active as unknown as { text?: string }).text ?? "") : "";
+
+  async function suggest(variation: TextVariation) {
+    if (!original.trim()) return;
+    setLoading(variation);
+    setVariations([]);
+    try {
+      const results = await suggestText({ text: original, variation });
+      setVariations(results);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  function applyVariation(v: string) {
+    if (!canvas || !active) return;
+    (active as unknown as { set: (k: string, v: unknown) => void }).set("text", v);
+    canvas.renderAll();
+    canvas.fire("object:modified", { target: active });
+    setVariations([]);
+    toast.success("Texto actualizado");
+  }
+
+  if (!isText || selectedIds.length === 0) {
+    return (
+      <div className="mb-5 rounded-md border border-primary/20 bg-primary/5 p-3">
+        <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          <Sparkles className="h-3 w-3" />
+          Smart Text IA
+        </p>
+        <p className="mt-1 text-[11px] text-white/60">
+          Selecciona un texto del canvas para ver sugerencias de la IA.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-5 rounded-md border border-primary/20 bg-primary/5 p-3">
+      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+        <Sparkles className="h-3 w-3" />
+        Smart Text IA
+      </p>
+      <p className="mb-2 line-clamp-2 text-[11px] italic text-white/70">
+        “{original.slice(0, 60)}{original.length > 60 ? "..." : ""}”
+      </p>
+      <div className="grid grid-cols-2 gap-1">
+        {VARIATIONS.map((v) => (
+          <button
+            key={v.value}
+            disabled={loading !== null}
+            onClick={() => suggest(v.value)}
+            className="flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2 py-1.5 text-[10px] font-medium text-white transition-colors hover:border-primary/40 hover:bg-primary/10 disabled:opacity-50"
+          >
+            {loading === v.value ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <span>{v.emoji}</span>
+            )}
+            <span className="truncate">{v.label}</span>
+          </button>
+        ))}
+      </div>
+      {variations.length > 0 && (
+        <div className="mt-2 space-y-1">
+          <p className="text-[10px] font-semibold text-white/50">Sugerencias:</p>
+          {variations.map((v, i) => (
+            <button
+              key={i}
+              onClick={() => applyVariation(v)}
+              className="block w-full rounded border border-white/10 bg-white/5 p-2 text-left text-[11px] text-white transition-colors hover:border-primary/40 hover:bg-primary/10"
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -9,6 +9,8 @@ import { getAppSettings } from "@/lib/app-settings";
 import { MaintenanceScreen } from "@/components/layout/maintenance-screen";
 import { getActiveOrgBranding } from "@/lib/org-branding";
 import { getLayoutMode } from "@/lib/layout-prefs";
+import { EstailaChatbot } from "@/components/layout/estaila-chatbot";
+import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 
 export default async function DashboardLayout({
   children,
@@ -119,6 +121,7 @@ export default async function DashboardLayout({
           </div>
         </div>
       )}
+      {isDeepSeekConfigured() && <EstailaChatbot />}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfile } from "@/lib/actions/profile";
 import { cn, formatDate, initials } from "@/lib/utils";
+import { BioGenerator } from "./bio-generator";
 
 type DbUser = {
   id: string;
@@ -196,24 +197,27 @@ export function ProfileForm({ user }: { user: DbUser }) {
           </Field>
         </div>
 
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <p className="text-[11px] text-muted-foreground">
             {dirty
               ? "Cambios sin guardar"
               : "Todos los cambios guardados"}
           </p>
-          <Button
-            onClick={save}
-            disabled={pending || !dirty}
-            variant="ink"
-          >
-            {pending ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Guardar cambios
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <BioGenerator />
+            <Button
+              onClick={save}
+              disabled={pending || !dirty}
+              variant="ink"
+            >
+              {pending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Guardar cambios
+            </Button>
+          </div>
         </div>
       </Card>
 
