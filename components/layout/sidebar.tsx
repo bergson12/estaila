@@ -27,8 +27,6 @@ import {
   Briefcase,
   FileText,
   BarChart3,
-  MessageSquare,
-  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
@@ -315,65 +313,29 @@ export function Sidebar({
         )}
       </nav>
 
-      {/* Profile + credits + user */}
+      {/* Credits + user */}
       <div className="border-t border-border p-3">
         {!collapsed && (
-          <>
-            {/* Profile section — Shopall-style quick links */}
-            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Perfil
-            </p>
-            <div className="mb-3 space-y-0.5">
-              <ProfileLink
-                href="/contactos"
-                icon={
-                  <MessageSquare className="h-4 w-4" strokeWidth={1.75} />
-                }
-                label="Mensajes"
-                active={pathname === "/contactos"}
-              />
-              <ProfileLink
-                href="/agenda"
-                icon={<Bell className="h-4 w-4" strokeWidth={1.75} />}
-                label="Notificaciones"
-                active={pathname === "/agenda"}
-              />
-              <ProfileLink
-                href="/settings"
-                icon={<Settings className="h-4 w-4" strokeWidth={1.75} />}
-                label="Configuración"
-                active={pathname === "/settings"}
-              />
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              >
-                <LogOut className="h-4 w-4" strokeWidth={1.75} />
-                Cerrar sesión
-              </button>
+          <Link
+            href="/pricing"
+            className="mb-3 block rounded-lg border border-border bg-card/50 p-3 transition-colors hover:border-primary/40 hover:bg-card"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <CreditCard className="h-3.5 w-3.5" />
+                Créditos IA
+              </div>
+              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                {user.plan}
+              </span>
             </div>
-
-            <Link
-              href="/pricing"
-              className="mb-3 block rounded-lg border border-border bg-card/50 p-3 transition-colors hover:border-primary/40 hover:bg-card"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                  <CreditCard className="h-3.5 w-3.5" />
-                  Créditos IA
-                </div>
-                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  {user.plan}
-                </span>
-              </div>
-              <div className="mt-1.5 flex items-baseline gap-1.5">
-                <span className="font-mono text-2xl font-bold tabular-nums">
-                  {user.credits}
-                </span>
-                <span className="text-xs text-muted-foreground">restantes</span>
-              </div>
-            </Link>
-          </>
+            <div className="mt-1.5 flex items-baseline gap-1.5">
+              <span className="font-mono text-2xl font-bold tabular-nums">
+                {user.credits}
+              </span>
+              <span className="text-xs text-muted-foreground">restantes</span>
+            </div>
+          </Link>
         )}
 
         <DropdownMenu>
@@ -492,27 +454,21 @@ function NavItem({
       href={href}
       prefetch
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium outline-none transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring",
         active
-          ? featured
-            ? "bg-primary/15 text-primary ring-1 ring-primary/20"
-            : admin
-              ? "bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/30"
-              : "bg-card text-foreground shadow-sm ring-1 ring-border"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground hover:scale-[1.01]",
+          ? admin
+            ? "bg-amber-500/10 text-amber-600"
+            : "bg-sidebar-accent text-foreground"
+          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
         collapsed && "justify-center px-0"
       )}
     >
-      {/* Icon container — warm chip on active */}
       <span
         className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
-          active && featured && "bg-primary text-primary-foreground",
-          active && admin && "bg-amber-500 text-white",
-          active && !featured && !admin && "bg-primary/15 text-primary",
-          !active && featured && "text-primary/80",
-          !active && admin && "text-amber-500/80",
-          !active && !featured && !admin && "text-muted-foreground group-hover:text-foreground"
+          "flex h-5 w-5 shrink-0 items-center justify-center transition-colors",
+          active && admin && "text-amber-600",
+          active && !admin && "text-primary",
+          !active && "text-muted-foreground group-hover:text-foreground"
         )}
       >
         {icon}
@@ -521,26 +477,16 @@ function NavItem({
         <>
           <span className="truncate">{label}</span>
           {featured && (
-            <span className="ml-auto rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
+            <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
               IA
             </span>
           )}
           {admin && (
-            <span className="ml-auto rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-600">
+            <span className="ml-auto rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-600">
               Admin
             </span>
           )}
         </>
-      )}
-      {active && (
-        <motion.span
-          layoutId={admin ? "sidebar-active-admin" : "sidebar-active"}
-          className={cn(
-            "absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full",
-            admin ? "bg-amber-500" : "bg-primary"
-          )}
-          transition={{ type: "spring", stiffness: 400, damping: 32 }}
-        />
       )}
     </Link>
   );
@@ -555,36 +501,6 @@ function NavItem({
     );
   }
   return content;
-}
-
-/**
- * Compact profile row used in the sidebar footer — Shopall-style.
- */
-function ProfileLink({
-  href,
-  icon,
-  label,
-  active,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-        active
-          ? "bg-sidebar-accent text-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-      )}
-    >
-      {icon}
-      {label}
-    </Link>
-  );
 }
 
 export const SIDEBAR_WIDTH_PX = 240;
