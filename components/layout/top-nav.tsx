@@ -7,7 +7,6 @@ import { motion } from "motion/react";
 import {
   Activity,
   ArrowLeft,
-  Bell,
   Briefcase,
   Building2,
   Calendar,
@@ -41,6 +40,7 @@ import {
 import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { LayoutModeToggle } from "./layout-mode-toggle";
+import { NotificationBell } from "./notification-bell";
 import { authClient } from "@/lib/auth-client";
 import { cn, initials } from "@/lib/utils";
 import { toast } from "sonner";
@@ -197,9 +197,6 @@ export function TopNav({
           >
             <Search className="h-3.5 w-3.5 shrink-0" />
             <span className="flex-1">Buscar propiedad, contacto, página...</span>
-            <kbd className="rounded-md border border-border bg-background/80 px-1.5 py-0.5 font-mono text-[10px] font-medium">
-              ⌘K
-            </kbd>
           </button>
 
           {/* Right actions */}
@@ -227,13 +224,7 @@ export function TopNav({
 
             <ThemeToggle />
 
-            <button
-              aria-label="Notificaciones"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-primary" />
-            </button>
+            <NotificationBell />
 
             <UserMenu
               user={user}

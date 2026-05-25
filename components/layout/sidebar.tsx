@@ -14,6 +14,7 @@ import {
   Wallet,
   Sparkles,
   ChevronsLeft,
+  ChevronsRight,
   Settings,
   LogOut,
   CreditCard,
@@ -230,17 +231,37 @@ export function Sidebar({
             </div>
           )}
         </Link>
-        {!collapsed && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={() => setCollapsed(true)}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-        )}
       </div>
+
+      {/* Collapse toggle — always visible on the right edge, branded 3D pill */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-label={collapsed ? "Expandir menú" : "Plegar menú"}
+        title={collapsed ? "Expandir menú" : "Plegar menú"}
+        className={cn(
+          "group absolute top-[60px] -right-3 z-30 flex h-7 w-7 items-center justify-center rounded-full",
+          // 3D green pill
+          "bg-gradient-to-b from-[#0fd271] to-[#00a553]",
+          "shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_4px_-1px_rgba(0,0,0,0.25),0_0_8px_rgba(0,191,99,0.35)]",
+          "ring-2 ring-background transition-all duration-200",
+          "hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_3px_6px_-1px_rgba(0,0,0,0.3),0_0_14px_rgba(0,191,99,0.55)]",
+          "hover:scale-105 active:scale-95",
+          "hidden md:flex"
+        )}
+      >
+        {collapsed ? (
+          <ChevronsRight
+            className="h-3.5 w-3.5 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
+            strokeWidth={2.5}
+          />
+        ) : (
+          <ChevronsLeft
+            className="h-3.5 w-3.5 text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.25)]"
+            strokeWidth={2.5}
+          />
+        )}
+      </button>
 
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">

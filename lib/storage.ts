@@ -36,6 +36,12 @@ function hasBlobToken(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
+function isServerless(): boolean {
+  // Vercel (and most serverless platforms) set this. The filesystem is read-only
+  // in production, so we must use Blob storage.
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
 /**
  * Persist a file. Returns absolute URL + key.
  */
@@ -64,6 +70,14 @@ export async function uploadFile(
       size: buffer.byteLength,
       contentType,
     };
+  }
+
+  // In serverless without Blob configured, fail loudly instead of crashing
+  // with ENOENT (read-only filesystem). Surface a clear setup hint to the dev.
+  if (isServerless()) {
+    throw new Error(
+      "Vercel Blob no configurado. Crea un Blob Store en Vercel Dashboard → Storage y la variable BLOB_READ_WRITE_TOKEN se inyectará automáticamente."
+    );
   }
 
   // Local dev fallback — write to ./public/uploads/

@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, ChevronRight, Home } from "lucide-react";
+import { Search, ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { MobileNav } from "./mobile-nav";
+import { NotificationBell } from "./notification-bell";
 
 type TopbarUser = {
   name: string;
@@ -126,9 +127,6 @@ export function Topbar({
           >
             <Search className="h-3.5 w-3.5" />
             <span className="flex-1">Buscar...</span>
-            <kbd className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-              ⌘K
-            </kbd>
           </button>
           <Button
             variant="ghost"
@@ -139,10 +137,7 @@ export function Topbar({
             <Search className="h-4 w-4" />
           </Button>
           <ThemeToggle />
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-          </Button>
+          <NotificationBell />
         </div>
       </header>
 

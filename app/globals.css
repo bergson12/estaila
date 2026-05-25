@@ -178,6 +178,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Wiggle animation for notification bell when items are urgent */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-12deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
+
 /* Dotted background pattern for premium feel */
 .bg-dots {
   background-image: radial-gradient(
