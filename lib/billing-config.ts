@@ -1,17 +1,17 @@
 // Shared billing constants — no "use server" so they can be imported anywhere.
 
 // Display mapping (landing ↔ internal keys):
-//   PRO   = "Solo"   $29  — entry paid tier (1 agent)
-//   TEAM  = "Pro"    $59  — featured tier (small team / pro features)
+//   PRO   = "Solo"   $15  — entry paid tier (1 agent)
+//   TEAM  = "Pro"    $39  — featured tier (small team / pro features)
 //   BUSINESS         (legacy, hidden in new UI — kept for backward compat)
-//   AGENCY = "Agency" Custom — enterprise (contact sales)
+//   AGENCY = "Agency" $199 — enterprise
 export type PlanKey = "PRO" | "TEAM" | "BUSINESS" | "AGENCY";
 
 export const PLAN_PRICE: Record<PlanKey, number> = {
-  PRO: 29,
-  TEAM: 59,
-  BUSINESS: 89,
-  AGENCY: 0, // custom pricing — handle as "Custom" in UI
+  PRO: 15,
+  TEAM: 39,
+  BUSINESS: 79,
+  AGENCY: 199,
 };
 export const PLAN_CREDITS: Record<PlanKey, number> = {
   PRO: 60,

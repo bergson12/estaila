@@ -127,17 +127,17 @@ const COPY = {
           cta: "Empezar gratis", featured: false,
         },
         {
-          name: "Solo", price: 29 as number | "custom", tag: "Agente independiente",
+          name: "Solo", price: 15 as number | "custom", tag: "Agente independiente",
           features: ["CRM completo", "60 créditos IA / mes", "Propiedades ilimitadas", "Las 4 plantillas básicas", "Sin marca de agua", "Soporte chat"],
           cta: "Probar Solo", featured: false,
         },
         {
-          name: "Pro", price: 59 as number | "custom", tag: "Más popular",
+          name: "Pro", price: 39 as number | "custom", tag: "Más popular",
           features: ["Todo en Solo", "200 créditos IA / mes", "6 plantillas premium", "Dominio propio", "Branding completo", "Marketing IA + posts", "Soporte prioritario"],
           cta: "Probar Pro", featured: true,
         },
         {
-          name: "Agency", price: "custom" as number | "custom", tag: "Equipos y agencias",
+          name: "Agency", price: 199 as number | "custom", tag: "Equipos y agencias",
           features: ["Todo en Pro", "Créditos IA ilimitados", "Multi-usuario (5+)", "White-label completo", "API + Webhooks", "Onboarding 1:1", "Account manager"],
           cta: "Hablar con ventas", featured: false,
         },
@@ -327,9 +327,9 @@ const COPY = {
       annualNote: "2 months free on annual billing",
       plans: [
         { name: "Free", price: 0 as number | "custom", tag: "To try", features: ["Basic CRM", "5 AI credits / mo", "Up to 10 properties", "1 portal template", "Watermark"], cta: "Start free", featured: false },
-        { name: "Solo", price: 29 as number | "custom", tag: "Independent agent", features: ["Full CRM", "60 AI credits / mo", "Unlimited properties", "4 basic templates", "No watermark", "Chat support"], cta: "Try Solo", featured: false },
-        { name: "Pro", price: 59 as number | "custom", tag: "Most popular", features: ["Everything in Solo", "200 AI credits / mo", "6 premium templates", "Custom domain", "Full branding", "AI marketing + posts", "Priority support"], cta: "Try Pro", featured: true },
-        { name: "Agency", price: "custom" as number | "custom", tag: "Teams & agencies", features: ["Everything in Pro", "Unlimited AI credits", "Multi-user (5+)", "Full white-label", "API + Webhooks", "1:1 onboarding", "Account manager"], cta: "Talk to sales", featured: false },
+        { name: "Solo", price: 15 as number | "custom", tag: "Independent agent", features: ["Full CRM", "60 AI credits / mo", "Unlimited properties", "4 basic templates", "No watermark", "Chat support"], cta: "Try Solo", featured: false },
+        { name: "Pro", price: 39 as number | "custom", tag: "Most popular", features: ["Everything in Solo", "200 AI credits / mo", "6 premium templates", "Custom domain", "Full branding", "AI marketing + posts", "Priority support"], cta: "Try Pro", featured: true },
+        { name: "Agency", price: 199 as number | "custom", tag: "Teams & agencies", features: ["Everything in Pro", "Unlimited AI credits", "Multi-user (5+)", "Full white-label", "API + Webhooks", "1:1 onboarding", "Account manager"], cta: "Talk to sales", featured: false },
       ],
     },
     testimonials: {

@@ -52,8 +52,8 @@ const PLANS = [
   {
     key: "PRO" as const,
     name: "Solo",
-    priceMonthly: 29,
-    priceYearly: 278, // ~20% off (24.80/mo annual)
+    priceMonthly: 15,
+    priceYearly: 144, // ~20% off (12/mo annual equivalent)
     credits: 60,
     icon: Zap,
     description: "Agente independiente que cierra ventas cada mes",
@@ -69,8 +69,8 @@ const PLANS = [
   {
     key: "TEAM" as const,
     name: "Pro",
-    priceMonthly: 59,
-    priceYearly: 566, // ~20% off
+    priceMonthly: 39,
+    priceYearly: 374, // ~20% off
     credits: 200,
     icon: Crown,
     description: "Pro features con branding y dominio propio",
@@ -88,12 +88,12 @@ const PLANS = [
   {
     key: "AGENCY" as const,
     name: "Agency",
-    priceMonthly: 0, // sentinel — UI shows "Custom"
-    priceYearly: 0,
+    priceMonthly: 199,
+    priceYearly: 1908, // ~20% off
     credits: 99999,
     icon: Users,
     description: "Equipos y agencias con white-label + API",
-    isCustom: true,
+    isCustom: false,
     features: [
       "Todo en Pro",
       "Créditos IA ilimitados",

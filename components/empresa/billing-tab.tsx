@@ -31,7 +31,7 @@ const PLAN_CARDS = [
   {
     key: "BUSINESS",
     name: "Business",
-    price: 59,
+    price: 39,
     seats: 10,
     featured: true,
     features: [
