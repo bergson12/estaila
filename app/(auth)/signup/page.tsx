@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { getAppSettings } from "@/lib/app-settings";
+import { isGoogleAuthEnabled, isEmailVerificationEnabled } from "@/lib/auth-config";
 import { SignupForm } from "./signup-form";
 
 export default async function SignupPage() {
@@ -25,5 +26,10 @@ export default async function SignupPage() {
       </Card>
     );
   }
-  return <SignupForm />;
+  return (
+    <SignupForm
+      googleEnabled={isGoogleAuthEnabled()}
+      requiresVerification={isEmailVerificationEnabled()}
+    />
+  );
 }

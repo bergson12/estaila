@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Loader2, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { GoogleButton } from "@/components/auth/google-button";
 
 const Schema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
@@ -21,10 +22,17 @@ const Schema = z.object({
 });
 type FormValues = z.infer<typeof Schema>;
 
-export function SignupForm() {
+export function SignupForm({
+  googleEnabled = false,
+  requiresVerification = false,
+}: {
+  googleEnabled?: boolean;
+  requiresVerification?: boolean;
+}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -48,6 +56,10 @@ export function SignupForm() {
         toast.error(error.message ?? "Error al crear cuenta");
         return;
       }
+      if (requiresVerification) {
+        setPendingEmail(values.email);
+        return;
+      }
       toast.success("¡Cuenta creada! Empezamos en 60 segundos.");
       router.push("/onboarding");
       router.refresh();
@@ -56,6 +68,30 @@ export function SignupForm() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (pendingEmail) {
+    return (
+      <Card className="p-7 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
+          <Mail className="h-6 w-6" strokeWidth={1.75} />
+        </div>
+        <h1 className="text-xl font-semibold leading-tight">
+          Revisa tu correo
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enviamos un enlace de verificación a{" "}
+          <span className="font-medium text-foreground">{pendingEmail}</span>.
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Haz click en el botón del email para confirmar tu cuenta y entrar a
+          tu CRM.
+        </p>
+        <p className="mt-5 text-[11px] text-muted-foreground">
+          ¿No lo ves? Revisa la carpeta de Spam o promociones.
+        </p>
+      </Card>
+    );
   }
 
   const benefits = [
@@ -90,6 +126,8 @@ export function SignupForm() {
           </li>
         ))}
       </ul>
+
+      <GoogleButton available={googleEnabled} callbackURL="/onboarding" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-1.5">

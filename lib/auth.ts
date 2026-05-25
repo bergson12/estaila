@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "./db";
 import { getAppSettings } from "./app-settings";
+import { sendEmail, buildVerificationEmail } from "./email";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -12,6 +13,18 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
     minPasswordLength: 6,
+    // Only enforce email verification when an email sender is configured —
+    // otherwise users would be locked out in environments without Resend.
+    requireEmailVerification: !!process.env.RESEND_API_KEY,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24, // 24h
+    sendVerificationEmail: async ({ user, url }) => {
+      const { subject, html } = buildVerificationEmail(url, user.name);
+      await sendEmail({ to: user.email, subject, html });
+    },
   },
   socialProviders: {
     // TODO: enable when real credentials provided in env
