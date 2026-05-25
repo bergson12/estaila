@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
-import { isPayPalConfigured } from "@/lib/paypal";
+import { isPayPalConfigured, isPayPalSubsReady } from "@/lib/paypal";
 import { isLemonConfigured } from "@/lib/lemonsqueezy";
 import { CREDIT_PACKS } from "@/lib/billing-config";
 import {
@@ -129,6 +129,7 @@ export default async function PricingPage({
   const currentPlan = (dbUser?.plan ?? "FREE") as PlanKey;
   const lsReady = isLemonConfigured();
   const ppReady = isPayPalConfigured();
+  const ppSubsReady = isPayPalSubsReady();
   const noProvider = !lsReady && !ppReady;
 
   return (
@@ -294,8 +295,8 @@ export default async function PricingPage({
                       </Button>
                     </form>
                   )}
-                  {/* Fallback: PayPal */}
-                  {ppReady && (
+                  {/* Fallback: PayPal subscriptions — only when plan IDs are wired */}
+                  {ppSubsReady && (
                     <form action={startSubscriptionAction}>
                       <input type="hidden" name="plan" value={p.key} />
                       <Button
@@ -308,7 +309,7 @@ export default async function PricingPage({
                       </Button>
                     </form>
                   )}
-                  {!lsReady && !ppReady && (
+                  {!lsReady && !ppSubsReady && (
                     <Button variant="outline" className="w-full" disabled>
                       Pagos no configurados
                     </Button>

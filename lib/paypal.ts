@@ -21,6 +21,20 @@ export function isPayPalConfigured(): boolean {
   return !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 }
 
+/**
+ * PayPal can run subscriptions only when at least one Plan ID is wired.
+ * Used by /pricing to decide whether to render the "Pagar con PayPal" CTA
+ * for recurring tiers (vs one-time packs which don't need plan IDs).
+ */
+export function isPayPalSubsReady(): boolean {
+  if (!isPayPalConfigured()) return false;
+  return !!(
+    process.env.PAYPAL_PLAN_PRO ||
+    process.env.PAYPAL_PLAN_TEAM ||
+    process.env.PAYPAL_PLAN_AGENCY
+  );
+}
+
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 export async function getAccessToken(): Promise<string> {
