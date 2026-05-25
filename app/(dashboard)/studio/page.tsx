@@ -8,6 +8,7 @@ import {
   Sunset,
   Waves,
   Trees,
+  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
@@ -17,6 +18,14 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-server";
 
 const TOOLS = [
+  {
+    href: "/studio/editor",
+    icon: LayoutGrid,
+    title: "Editor Avanzado",
+    desc: "Combina IA + texto + logos + plantillas inmobiliarias. Exporta a Instagram, WhatsApp, PDF. Gratis.",
+    cost: 0,
+    featured: true,
+  },
   {
     href: "/studio/staging",
     icon: Sofa,
