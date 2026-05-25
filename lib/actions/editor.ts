@@ -96,12 +96,61 @@ export async function createProjectFromTemplate(args: {
     }
   }
 
-  // Initial canvas JSON: just the objects array wrapped as Fabric expects
-  const canvasJson = JSON.stringify({
-    version: "6.0.0",
-    objects: tpl.objects,
-    background: tpl.background,
-  });
+  // Build a minimal Polotno-compatible page with a title placeholder.
+  // The user can then drag, edit and add elements using Polotno's UI.
+  const polotnoJson = {
+    width: tpl.width,
+    height: tpl.height,
+    fonts: [],
+    pages: [
+      {
+        id: "page-1",
+        background: tpl.background,
+        width: tpl.width,
+        height: tpl.height,
+        children: [
+          {
+            type: "text",
+            x: 60,
+            y: tpl.height - 240,
+            width: tpl.width - 120,
+            text: "{{title}}",
+            fontSize: 56,
+            fontFamily: "Raleway",
+            fill: "#0a0a0a",
+            fontWeight: "bold",
+            align: "left",
+          },
+          {
+            type: "text",
+            x: 60,
+            y: tpl.height - 140,
+            width: tpl.width - 120,
+            text: "{{price}}",
+            fontSize: 40,
+            fontFamily: "Raleway",
+            fill: "#00bf63",
+            fontWeight: "bold",
+            align: "left",
+          },
+          {
+            type: "text",
+            x: 60,
+            y: tpl.height - 70,
+            width: tpl.width - 120,
+            text: "{{agent_name}}  ·  {{agent_phone}}",
+            fontSize: 18,
+            fontFamily: "Raleway",
+            fill: "#525252",
+            fontWeight: "normal",
+            align: "left",
+          },
+        ],
+      },
+    ],
+    audios: [],
+  };
+  const canvasJson = JSON.stringify(polotnoJson);
   const filled = applySmartFill(canvasJson, smartData);
 
   const project = await prisma.editorProject.create({

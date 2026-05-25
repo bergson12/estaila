@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { NewProjectModal } from "@/components/editor/modals/NewProjectModal";
+import { NewProjectModal } from "@/components/editor/NewProjectModal";
 import { deleteProject } from "@/lib/actions/editor";
 import { cn } from "@/lib/utils";
 
