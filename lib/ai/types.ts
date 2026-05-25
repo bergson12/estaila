@@ -35,6 +35,13 @@ export type ProcessOptions = {
   roomType?: RoomType | string;
   removeFurnitureFirst?: boolean;
   density?: "MINIMAL" | "BALANCED" | "FULL";
+  // Extra staging knobs
+  lightMood?: string;
+  buyerTarget?: string;
+  luxuryLevel?: string;
+  extraPrompt?: string;
+  // Brush mask data URL (white-on-black) restricting AI to that area
+  maskDataUrl?: string;
   // Declutter
   declutterMode?: "AUTO" | "FURNITURE" | "PEOPLE" | "PERSONAL";
   // Enhance

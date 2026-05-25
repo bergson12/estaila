@@ -83,21 +83,50 @@ export const AI_TOOLS = [
 export type AIToolValue = (typeof AI_TOOLS)[number]["value"];
 
 export const STAGING_STYLES = [
-  { value: "MODERN", label: "Moderno" },
-  { value: "SCANDINAVIAN", label: "Escandinavo" },
-  { value: "CARIBENO", label: "Tropical" },
-  { value: "COLONIAL", label: "Colonial" },
-  { value: "MINIMALISTA", label: "Minimalista" },
-  { value: "LUXURY", label: "Luxury" },
-  { value: "INDUSTRIAL", label: "Industrial" },
-  { value: "COSTERO", label: "Costero" },
+  { value: "MODERN", label: "Moderno", emoji: "🛋️" },
+  { value: "SCANDINAVIAN", label: "Escandinavo", emoji: "🪵" },
+  { value: "JAPANDI", label: "Japandi", emoji: "🎋" },
+  { value: "MID_CENTURY", label: "Mid-Century", emoji: "🪑" },
+  { value: "CARIBENO", label: "Tropical", emoji: "🌴" },
+  { value: "COLONIAL", label: "Colonial", emoji: "🏛️" },
+  { value: "MINIMALISTA", label: "Minimalista", emoji: "⚪" },
+  { value: "LUXURY", label: "Luxury", emoji: "💎" },
+  { value: "INDUSTRIAL", label: "Industrial", emoji: "⚙️" },
+  { value: "COSTERO", label: "Costero", emoji: "🌊" },
+  { value: "BOHEMIAN", label: "Bohemio", emoji: "🧶" },
+  { value: "FARMHOUSE", label: "Farmhouse", emoji: "🏚️" },
+  { value: "ART_DECO", label: "Art Deco", emoji: "✨" },
+  { value: "AIRBNB", label: "Airbnb", emoji: "🏡" },
+  { value: "FAMILY", label: "Family", emoji: "👨‍👩‍👧" },
+  { value: "OFFICE_PRO", label: "Oficina Pro", emoji: "💼" },
 ] as const;
 
 export const ROOM_TYPES = [
-  { value: "LIVING", label: "Sala" },
-  { value: "BEDROOM", label: "Habitación" },
-  { value: "KITCHEN", label: "Cocina" },
-  { value: "DINING", label: "Comedor" },
-  { value: "OFFICE", label: "Oficina" },
-  { value: "EXTERIOR", label: "Exterior" },
+  { value: "LIVING", label: "Sala", emoji: "🛋️" },
+  { value: "BEDROOM", label: "Dormitorio", emoji: "🛏️" },
+  { value: "KITCHEN", label: "Cocina", emoji: "🍳" },
+  { value: "DINING", label: "Comedor", emoji: "🍽️" },
+  { value: "BATHROOM", label: "Baño", emoji: "🛁" },
+  { value: "OFFICE", label: "Oficina", emoji: "💻" },
+  { value: "KIDS", label: "Niños", emoji: "🧸" },
+  { value: "EXTERIOR", label: "Exterior", emoji: "🌳" },
+  { value: "BALCONY", label: "Balcón", emoji: "🌇" },
+  { value: "POOL", label: "Piscina", emoji: "🏊" },
+] as const;
+
+export const LIGHT_MOODS = [
+  { value: "NATURAL", label: "Natural", desc: "Luz neutra de día" },
+  { value: "WARM", label: "Cálida", desc: "Tonos dorados acogedores" },
+  { value: "BRIGHT", label: "Brillante", desc: "Alta iluminación fresca" },
+  { value: "MOODY", label: "Atmósfera", desc: "Sombras suaves dramáticas" },
+  { value: "GOLDEN_HOUR", label: "Golden Hour", desc: "Atardecer cálido" },
+] as const;
+
+export const BUYER_TARGETS = [
+  { value: "FAMILY", label: "Familia con niños", emoji: "👨‍👩‍👧" },
+  { value: "YOUNG_COUPLE", label: "Pareja joven", emoji: "💑" },
+  { value: "EXECUTIVE", label: "Ejecutivo", emoji: "💼" },
+  { value: "INVESTOR", label: "Inversionista", emoji: "📈" },
+  { value: "RETIREE", label: "Retiro", emoji: "🌅" },
+  { value: "DIGITAL_NOMAD", label: "Nómada digital", emoji: "💻" },
 ] as const;
