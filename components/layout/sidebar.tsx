@@ -142,7 +142,7 @@ export function Sidebar({
   async function handleLogout() {
     await authClient.signOut();
     toast.success("Sesión cerrada");
-    router.push("/login");
+    router.push("/welcome");
     router.refresh();
   }
 

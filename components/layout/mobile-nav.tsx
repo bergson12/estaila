@@ -100,7 +100,7 @@ export function MobileNav({
     setOpen(false);
     await authClient.signOut();
     toast.success("Sesión cerrada");
-    router.push("/login");
+    router.push("/welcome");
     router.refresh();
   }
 
