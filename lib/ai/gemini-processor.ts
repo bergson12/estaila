@@ -1,13 +1,13 @@
 import "server-only";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import type {
   ImageProcessor,
   ProcessInput,
   ProcessOptions,
   ProcessResult,
 } from "./types";
+import { uploadFile } from "@/lib/storage";
 
 /**
  * GeminiProcessor — real image generation via Google Gemini 2.5 Flash Image
@@ -285,21 +285,18 @@ export class GeminiProcessor implements ImageProcessor {
       throw new Error("Gemini no devolvió imagen — intenta de nuevo con otro prompt.");
     }
 
-    // Save output
+    // Save output to Vercel Blob (or local fs in dev). Filesystem is
+    // read-only on Vercel serverless, so this MUST go through storage.ts.
     const outBuf = Buffer.from(imagePart.inline_data.data, "base64");
-    const outName = `${randomUUID()}.png`;
-    const outDir = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      this.userId,
-      "generations"
-    );
-    await mkdir(outDir, { recursive: true });
-    await writeFile(path.join(outDir, outName), outBuf);
+    const outBlob = new Blob([new Uint8Array(outBuf)], { type: "image/png" });
+    const uploaded = await uploadFile(outBlob, {
+      filename: `gen-${Date.now()}.png`,
+      prefix: `gen/${this.userId}`,
+      contentType: "image/png",
+    });
 
     return {
-      outputUrl: `/uploads/${this.userId}/generations/${outName}`,
+      outputUrl: uploaded.url,
       processingTimeMs: Date.now() - start,
     };
   }

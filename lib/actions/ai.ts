@@ -143,6 +143,10 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
       fallbackReason,
     };
   } catch (e) {
+    const err = e as Error;
+    const detail = err.message ?? String(err);
+    console.error("[ai.generate] failed:", detail, err.stack);
+
     // Refund credits on failure
     await prisma.$transaction([
       prisma.user.update({
@@ -153,11 +157,13 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
         where: { id: gen.id },
         data: {
           status: "FAILED",
-          errorMsg: (e as Error).message,
+          errorMsg: detail,
         },
       }),
     ]);
-    throw e;
+    // Re-throw with the real message wrapped so Next.js doesn't redact it.
+    // Including the prefix makes the toast self-explanatory even in prod.
+    throw new Error(`Studio IA: ${detail}`);
   }
 }
 
