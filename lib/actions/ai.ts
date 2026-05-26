@@ -235,6 +235,83 @@ export async function getRecentGenerations(limit = 8) {
   });
 }
 
+/** Lightweight property list for the post-generation save dialog. */
+export async function listMyPropertiesLite(): Promise<
+  { id: string; title: string; location: string | null; coverUrl: string | null }[]
+> {
+  const user = await requireUser();
+  const rows = await prisma.property.findMany({
+    where: { userId: user.id },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    select: {
+      id: true,
+      title: true,
+      location: true,
+      photos: {
+        take: 1,
+        orderBy: { order: "asc" },
+        select: { url: true },
+      },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    location: r.location,
+    coverUrl: r.photos[0]?.url ?? null,
+  }));
+}
+
+/** Lightweight contact list for the send-via-WhatsApp dialog. */
+export async function listMyContactsLite(): Promise<
+  { id: string; name: string; phone: string | null; email: string | null }[]
+> {
+  const user = await requireUser();
+  const rows = await prisma.contact.findMany({
+    where: { userId: user.id, phone: { not: null } },
+    orderBy: { updatedAt: "desc" },
+    take: 100,
+    select: { id: true, name: true, phone: true, email: true },
+  });
+  return rows;
+}
+
+/** Log that we sent a generated photo to a contact (so it appears in timeline). */
+export async function logPhotoSentToContact(args: {
+  generationId: string;
+  contactId: string;
+  channel: "WHATSAPP" | "EMAIL";
+  note?: string;
+}): Promise<void> {
+  const user = await requireUser();
+  const gen = await prisma.aIGeneration.findFirst({
+    where: { id: args.generationId, userId: user.id },
+    select: { id: true, outputUrl: true, tool: true },
+  });
+  if (!gen?.outputUrl) throw new Error("Generación no encontrada");
+  const contact = await prisma.contact.findFirst({
+    where: { id: args.contactId, userId: user.id },
+    select: { id: true, name: true },
+  });
+  if (!contact) throw new Error("Contacto no encontrado");
+
+  await prisma.contactActivity.create({
+    data: {
+      userId: user.id,
+      contactId: contact.id,
+      type: args.channel === "EMAIL" ? "EMAIL" : "WHATSAPP_SENT",
+      title: `Foto Studio IA (${gen.tool}) enviada`,
+      content: args.note ?? null,
+      metadata: JSON.stringify({
+        generationId: gen.id,
+        photoUrl: gen.outputUrl,
+      }),
+    },
+  });
+  revalidatePath(`/contactos/${contact.id}`);
+}
+
 export async function savePhotoToProperty(
   generationId: string,
   propertyId: string

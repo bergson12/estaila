@@ -45,9 +45,9 @@ export function StudioShell({
           <CanvasView onRegenerate={image ? () => runGenerate() : undefined} />
         </div>
 
-        {/* Right: options — sticky panel, independent scroll */}
-        <div className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
-          <div className="space-y-3">
+        {/* Right: options — sticky panel, scrolls only as last resort */}
+        <div className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
+          <div className="space-y-2">
             <CreditsMeter plan={plan} />
             {optionsPanel}
           </div>

@@ -23,6 +23,7 @@
 
 import { Eraser, Paintbrush, RotateCcw, Trash2, X, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -296,7 +297,13 @@ export function MaskBrush({
           ref={imgRef}
           src={imageUrl}
           alt="Imagen a editar"
+          crossOrigin="anonymous"
           onLoad={() => setImgLoaded(true)}
+          onError={() =>
+            toast.error(
+              "No se pudo cargar la imagen para el pincel. Verifica permisos CORS."
+            )
+          }
           className="block max-h-[85vh] max-w-[90vw] select-none"
           draggable={false}
         />

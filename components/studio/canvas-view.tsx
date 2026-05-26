@@ -1,19 +1,15 @@
 "use client";
 
 import {
-  Download,
-  RefreshCw,
-  Trash2,
   Image as ImageIcon,
   Loader2,
   Sparkles,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Button } from "@/components/ui/button";
 import { UploadZone } from "./upload-zone";
 import { BeforeAfter } from "./before-after";
-import { NextToolMenu } from "./next-tool-menu";
 import { PhotoAnalysis } from "./photo-analysis";
+import { PostActions } from "./post-actions";
 import { useStudio } from "./studio-context";
 
 export function CanvasView({
@@ -89,7 +85,7 @@ export function CanvasView({
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <ImageIcon className="h-3.5 w-3.5" />
           {result ? (
@@ -109,57 +105,21 @@ export function CanvasView({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {result && (
-            <>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Button asChild variant="outline" size="sm">
-                  <a
-                    href={result.outputUrl}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Download className="mr-1.5 h-3.5 w-3.5" />
-                    Descargar
-                  </a>
-                </Button>
-              </motion.div>
-              {onRegenerate && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onRegenerate}
-                    disabled={isGenerating}
-                  >
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                    Regenerar
-                  </Button>
-                </motion.div>
-              )}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <NextToolMenu />
-              </motion.div>
-            </>
-          )}
-          <Button variant="ghost" size="sm" onClick={reset}>
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-            Cambiar foto
-          </Button>
-        </div>
+        {result ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <PostActions
+              generationId={result.generationId}
+              outputUrl={result.outputUrl}
+              onRegenerate={onRegenerate}
+              onReset={reset}
+              isGenerating={isGenerating}
+            />
+          </motion.div>
+        ) : null}
       </div>
     </div>
   );

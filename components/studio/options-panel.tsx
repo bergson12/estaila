@@ -11,9 +11,9 @@ export function OptionsPanel({
   className?: string;
 }) {
   return (
-    <Card className={cn("p-5", className)}>
+    <Card className={cn("p-3", className)}>
       {title && (
-        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </h3>
       )}
