@@ -1044,9 +1044,20 @@ function useVoiceInput(opts: VoiceInputOptions): {
     rec.onerror = (ev) => {
       const code = ev.error ?? "unknown";
       if (code === "not-allowed" || code === "service-not-allowed") {
-        toast.error("Permiso de micrófono denegado. Habilítalo en el navegador.");
+        toast.error(
+          "Permiso de micrófono denegado. Habilítalo en el navegador (candado URL → permisos)."
+        );
       } else if (code === "no-speech") {
         toast.info("No detecté tu voz. Intenta de nuevo más cerca del mic.");
+      } else if (code === "audio-capture") {
+        toast.error("No se detectó micrófono. Conecta uno y vuelve a intentar.");
+      } else if (code === "network") {
+        toast.error(
+          "Sin conexión al servicio de voz. Posibles causas: extensión bloqueando, VPN/proxy corporativo, o sin Internet. Prueba otro navegador o desactiva extensiones.",
+          { duration: 10000 }
+        );
+      } else if (code === "language-not-supported") {
+        toast.error("Idioma no soportado por tu navegador.");
       } else if (code !== "aborted") {
         toast.error(`Error de voz: ${code}`);
       }
