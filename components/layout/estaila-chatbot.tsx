@@ -227,9 +227,12 @@ export function EstailaChatbot() {
           actions: response.actions,
         },
       ]);
+      if (response.errorDetail) {
+        toast.error(response.errorDetail, { duration: 12000 });
+      }
 
-      // Persist turn (best-effort)
-      if (activeConvoId) {
+      // Persist turn only if it didn't fail
+      if (activeConvoId && !response.errorDetail) {
         startTransition(() => {
           saveConversationTurn({
             conversationId: activeConvoId!,
@@ -242,13 +245,14 @@ export function EstailaChatbot() {
         });
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      // Network / redacted RSC error. Show whatever Next gave us.
+      const msg = (e as Error).message ?? "Error desconocido";
+      toast.error(msg, { duration: 12000 });
       setHistory((h) => [
         ...h,
         {
           role: "assistant",
-          content:
-            "Algo falló. Intenta de nuevo. Si persiste, revisa DEEPSEEK_API_KEY.",
+          content: `⚠️ ${msg}`,
         },
       ]);
     } finally {

@@ -147,6 +147,8 @@ export type ChatAction =
 export type ChatResponse = {
   text: string;
   actions: ChatAction[];
+  /** When something failed, contains the real (un-redacted) error message. */
+  errorDetail?: string;
 };
 
 /**
@@ -221,6 +223,28 @@ export async function realEstateChat(args: {
   history: ChatTurn[];
   message: string;
   /** Optional wizard mode: CONTACT | PROPERTY | APPOINTMENT */
+  wizard?: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
+}): Promise<ChatResponse> {
+  // Catch every failure inside the action so Next.js doesn't redact the
+  // message as a generic "Server Components render error". Surface the real
+  // cause to the client via errorDetail.
+  try {
+    return await realEstateChatInner(args);
+  } catch (e) {
+    const err = e as Error;
+    const detail = `${err.name ?? "Error"}: ${err.message ?? String(err)}`;
+    console.error("[realEstateChat]", detail, err.stack);
+    return {
+      text: `⚠️ ${detail}`,
+      actions: [],
+      errorDetail: detail,
+    };
+  }
+}
+
+async function realEstateChatInner(args: {
+  history: ChatTurn[];
+  message: string;
   wizard?: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
 }): Promise<ChatResponse> {
   const user = await requireUser();
