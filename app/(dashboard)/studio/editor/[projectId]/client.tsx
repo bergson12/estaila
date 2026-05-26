@@ -1,6 +1,23 @@
 "use client";
 
-import { PolotnoEditor } from "@/components/editor/PolotnoEditor";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const PolotnoEditor = dynamic(
+  () =>
+    import("@/components/editor/PolotnoEditor").then((m) => m.PolotnoEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs">Cargando editor...</p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 type Props = {
   projectId: string;
