@@ -87,10 +87,32 @@ export async function chat(
   }
 
   const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
+    choices?: Array<{
+      message?: { content?: string };
+      finish_reason?: string;
+    }>;
+    usage?: { completion_tokens?: number; total_tokens?: number };
   };
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error("DeepSeek devolvió respuesta vacía");
+  const choice = data.choices?.[0];
+  const content = choice?.message?.content?.trim();
+  const finishReason = choice?.finish_reason ?? "unknown";
+  const usage = data.usage;
+
+  if (!content) {
+    throw new Error(
+      `DeepSeek devolvió respuesta vacía (finish_reason=${finishReason}, completion_tokens=${
+        usage?.completion_tokens ?? "?"
+      }). Sube max_tokens o simplifica el prompt.`
+    );
+  }
+
+  // If model hit length budget, surface a warning in the content so we can
+  // debug — but still return what we got.
+  if (finishReason === "length") {
+    console.warn(
+      `[deepseek] truncated at max_tokens (completion=${usage?.completion_tokens})`
+    );
+  }
   return content;
 }
 
