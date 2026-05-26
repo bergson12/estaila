@@ -30,12 +30,12 @@ export function ToolNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-0.5 lg:w-60">
+    <aside className="flex w-full shrink-0 flex-col gap-px lg:w-60">
       <Link
         href="/studio"
-        className="mb-3 flex items-center gap-2 px-2 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+        className="mb-1.5 flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
       >
-        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        <Sparkles className="h-3 w-3 text-primary" />
         Studio IA
       </Link>
       {TOOLS.map((t) => {
@@ -46,7 +46,7 @@ export function ToolNav() {
             key={t.href}
             href={t.href}
             className={cn(
-              "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+              "group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors",
               active
                 ? "bg-primary/15 text-primary"
                 : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
@@ -54,14 +54,14 @@ export function ToolNav() {
           >
             <Icon
               className={cn(
-                "h-4 w-4 shrink-0",
+                "h-3.5 w-3.5 shrink-0",
                 active && "text-primary",
                 t.featured && !active && "text-primary/70"
               )}
               strokeWidth={1.75}
             />
             <span className="flex-1 truncate">{t.label}</span>
-            <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
+            <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
               {t.cost}c
             </span>
           </Link>

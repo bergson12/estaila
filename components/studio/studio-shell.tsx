@@ -22,8 +22,8 @@ export function StudioShell({
   return (
     <div className="mx-auto w-full max-w-[1600px]">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[14rem_minmax(0,1fr)_19rem]">
-        {/* Left: tool nav — sticky on desktop */}
-        <div className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
+        {/* Left: tool nav — sticky on desktop, compact enough to never need scroll */}
+        <div className="lg:sticky lg:top-20 lg:self-start">
           <ToolNav />
         </div>
 
