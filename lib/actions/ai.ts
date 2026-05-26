@@ -16,26 +16,52 @@ export type GenerateInput = {
   options?: ProcessOptions;
 };
 
-export type GenerateResult = {
-  id: string;
-  outputUrl: string;
-  cssFilter?: string;
-  creditsUsed: number;
-  remainingCredits: number;
-  processingTimeMs: number;
-  fallbackUsed?: "mock";
-  fallbackReason?: string;
-};
+export type GenerateResult =
+  | {
+      ok: true;
+      id: string;
+      outputUrl: string;
+      cssFilter?: string;
+      creditsUsed: number;
+      remainingCredits: number;
+      processingTimeMs: number;
+      fallbackUsed?: "mock";
+      fallbackReason?: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      code?:
+        | "AUTH"
+        | "SUSPENDED"
+        | "DISABLED"
+        | "INSUFFICIENT_CREDITS"
+        | "QUOTA"
+        | "UNKNOWN";
+    };
 
 export async function generate(input: GenerateInput): Promise<GenerateResult> {
+  try {
+    return await generateInner(input);
+  } catch (e) {
+    const err = e as Error;
+    const msg = err.message ?? String(err);
+    console.error("[generate]", msg, err.stack);
+    return { ok: false, error: msg, code: "UNKNOWN" };
+  }
+}
+
+async function generateInner(input: GenerateInput): Promise<GenerateResult> {
   const user = await requireUser();
 
   // Global kill-switch from admin settings
   const settings = await getAppSettings();
   if (!settings.studioEnabled) {
-    throw new Error(
-      "Studio IA está temporalmente desactivado por el administrador. Vuelve más tarde."
-    );
+    return {
+      ok: false,
+      error: "Studio IA está temporalmente desactivado por el administrador.",
+      code: "DISABLED",
+    };
   }
 
   // Suspended user check
@@ -44,7 +70,11 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
     select: { suspended: true },
   });
   if (userRow?.suspended) {
-    throw new Error("Tu cuenta está suspendida. Contacta soporte.");
+    return {
+      ok: false,
+      error: "Tu cuenta está suspendida. Contacta soporte.",
+      code: "SUSPENDED",
+    };
   }
 
   const cost = TOOL_COST[input.tool] ?? 1;
@@ -54,12 +84,16 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
     where: { id: user.id },
     select: { credits: true },
   });
-  if (!dbUser) throw new Error("Usuario no encontrado");
+  if (!dbUser) {
+    return { ok: false, error: "Usuario no encontrado", code: "AUTH" };
+  }
 
   if (dbUser.credits < cost) {
-    throw new Error(
-      `Créditos insuficientes. Necesitas ${cost} crédito${cost > 1 ? "s" : ""} pero solo tienes ${dbUser.credits}.`
-    );
+    return {
+      ok: false,
+      error: `Créditos insuficientes. Necesitas ${cost} crédito${cost > 1 ? "s" : ""} pero solo tienes ${dbUser.credits}.`,
+      code: "INSUFFICIENT_CREDITS",
+    };
   }
 
   // Create generation record (PROCESSING) + deduct credits atomically
@@ -133,6 +167,7 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
 
     revalidatePath("/studio");
     return {
+      ok: true,
       id: updated.id,
       outputUrl: result.outputUrl,
       cssFilter: result.cssFilter,
@@ -161,9 +196,13 @@ export async function generate(input: GenerateInput): Promise<GenerateResult> {
         },
       }),
     ]);
-    // Re-throw with the real message wrapped so Next.js doesn't redact it.
-    // Including the prefix makes the toast self-explanatory even in prod.
-    throw new Error(`Studio IA: ${detail}`);
+
+    const code = /quota|429|billing|prepayment|credits/i.test(detail)
+      ? "QUOTA"
+      : /401|403|api key|auth/i.test(detail)
+        ? "AUTH"
+        : "UNKNOWN";
+    return { ok: false, error: detail, code };
   }
 }
 

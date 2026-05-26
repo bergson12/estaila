@@ -131,6 +131,13 @@ export function StudioProvider({
             ...(maskDataUrl ? { maskDataUrl } : {}),
           } as ProcessOptions,
         });
+
+        if (!out.ok) {
+          // Show the real error message (not the redacted RSC one)
+          toast.error(out.error, { duration: 10000 });
+          return;
+        }
+
         setResult({
           generationId: out.id,
           outputUrl: out.outputUrl,
