@@ -240,7 +240,7 @@ export class GeminiProcessor implements ImageProcessor {
           {
             parts: [
               { text: prompt },
-              { inline_data: { mime_type: mime, data: base64 } },
+              { inlineData: { mimeType: mime, data: base64 } },
             ],
           },
         ],
@@ -277,17 +277,39 @@ export class GeminiProcessor implements ImageProcessor {
     }
 
     const data = await res.json();
-    const parts = data?.candidates?.[0]?.content?.parts ?? [];
-    const imagePart = parts.find(
-      (p: { inline_data?: { data?: string } }) => p.inline_data?.data
+    const candidate = data?.candidates?.[0];
+    const parts = candidate?.content?.parts ?? [];
+
+    // Gemini v1beta returns inlineData (camelCase). Older code path used
+    // inline_data (snake_case). Read both for forward+backward compat.
+    type GeminiPart = {
+      inlineData?: { data?: string; mimeType?: string };
+      inline_data?: { data?: string; mime_type?: string };
+      text?: string;
+    };
+    const imagePart = (parts as GeminiPart[]).find(
+      (p) => p.inlineData?.data ?? p.inline_data?.data
     );
-    if (!imagePart?.inline_data?.data) {
-      throw new Error("Gemini no devolvió imagen — intenta de nuevo con otro prompt.");
+    const base64Out =
+      imagePart?.inlineData?.data ?? imagePart?.inline_data?.data;
+
+    if (!base64Out) {
+      // Try to extract any text Gemini sent (often a safety / refusal note)
+      const textPart = (parts as GeminiPart[]).find((p) => p.text)?.text;
+      const finishReason = candidate?.finishReason ?? "unknown";
+      const safety = candidate?.safetyRatings
+        ? JSON.stringify(candidate.safetyRatings).slice(0, 200)
+        : "";
+      throw new Error(
+        `Gemini no devolvió imagen (finishReason=${finishReason}${
+          textPart ? `, text="${textPart.slice(0, 120)}"` : ""
+        }${safety ? `, safety=${safety}` : ""})`
+      );
     }
 
     // Save output to Vercel Blob (or local fs in dev). Filesystem is
     // read-only on Vercel serverless, so this MUST go through storage.ts.
-    const outBuf = Buffer.from(imagePart.inline_data.data, "base64");
+    const outBuf = Buffer.from(base64Out, "base64");
     const outBlob = new Blob([new Uint8Array(outBuf)], { type: "image/png" });
     const uploaded = await uploadFile(outBlob, {
       filename: `gen-${Date.now()}.png`,

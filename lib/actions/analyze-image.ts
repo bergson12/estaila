@@ -95,7 +95,7 @@ export async function analyzePhoto(imageUrl: string): Promise<PhotoAnalysis> {
           {
             parts: [
               { text: ANALYSIS_PROMPT },
-              { inline_data: { mime_type: mime, data: base64 } },
+              { inlineData: { mimeType: mime, data: base64 } },
             ],
           },
         ],
