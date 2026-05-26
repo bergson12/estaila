@@ -3,9 +3,11 @@
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 
-const PolotnoEditor = dynamic(
+const PhotopeaEditor = dynamic(
   () =>
-    import("@/components/editor/PolotnoEditor").then((m) => m.PolotnoEditor),
+    import("@/components/editor/PhotopeaEditor").then(
+      (m) => m.PhotopeaEditor
+    ),
   {
     ssr: false,
     loading: () => (
@@ -23,20 +25,16 @@ type Props = {
   projectId: string;
   initialName: string;
   canvasData: string;
-  width: number;
-  height: number;
-  format: string;
-  propertyTitle: string | null;
+  initialImageUrl?: string | null;
 };
 
 export function EditorClient(props: Props) {
   return (
-    <PolotnoEditor
+    <PhotopeaEditor
       projectId={props.projectId}
       initialName={props.initialName}
+      initialImageUrl={props.initialImageUrl}
       canvasData={props.canvasData}
-      width={props.width}
-      height={props.height}
     />
   );
 }
