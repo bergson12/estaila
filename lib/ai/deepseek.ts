@@ -48,17 +48,19 @@ export async function chat(
     model: MODEL,
     messages,
     temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 800,
+    // Default al techo del modelo (deepseek-chat = 8192). Eliminar
+    // bloqueos por max_tokens.
+    max_tokens: opts.maxTokens ?? 4096,
   };
   if (opts.jsonMode) {
     body.response_format = { type: "json_object" };
   }
 
-  // Abort early so we can surface a clean error instead of being killed by
-  // the platform. Caller can override via opts.timeoutMs.
-  // Default 25s (leaves 5s margin under our maxDuration=30 on Vercel).
+  // Default 55s — usa todo el budget del plan Vercel (maxDuration=60)
+  // y deja 5s de margen para serializar la respuesta. Caller puede
+  // bajar este número pero no queremos cortar al modelo por defecto.
   const controller = new AbortController();
-  const timeoutMs = opts.timeoutMs ?? 25000;
+  const timeoutMs = opts.timeoutMs ?? 55000;
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;

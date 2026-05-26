@@ -13,8 +13,8 @@ import { EstailaChatbot } from "@/components/layout/estaila-chatbot";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 
 // Server actions invoked from this segment inherit this cap.
-// DeepSeek + AI tools occasionally need more than the 10s default.
-export const maxDuration = 30;
+// Set to 60 — the Vercel Hobby ceiling — so AI tools can run free.
+export const maxDuration = 60;
 
 export default async function DashboardLayout({
   children,

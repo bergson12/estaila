@@ -325,31 +325,14 @@ REGLAS:
     { role: "user", content: args.message },
   ];
 
-  // Try once; if DeepSeek returns empty (often happens when JSON mode +
-  // tight max_tokens collide with internal reasoning), retry with double
-  // the budget.
-  let raw: string;
-  try {
-    raw = await chat(messages, {
-      temperature: args.wizard ? 0.3 : 0.6,
-      maxTokens: args.wizard ? 600 : 900,
-      jsonMode: true,
-      timeoutMs: args.wizard ? 15000 : 25000,
-    });
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg.includes("respuesta vacía") || msg.includes("length")) {
-      // One retry with more room
-      raw = await chat(messages, {
-        temperature: args.wizard ? 0.3 : 0.6,
-        maxTokens: args.wizard ? 1200 : 1500,
-        jsonMode: true,
-        timeoutMs: args.wizard ? 18000 : 28000,
-      });
-    } else {
-      throw e;
-    }
-  }
+  // Sin límites estrictos: max_tokens al techo del modelo (deepseek-chat
+  // soporta hasta 8192), timeout al máximo del plan Vercel.
+  const raw = await chat(messages, {
+    temperature: args.wizard ? 0.3 : 0.6,
+    maxTokens: 4096,
+    jsonMode: true,
+    timeoutMs: 55000,
+  });
 
   try {
     const parsed = JSON.parse(raw) as ChatResponse;
