@@ -340,6 +340,50 @@ export async function chatCreateAppointment(data: {
 // Chatbot — saved conversations (persistence)
 // ============================================================
 
+/**
+ * Auto-create ChatConversation + ChatMessage tables if they don't exist
+ * (e.g. Turso fresh deploy where migration hasn't run yet). Runs once per
+ * process lifetime; cached via global.
+ */
+let chatSchemaReady = false;
+async function ensureChatSchema() {
+  if (chatSchemaReady) return;
+  try {
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ChatConversation" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "title" TEXT NOT NULL DEFAULT 'Nueva conversación',
+      "wizard" TEXT,
+      "preview" TEXT,
+      "pinned" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL,
+      CONSTRAINT "ChatConversation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`);
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ChatMessage" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "conversationId" TEXT NOT NULL,
+      "role" TEXT NOT NULL,
+      "content" TEXT NOT NULL,
+      "actionsJson" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "ChatMessage_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "ChatConversation" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`);
+    await prisma.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ChatConversation_userId_updatedAt_idx" ON "ChatConversation"("userId", "updatedAt")`
+    );
+    await prisma.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ChatConversation_userId_pinned_idx" ON "ChatConversation"("userId", "pinned")`
+    );
+    await prisma.$executeRawUnsafe(
+      `CREATE INDEX IF NOT EXISTS "ChatMessage_conversationId_createdAt_idx" ON "ChatMessage"("conversationId", "createdAt")`
+    );
+    chatSchemaReady = true;
+  } catch (e) {
+    console.warn("[ensureChatSchema] failed, will retry:", (e as Error).message);
+  }
+}
+
 export type ConversationSummary = {
   id: string;
   title: string;
@@ -362,6 +406,7 @@ export type LoadedConversation = {
 
 export async function listConversations(): Promise<ConversationSummary[]> {
   const user = await requireUser();
+  await ensureChatSchema();
   const rows = await prisma.chatConversation.findMany({
     where: { userId: user.id },
     orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
@@ -389,6 +434,7 @@ export async function loadConversation(
   conversationId: string
 ): Promise<LoadedConversation> {
   const user = await requireUser();
+  await ensureChatSchema();
   const convo = await prisma.chatConversation.findFirst({
     where: { id: conversationId, userId: user.id },
     include: {
@@ -420,6 +466,7 @@ export async function createConversation(args: {
   wizard?: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
 }): Promise<{ id: string }> {
   const user = await requireUser();
+  await ensureChatSchema();
   const convo = await prisma.chatConversation.create({
     data: {
       userId: user.id,
@@ -438,6 +485,7 @@ export async function saveConversationTurn(args: {
   assistantActions?: ChatAction[];
 }): Promise<void> {
   const user = await requireUser();
+  await ensureChatSchema();
   // Verify ownership
   const owned = await prisma.chatConversation.findFirst({
     where: { id: args.conversationId, userId: user.id },
@@ -481,6 +529,7 @@ export async function renameConversation(args: {
   title: string;
 }): Promise<void> {
   const user = await requireUser();
+  await ensureChatSchema();
   const title = args.title.trim().slice(0, 80);
   if (!title) throw new Error("Título requerido");
   await prisma.chatConversation.updateMany({
@@ -491,6 +540,7 @@ export async function renameConversation(args: {
 
 export async function deleteConversation(id: string): Promise<void> {
   const user = await requireUser();
+  await ensureChatSchema();
   await prisma.chatConversation.deleteMany({
     where: { id, userId: user.id },
   });
@@ -501,6 +551,7 @@ export async function pinConversation(args: {
   pinned: boolean;
 }): Promise<void> {
   const user = await requireUser();
+  await ensureChatSchema();
   await prisma.chatConversation.updateMany({
     where: { id: args.id, userId: user.id },
     data: { pinned: args.pinned },
@@ -512,6 +563,7 @@ export async function setConversationWizard(args: {
   wizard: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
 }): Promise<void> {
   const user = await requireUser();
+  await ensureChatSchema();
   await prisma.chatConversation.updateMany({
     where: { id: args.id, userId: user.id },
     data: { wizard: args.wizard },
