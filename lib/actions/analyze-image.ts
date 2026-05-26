@@ -83,10 +83,13 @@ export async function analyzePhoto(imageUrl: string): Promise<PhotoAnalysis> {
     }
     const base64 = buf.toString("base64");
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": key,
+      },
       body: JSON.stringify({
         contents: [
           {

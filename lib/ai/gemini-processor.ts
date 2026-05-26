@@ -23,6 +23,8 @@ import type {
  * Cost reference (as of late 2025): ~$0.039 per image — much cheaper than Replicate.
  */
 
+// Image generation requires the specific image variant. Text/vision flows use
+// `gemini-flash-latest` (auto-rolls to current latest).
 const GEMINI_MODEL = "gemini-2.5-flash-image";
 
 type Prompter = (opts: ProcessOptions | undefined, property?: PropertyHints) => string;
@@ -226,10 +228,13 @@ export class GeminiProcessor implements ImageProcessor {
     const base64 = buf.toString("base64");
 
     // Call Gemini
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${this.apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": this.apiKey,
+      },
       body: JSON.stringify({
         contents: [
           {
