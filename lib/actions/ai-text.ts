@@ -7,6 +7,7 @@ import { ask, chat, type ChatMessage } from "@/lib/ai/deepseek";
 import {
   CRM_ROUTES,
   CRM_ENTITIES,
+  WIZARDS,
   RESPONSE_SHAPE,
 } from "@/lib/ai/crm-context";
 
@@ -151,6 +152,8 @@ export type ChatResponse = {
 export async function realEstateChat(args: {
   history: ChatTurn[];
   message: string;
+  /** Optional wizard mode: CONTACT | PROPERTY | APPOINTMENT */
+  wizard?: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
 }): Promise<ChatResponse> {
   const user = await requireUser();
 
@@ -197,6 +200,8 @@ ${CRM_ROUTES}
 
 ${CRM_ENTITIES}
 
+${WIZARDS}
+
 ${RESPONSE_SHAPE}
 
 REGLAS:
@@ -205,7 +210,14 @@ REGLAS:
 - Hablas español por defecto. Inglés si el usuario lo hace.
 - Hasta 4 acciones por respuesta. Solo las más útiles.
 - Cuando alguien diga "agéndame con Juan mañana 3pm", devuelve create_appointment con la fecha calculada.
-- Cuando hable de un tema (pricing, staging, etc), sugiere ruta navigate relevante.`;
+- Cuando hable de un tema (pricing, staging, etc), sugiere ruta navigate relevante.
+${
+  args.wizard
+    ? `\nMODO WIZARD ACTIVO: ${args.wizard}.
+  Sigue estrictamente la plantilla del wizard correspondiente.
+  Una pregunta por turno. Confirma cada respuesta. Al completar, sugiere la acción create_*.`
+    : ""
+}`;
 
   const messages: ChatMessage[] = [
     { role: "system", content: system },
@@ -322,4 +334,186 @@ export async function chatCreateAppointment(data: {
   });
   revalidatePath("/agenda");
   return appt;
+}
+
+// ============================================================
+// Chatbot — saved conversations (persistence)
+// ============================================================
+
+export type ConversationSummary = {
+  id: string;
+  title: string;
+  preview: string | null;
+  wizard: string | null;
+  pinned: boolean;
+  updatedAt: string;
+};
+
+export type LoadedConversation = {
+  id: string;
+  title: string;
+  wizard: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
+  messages: {
+    role: "user" | "assistant";
+    content: string;
+    actions?: ChatAction[];
+  }[];
+};
+
+export async function listConversations(): Promise<ConversationSummary[]> {
+  const user = await requireUser();
+  const rows = await prisma.chatConversation.findMany({
+    where: { userId: user.id },
+    orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      preview: true,
+      wizard: true,
+      pinned: true,
+      updatedAt: true,
+    },
+    take: 50,
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    preview: r.preview,
+    wizard: r.wizard,
+    pinned: r.pinned,
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+}
+
+export async function loadConversation(
+  conversationId: string
+): Promise<LoadedConversation> {
+  const user = await requireUser();
+  const convo = await prisma.chatConversation.findFirst({
+    where: { id: conversationId, userId: user.id },
+    include: {
+      messages: { orderBy: { createdAt: "asc" } },
+    },
+  });
+  if (!convo) throw new Error("Conversación no encontrada");
+  return {
+    id: convo.id,
+    title: convo.title,
+    wizard:
+      convo.wizard === "CONTACT" ||
+      convo.wizard === "PROPERTY" ||
+      convo.wizard === "APPOINTMENT"
+        ? convo.wizard
+        : null,
+    messages: convo.messages.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.content,
+      actions: m.actionsJson
+        ? (JSON.parse(m.actionsJson) as ChatAction[])
+        : undefined,
+    })),
+  };
+}
+
+export async function createConversation(args: {
+  title?: string;
+  wizard?: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
+}): Promise<{ id: string }> {
+  const user = await requireUser();
+  const convo = await prisma.chatConversation.create({
+    data: {
+      userId: user.id,
+      title: args.title?.slice(0, 80) ?? "Nueva conversación",
+      wizard: args.wizard ?? null,
+    },
+    select: { id: true },
+  });
+  return convo;
+}
+
+export async function saveConversationTurn(args: {
+  conversationId: string;
+  userMessage: string;
+  assistantText: string;
+  assistantActions?: ChatAction[];
+}): Promise<void> {
+  const user = await requireUser();
+  // Verify ownership
+  const owned = await prisma.chatConversation.findFirst({
+    where: { id: args.conversationId, userId: user.id },
+    select: { id: true, title: true },
+  });
+  if (!owned) throw new Error("Conversación no encontrada");
+
+  await prisma.$transaction([
+    prisma.chatMessage.create({
+      data: {
+        conversationId: args.conversationId,
+        role: "user",
+        content: args.userMessage.slice(0, 4000),
+      },
+    }),
+    prisma.chatMessage.create({
+      data: {
+        conversationId: args.conversationId,
+        role: "assistant",
+        content: args.assistantText.slice(0, 6000),
+        actionsJson: args.assistantActions
+          ? JSON.stringify(args.assistantActions)
+          : null,
+      },
+    }),
+    prisma.chatConversation.update({
+      where: { id: args.conversationId },
+      data: {
+        preview: args.assistantText.slice(0, 140),
+        // Auto-title from first user message if still default
+        ...(owned.title === "Nueva conversación"
+          ? { title: args.userMessage.slice(0, 60) }
+          : {}),
+      },
+    }),
+  ]);
+}
+
+export async function renameConversation(args: {
+  id: string;
+  title: string;
+}): Promise<void> {
+  const user = await requireUser();
+  const title = args.title.trim().slice(0, 80);
+  if (!title) throw new Error("Título requerido");
+  await prisma.chatConversation.updateMany({
+    where: { id: args.id, userId: user.id },
+    data: { title },
+  });
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+  const user = await requireUser();
+  await prisma.chatConversation.deleteMany({
+    where: { id, userId: user.id },
+  });
+}
+
+export async function pinConversation(args: {
+  id: string;
+  pinned: boolean;
+}): Promise<void> {
+  const user = await requireUser();
+  await prisma.chatConversation.updateMany({
+    where: { id: args.id, userId: user.id },
+    data: { pinned: args.pinned },
+  });
+}
+
+export async function setConversationWizard(args: {
+  id: string;
+  wizard: "CONTACT" | "PROPERTY" | "APPOINTMENT" | null;
+}): Promise<void> {
+  const user = await requireUser();
+  await prisma.chatConversation.updateMany({
+    where: { id: args.id, userId: user.id },
+    data: { wizard: args.wizard },
+  });
 }

@@ -64,6 +64,7 @@ model User {
   marketingKits  MarketingKit[]
   editorProjects EditorProject[]
   brandAssets    BrandAsset[]
+  chatConvos     ChatConversation[]
 
   // Better-Auth relations
   sessions Session[]
@@ -1052,4 +1053,42 @@ model BrandAsset {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+}
+
+// ============================================================
+// CHATBOT — saved conversations + per-section wizard state
+// ============================================================
+
+model ChatConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Nueva conversación")
+  // Optional wizard pinned to this convo: CONTACT | PROPERTY | APPOINTMENT | null
+  wizard    String?
+  // Latest assistant snippet for the list preview
+  preview   String?
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([userId, updatedAt])
+  @@index([userId, pinned])
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  // user | assistant
+  role           String
+  content        String
+  // JSON-encoded ChatAction[] (only on assistant turns); null otherwise
+  actionsJson    String?
+  createdAt      DateTime @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }
