@@ -108,6 +108,22 @@ export async function analyzePhoto(imageUrl: string): Promise<PhotoAnalysis> {
 
     if (!res.ok) {
       const errBody = await res.text();
+      // Quota / credits exhausted — return silent fallback so UI no rompe.
+      if (res.status === 429) {
+        return {
+          ...FALLBACK,
+          oneLineDescription:
+            "Análisis IA en pausa (créditos Gemini agotados). El resto del Studio funciona normal.",
+          error: "QUOTA_EXHAUSTED",
+        };
+      }
+      if (res.status === 401 || res.status === 403) {
+        return {
+          ...FALLBACK,
+          oneLineDescription: "Análisis IA deshabilitado (key Gemini inválida).",
+          error: "AUTH",
+        };
+      }
       throw new Error(`Gemini Vision ${res.status}: ${errBody.slice(0, 200)}`);
     }
 

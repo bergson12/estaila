@@ -132,6 +132,8 @@ function AnalysisContent({
   onToggle: () => void;
 }) {
   if (!analysis.available) {
+    const isQuota = analysis.error === "QUOTA_EXHAUSTED";
+    const isAuth = analysis.error === "AUTH";
     const hasError = !!analysis.error;
     return (
       <div className="flex items-start gap-3 text-sm">
@@ -142,11 +144,43 @@ function AnalysisContent({
         )}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-muted-foreground">
-            {hasError ? "No se pudo analizar la foto" : "Análisis IA no configurado"}
+            {isQuota
+              ? "Análisis IA en pausa"
+              : isAuth
+                ? "Análisis IA deshabilitado"
+                : hasError
+                  ? "No se pudo analizar la foto"
+                  : "Análisis IA no configurado"}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {hasError ? (
-              <>{analysis.error}</>
+            {isQuota ? (
+              <>
+                Créditos Gemini agotados. Recarga en{" "}
+                <a
+                  href="https://ai.studio/projects"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  ai.studio/projects
+                </a>{" "}
+                o genera una nueva key en proyecto sin billing (free tier).
+              </>
+            ) : isAuth ? (
+              <>
+                La key Gemini no es válida. Verifica en{" "}
+                <a
+                  href="https://aistudio.google.com/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  aistudio.google.com/apikey
+                </a>
+                .
+              </>
+            ) : hasError ? (
+              <>{analysis.oneLineDescription}</>
             ) : (
               <>
                 Define <code className="rounded bg-muted px-1 text-[10px]">GEMINI_API_KEY</code> en{" "}
