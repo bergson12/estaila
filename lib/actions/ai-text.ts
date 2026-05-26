@@ -149,6 +149,74 @@ export type ChatResponse = {
   actions: ChatAction[];
 };
 
+/**
+ * Slim system prompt used only in wizard mode. Keeps DeepSeek responses
+ * fast (under Vercel Hobby's 10s cap).
+ */
+function buildWizardSystemPrompt(
+  kind: "CONTACT" | "PROPERTY" | "APPOINTMENT",
+  userName: string,
+  userLocation: string | null
+): string {
+  const steps: Record<typeof kind, string[]> = {
+    CONTACT: [
+      "Nombre completo",
+      "Teléfono (con código país)",
+      'Email (puede decir "saltar")',
+      "Tipo: CLIENTE | LEAD | PROVEEDOR | OTRO",
+      "Notas rápidas (opcional)",
+    ],
+    PROPERTY: [
+      'Título corto (ej: "Casa Punta Cana 3hab")',
+      "Operación: EN_VENTA | EN_ALQUILER",
+      "Categoría: CASA | APARTAMENTO | SOLAR | TERRENO | LOCAL_COMERCIAL",
+      'Precio USD (número o "—")',
+      'Habitaciones/baños/m² (ej: "3/2/180")',
+      "Ubicación",
+      "Descripción breve (opcional)",
+    ],
+    APPOINTMENT: [
+      'Título (ej: "Visita Casa Miraflores")',
+      'Fecha y hora (ej: "mañana 3pm")',
+      "Duración aprox en minutos (default 60)",
+      "Asociar a contacto o propiedad (opcional)",
+      "Ubicación física",
+      "Notas (opcional)",
+    ],
+  };
+
+  const actionName =
+    kind === "CONTACT"
+      ? "create_contact"
+      : kind === "PROPERTY"
+        ? "create_property"
+        : "create_appointment";
+
+  return `Eres "Estaila Assistant" en MODO WIZARD: ${kind}.
+
+USUARIO: ${userName}${userLocation ? ` · ${userLocation}` : ""}
+
+OBJETIVO: Recoger todos los datos para ${actionName} preguntando UNA cosa por turno.
+
+PASOS:
+${steps[kind].map((s, i) => `${i + 1}. ${s}`).join("\n")}
+
+REGLAS:
+- UNA pregunta corta por turno. No párrafos largos.
+- Cada vez que el usuario responde, confirma con eco: "✓ <campo>: <valor>".
+- Si responde "saltar"/"no"/"omitir" en campo opcional, continúa.
+- En el último paso muestra mini-resumen y devuelve action create_*.
+- Hoy es ${new Date().toISOString()}.
+
+FORMATO RESPUESTA (JSON estricto):
+{
+  "text": "Tu pregunta o confirmación. Markdown ligero.",
+  "actions": []  // Solo en el último paso pones [{"type":"${actionName}","label":"...","data":{...}}]
+}
+
+Devuelve SOLO el JSON.`;
+}
+
 export async function realEstateChat(args: {
   history: ChatTurn[];
   message: string;
@@ -162,22 +230,34 @@ export async function realEstateChat(args: {
     select: { name: true, plan: true, credits: true, agentLocation: true },
   });
 
-  // Live stats to give the bot some grounded context
-  const [propCount, contactCount, todayAppts] = await Promise.all([
-    prisma.property.count({ where: { userId: user.id } }),
-    prisma.contact.count({ where: { userId: user.id } }),
-    prisma.appointment.count({
-      where: {
-        userId: user.id,
-        startAt: {
-          gte: new Date(),
-          lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        },
-      },
-    }),
-  ]);
+  // Live stats only needed in free-form chat mode. Skip in wizard mode
+  // to save 3 round-trips against Turso (each ~100ms from cold-start regions).
+  const [propCount, contactCount, todayAppts] = args.wizard
+    ? [0, 0, 0]
+    : await Promise.all([
+        prisma.property.count({ where: { userId: user.id } }),
+        prisma.contact.count({ where: { userId: user.id } }),
+        prisma.appointment.count({
+          where: {
+            userId: user.id,
+            startAt: {
+              gte: new Date(),
+              lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      ]);
 
-  const system = `Eres "Estaila Assistant", el asistente IA del CRM inmobiliario Estaila.
+  // In wizard mode use a slimmer system prompt: just the relevant wizard
+  // template + the response shape. CRM_ROUTES / CRM_ENTITIES bloat the
+  // context and slow down responses (Vercel Hobby = 10s cap).
+  const system = args.wizard
+    ? buildWizardSystemPrompt(
+        args.wizard,
+        dbUser?.name ?? user.name,
+        dbUser?.agentLocation ?? null
+      )
+    : `Eres "Estaila Assistant", el asistente IA del CRM inmobiliario Estaila.
 
 CONTEXTO DEL USUARIO:
 - Nombre: ${dbUser?.name ?? user.name}
@@ -210,14 +290,7 @@ REGLAS:
 - Hablas español por defecto. Inglés si el usuario lo hace.
 - Hasta 4 acciones por respuesta. Solo las más útiles.
 - Cuando alguien diga "agéndame con Juan mañana 3pm", devuelve create_appointment con la fecha calculada.
-- Cuando hable de un tema (pricing, staging, etc), sugiere ruta navigate relevante.
-${
-  args.wizard
-    ? `\nMODO WIZARD ACTIVO: ${args.wizard}.
-  Sigue estrictamente la plantilla del wizard correspondiente.
-  Una pregunta por turno. Confirma cada respuesta. Al completar, sugiere la acción create_*.`
-    : ""
-}`;
+- Cuando hable de un tema (pricing, staging, etc), sugiere ruta navigate relevante.`;
 
   const messages: ChatMessage[] = [
     { role: "system", content: system },
@@ -229,9 +302,12 @@ ${
   ];
 
   const raw = await chat(messages, {
-    temperature: 0.6,
-    maxTokens: 800,
+    temperature: args.wizard ? 0.3 : 0.6,
+    // Wizard turns are short (one question). Free-form chat needs more room.
+    maxTokens: args.wizard ? 350 : 700,
     jsonMode: true,
+    // Wizard turns are short → fast; free-form may need more time.
+    timeoutMs: args.wizard ? 12000 : 25000,
   });
 
   try {

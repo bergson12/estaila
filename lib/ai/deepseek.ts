@@ -25,6 +25,8 @@ export type ChatOptions = {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
+  /** Abort the request after this many ms. Defaults to 9000 (Vercel Hobby cap). */
+  timeoutMs?: number;
 };
 
 export function isDeepSeekConfigured(): boolean {
@@ -52,14 +54,32 @@ export async function chat(
     body.response_format = { type: "json_object" };
   }
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  // Abort early so we can surface a clean error instead of being killed by
+  // the platform. Caller can override via opts.timeoutMs.
+  // Default 25s (leaves 5s margin under our maxDuration=30 on Vercel).
+  const controller = new AbortController();
+  const timeoutMs = opts.timeoutMs ?? 25000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    if ((e as { name?: string }).name === "AbortError") {
+      throw new Error("DeepSeek tardó demasiado. Intenta una pregunta más corta.");
+    }
+    throw e;
+  }
+  clearTimeout(timer);
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
