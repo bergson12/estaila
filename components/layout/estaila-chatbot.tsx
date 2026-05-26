@@ -15,6 +15,8 @@ import {
   Clock,
   Loader2,
   MessageSquarePlus,
+  Mic,
+  MicOff,
   Pin,
   PinOff,
   Plus,
@@ -111,6 +113,10 @@ export function EstailaChatbot() {
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const voice = useVoiceInput({
+    onFinal: (t) =>
+      setInput((prev) => (prev ? `${prev} ${t}`.trim() : t.trim())),
+  });
 
   // Initial: read FAB collapsed state
   useEffect(() => {
@@ -557,29 +563,73 @@ export function EstailaChatbot() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (voice.listening) voice.stop();
                     send();
                   }}
-                  className="flex items-center gap-2 border-t border-border bg-card p-2.5"
+                  className="border-t border-border bg-card p-2.5"
                 >
-                  <input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={
-                      wizard
-                        ? "Responde una pregunta a la vez..."
-                        : "Pregunta o pide crear algo..."
-                    }
-                    disabled={sending}
-                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40 disabled:opacity-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!input.trim() || sending}
-                    className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                  </button>
+                  {voice.listening && voice.interim && (
+                    <div className="mb-1.5 flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] italic text-primary">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+                      </span>
+                      Escuchando: &ldquo;{voice.interim}&rdquo;
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder={
+                        voice.listening
+                          ? "🎙️ Hablando..."
+                          : wizard
+                            ? "Responde o usa el micrófono..."
+                            : "Pregunta o pide crear algo..."
+                      }
+                      disabled={sending}
+                      className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40 disabled:opacity-50"
+                    />
+                    {voice.supported && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (voice.listening) voice.stop();
+                          else voice.start();
+                        }}
+                        disabled={sending}
+                        title={
+                          voice.listening
+                            ? "Detener grabación"
+                            : "Hablar por voz"
+                        }
+                        className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-md transition-all disabled:opacity-40",
+                          voice.listening
+                            ? "bg-red-500 text-white shadow-md shadow-red-500/30 hover:bg-red-600"
+                            : "border border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                        )}
+                      >
+                        {voice.listening ? (
+                          <>
+                            <MicOff className="h-3.5 w-3.5" />
+                            <span className="sr-only">Detener</span>
+                          </>
+                        ) : (
+                          <Mic className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={!input.trim() || sending}
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </form>
               </>
             )}
@@ -897,4 +947,137 @@ function getActionMeta(action: ChatAction): {
     default:
       return { Icon: ArrowRight };
   }
+}
+
+// ============================================================
+// Voice input hook (Web Speech API — browser-native, free)
+// ============================================================
+
+type VoiceInputOptions = {
+  /** Called with finalized utterances. */
+  onFinal: (text: string) => void;
+  /** Language tag (defaults to es-DO). */
+  lang?: string;
+};
+
+type SpeechRecognitionResult = {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+};
+
+type SpeechRecognitionEvent = {
+  results: ArrayLike<SpeechRecognitionResult>;
+  resultIndex: number;
+};
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  onerror: ((e: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+};
+
+function useVoiceInput(opts: VoiceInputOptions): {
+  supported: boolean;
+  listening: boolean;
+  interim: string;
+  start: () => void;
+  stop: () => void;
+} {
+  const [supported, setSupported] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState("");
+  const recRef = useRef<SpeechRecognitionInstance | null>(null);
+  const onFinalRef = useRef(opts.onFinal);
+  onFinalRef.current = opts.onFinal;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const Ctor =
+      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance })
+        .webkitSpeechRecognition;
+    setSupported(Boolean(Ctor));
+  }, []);
+
+  const start = () => {
+    if (typeof window === "undefined") return;
+    const Ctor =
+      (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstance })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionInstance })
+        .webkitSpeechRecognition;
+    if (!Ctor) {
+      toast.error("Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
+      return;
+    }
+    if (recRef.current) {
+      try {
+        recRef.current.abort();
+      } catch {
+        // ignore
+      }
+    }
+    const rec = new Ctor();
+    rec.lang = opts.lang ?? "es-DO";
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      let interimText = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        const text = r[0].transcript;
+        if (r.isFinal) {
+          onFinalRef.current(text);
+        } else {
+          interimText += text;
+        }
+      }
+      setInterim(interimText);
+    };
+    rec.onerror = (ev) => {
+      const code = ev.error ?? "unknown";
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        toast.error("Permiso de micrófono denegado. Habilítalo en el navegador.");
+      } else if (code === "no-speech") {
+        toast.info("No detecté tu voz. Intenta de nuevo más cerca del mic.");
+      } else if (code !== "aborted") {
+        toast.error(`Error de voz: ${code}`);
+      }
+      setListening(false);
+      setInterim("");
+    };
+    rec.onend = () => {
+      setListening(false);
+      setInterim("");
+    };
+    recRef.current = rec;
+    try {
+      rec.start();
+      setListening(true);
+    } catch (e) {
+      toast.error((e as Error).message);
+      setListening(false);
+    }
+  };
+
+  const stop = () => {
+    if (recRef.current) {
+      try {
+        recRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    setListening(false);
+    setInterim("");
+  };
+
+  return { supported, listening, interim, start, stop };
 }
