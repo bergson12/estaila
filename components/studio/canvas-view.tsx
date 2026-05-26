@@ -7,16 +7,13 @@ import {
   Image as ImageIcon,
   Loader2,
   Sparkles,
-  Wand2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "./upload-zone";
 import { BeforeAfter } from "./before-after";
 import { NextToolMenu } from "./next-tool-menu";
 import { PhotoAnalysis } from "./photo-analysis";
-import { PhotoEditor } from "./photo-editor";
 import { useStudio } from "./studio-context";
 
 export function CanvasView({
@@ -25,7 +22,6 @@ export function CanvasView({
   onRegenerate?: () => void;
 }) {
   const { image, result, isGenerating, reset } = useStudio();
-  const [editorOpen, setEditorOpen] = useState(false);
 
   if (!image) {
     return (
@@ -153,21 +149,6 @@ export function CanvasView({
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.37 }}
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditorOpen(true)}
-                  className="border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
-                >
-                  <Wand2 className="mr-1.5 h-3.5 w-3.5" />
-                  Editor
-                </Button>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
                 <NextToolMenu />
@@ -180,13 +161,6 @@ export function CanvasView({
           </Button>
         </div>
       </div>
-
-      {editorOpen && (
-        <PhotoEditor
-          imageUrl={result?.outputUrl ?? image.url}
-          onClose={() => setEditorOpen(false)}
-        />
-      )}
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   Sunset,
   Waves,
   Trees,
-  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
@@ -113,48 +112,6 @@ export default async function StudioPage() {
         }
       />
 
-      {/* Hero — Editor Avanzado destacado */}
-      <Link href="/studio/editor" className="group block">
-        <Card className="relative mb-6 overflow-hidden border-primary/40 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 transition-all hover:border-primary/60 hover:shadow-xl hover:shadow-primary/15">
-          <div className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/30">
-            <Sparkles className="h-3 w-3" />
-            Nuevo · Pro
-          </div>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
-              <LayoutGrid className="h-7 w-7" strokeWidth={1.75} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold tracking-tight">
-                Editor Avanzado
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Editor tipo Canva integrado al CRM: <strong className="text-foreground">200+ plantillas inmobiliarias</strong>, texto editable, logos, formas, capas, exportación PNG/JPG/PDF.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {["Instagram Post", "Story", "Flyer A4", "WhatsApp", "Logos PNG", "Smart Text IA"].map(
-                  (tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-card px-2 py-0.5 text-[10px] font-medium text-foreground ring-1 ring-border"
-                    >
-                      {tag}
-                    </span>
-                  )
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 shadow-sm ring-1 ring-border">
-              <span className="text-xs text-muted-foreground">Gratis</span>
-              <span className="text-xs font-medium text-primary">Abrir →</span>
-            </div>
-          </div>
-        </Card>
-      </Link>
-
-      <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Herramientas IA
-      </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {TOOLS.map((t) => (
           <Link key={t.href} href={t.href} className="group">
