@@ -30,7 +30,7 @@ export function ToolNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-px lg:w-60">
+    <aside className="flex w-full shrink-0 flex-col gap-px">
       <Link
         href="/studio"
         className="mb-1.5 flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"

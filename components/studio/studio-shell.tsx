@@ -20,8 +20,8 @@ export function StudioShell({
   const { runGenerate, image } = useStudio();
 
   return (
-    <div className="mx-auto w-full max-w-[1600px]">
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[14rem_minmax(0,1fr)_19rem]">
+    <div className="w-full">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[12rem_minmax(0,1fr)_18rem]">
         {/* Left: tool nav — sticky on desktop, compact enough to never need scroll */}
         <div className="lg:sticky lg:top-20 lg:self-start">
           <ToolNav />
