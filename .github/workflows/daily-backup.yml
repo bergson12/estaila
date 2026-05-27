@@ -1,0 +1,145 @@
+name: Daily Backup → Google Drive
+
+on:
+  schedule:
+    # 06:00 UTC = 02:00 RD/EST = 01:00 CST
+    - cron: "0 6 * * *"
+  workflow_dispatch: # allows manual "Run workflow" button
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # --------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # --------------------------------------------------------------
+      # 1. Dump Turso to SQL
+      # --------------------------------------------------------------
+      - name: Set date variables
+        id: vars
+        run: |
+          echo "DATE=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          echo "MONTH=$(date +%Y-%m)" >> $GITHUB_OUTPUT
+          echo "DAY=$(date +%d)" >> $GITHUB_OUTPUT
+          echo "DOW=$(date +%u)" >> $GITHUB_OUTPUT
+
+      - name: Dump Turso DB
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          mkdir -p backup/db
+          npx tsx scripts/backup/dump-turso.ts \
+            backup/db/estaila-${{ steps.vars.outputs.DATE }}.sql
+          gzip -9 backup/db/estaila-${{ steps.vars.outputs.DATE }}.sql
+          ls -lh backup/db/
+
+      # --------------------------------------------------------------
+      # 2. Mirror Vercel Blob to local folder
+      # --------------------------------------------------------------
+      - name: Mirror Vercel Blob
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: |
+          mkdir -p backup/blob
+          npx tsx scripts/backup/mirror-blob.ts backup/blob
+          du -sh backup/blob
+
+      # --------------------------------------------------------------
+      # 3. Configure rclone with Google Drive
+      # --------------------------------------------------------------
+      - name: Install rclone
+        run: |
+          curl -s https://rclone.org/install.sh | sudo bash
+          rclone --version
+
+      - name: Write rclone config
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+          rclone listremotes
+
+      # --------------------------------------------------------------
+      # 4. Upload daily snapshot to Drive
+      # --------------------------------------------------------------
+      - name: Upload daily snapshot
+        run: |
+          # Daily folder (kept 90 days, see retention step)
+          rclone copy backup/ \
+            "drive:estaila-backups/daily/${{ steps.vars.outputs.DATE }}/" \
+            --transfers 8 \
+            --checkers 16 \
+            --progress
+
+      # Keep ONE backup per month forever (the 1st of each month)
+      - name: Upload monthly snapshot (if day 1)
+        if: steps.vars.outputs.DAY == '01'
+        run: |
+          rclone copy backup/ \
+            "drive:estaila-backups/monthly/${{ steps.vars.outputs.MONTH }}/" \
+            --transfers 8 \
+            --checkers 16
+
+      # --------------------------------------------------------------
+      # 5. Retention — drop daily snapshots older than 90 days
+      # --------------------------------------------------------------
+      - name: Prune old daily snapshots (>90 days)
+        run: |
+          rclone delete "drive:estaila-backups/daily/" \
+            --min-age 90d \
+            --rmdirs || true
+          rclone rmdirs "drive:estaila-backups/daily/" --leave-root || true
+
+      # --------------------------------------------------------------
+      # 6. Health summary (printed in workflow log)
+      # --------------------------------------------------------------
+      - name: Summary
+        run: |
+          echo "=== Backup ${{ steps.vars.outputs.DATE }} ==="
+          echo "DB size:    $(du -h backup/db/*.gz | awk '{print $1}')"
+          echo "Blob size:  $(du -sh backup/blob | awk '{print $1}')"
+          echo "Blob count: $(jq '.totalCount' backup/blob/manifest.json)"
+          echo "Drive path: estaila-backups/daily/${{ steps.vars.outputs.DATE }}/"
+
+      # --------------------------------------------------------------
+      # 7. On failure — notify (optional)
+      # --------------------------------------------------------------
+      - name: Notify failure
+        if: failure()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          if [ -n "$RESEND_API_KEY" ]; then
+            curl -s -X POST https://api.resend.com/emails \
+              -H "Authorization: Bearer $RESEND_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @- <<EOF
+          {
+            "from": "Estaila Backup <noreply@estaila.com>",
+            "to": ["bergson@estaila.com"],
+            "subject": "❌ Backup falló — ${{ steps.vars.outputs.DATE }}",
+            "html": "<p>El backup diario de estaila falló. Revisa el run en GitHub Actions.</p><p><a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'>Ver detalles</a></p>"
+          }
+          EOF
+          fi
