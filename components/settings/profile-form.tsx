@@ -38,6 +38,7 @@ type DbUser = {
   agentRole: string | null;
   agentLocation: string | null;
   agentPhone: string | null;
+  agentBio: string | null;
   createdAt: Date;
 };
 
@@ -48,13 +49,16 @@ export function ProfileForm({ user }: { user: DbUser }) {
   const [agentRole, setAgentRole] = useState(user.agentRole ?? "");
   const [agentLocation, setAgentLocation] = useState(user.agentLocation ?? "");
   const [agentPhone, setAgentPhone] = useState(user.agentPhone ?? "");
+  const [agentBio, setAgentBio] = useState(user.agentBio ?? "");
   const [image, setImage] = useState(user.image ?? "");
+  const [bioFlash, setBioFlash] = useState(false);
 
   const dirty =
     name !== user.name ||
     agentRole !== (user.agentRole ?? "") ||
     agentLocation !== (user.agentLocation ?? "") ||
     agentPhone !== (user.agentPhone ?? "") ||
+    agentBio !== (user.agentBio ?? "") ||
     image !== (user.image ?? "");
 
   function save() {
@@ -69,6 +73,7 @@ export function ProfileForm({ user }: { user: DbUser }) {
           agentRole: agentRole.trim() || undefined,
           agentLocation: agentLocation.trim() || undefined,
           agentPhone: agentPhone.trim() || undefined,
+          agentBio: agentBio.trim() || undefined,
           image: image.trim() || undefined,
         });
         toast.success("Perfil actualizado");
@@ -77,6 +82,18 @@ export function ProfileForm({ user }: { user: DbUser }) {
         toast.error((e as Error).message);
       }
     });
+  }
+
+  function applyGeneratedBio(text: string) {
+    setAgentBio(text);
+    setBioFlash(true);
+    // scroll bio into view
+    requestAnimationFrame(() => {
+      document
+        .getElementById("agent-bio-field")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    setTimeout(() => setBioFlash(false), 2000);
   }
 
   return (
@@ -195,6 +212,39 @@ export function ProfileForm({ user }: { user: DbUser }) {
           <Field label="Foto de perfil" className="sm:col-span-2">
             <AvatarUploader value={image} onChange={setImage} />
           </Field>
+
+          <Field
+            label="Bio / Descripción profesional"
+            className="sm:col-span-2"
+          >
+            <textarea
+              id="agent-bio-field"
+              value={agentBio}
+              onChange={(e) => setAgentBio(e.target.value)}
+              placeholder="2-3 oraciones que aparecen en tu portal, tarjeta digital y firma de emails. Usa el botón 'Generar bio con IA' para que escribamos uno por ti."
+              rows={5}
+              maxLength={600}
+              className={cn(
+                "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-all duration-300 outline-none placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30",
+                bioFlash &&
+                  "border-primary/50 ring-2 ring-primary/30 bg-primary/5"
+              )}
+            />
+            <div className="mt-1 flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground">
+                {agentBio.length} / 600 caracteres
+              </p>
+              {agentBio && (
+                <button
+                  type="button"
+                  onClick={() => setAgentBio("")}
+                  className="text-[10px] text-muted-foreground hover:text-foreground"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </Field>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
@@ -204,7 +254,7 @@ export function ProfileForm({ user }: { user: DbUser }) {
               : "Todos los cambios guardados"}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <BioGenerator />
+            <BioGenerator onApply={applyGeneratedBio} />
             <Button
               onClick={save}
               disabled={pending || !dirty}

@@ -41,6 +41,7 @@ model User {
   agentRole     String?  // "Agente independiente · Miami"
   agentLocation String?  // "Miami, FL"
   agentPhone    String?
+  agentBio      String?  // public bio for portal / cards / signature
   // Notifications
   notifyOnLead  Boolean  @default(true)
   notifyEmail   String?  // override email destination for lead notifications

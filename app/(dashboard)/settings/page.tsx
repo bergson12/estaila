@@ -21,6 +21,7 @@ export default async function SettingsPage() {
       agentRole: true,
       agentLocation: true,
       agentPhone: true,
+      agentBio: true,
       createdAt: true,
     },
   });

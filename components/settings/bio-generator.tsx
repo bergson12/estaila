@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Copy, Loader2, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,11 @@ const LENGTHS: { value: Length; label: string; desc: string }[] = [
   { value: "long", label: "Larga", desc: "200-250 palabras" },
 ];
 
-export function BioGenerator() {
+export function BioGenerator({
+  onApply,
+}: {
+  onApply?: (bio: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -37,12 +41,18 @@ export function BioGenerator() {
         <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" />
         Generar bio con IA
       </Button>
-      {open && <Modal onClose={() => setOpen(false)} />}
+      {open && <Modal onClose={() => setOpen(false)} onApply={onApply} />}
     </>
   );
 }
 
-function Modal({ onClose }: { onClose: () => void }) {
+function Modal({
+  onClose,
+  onApply,
+}: {
+  onClose: () => void;
+  onApply?: (bio: string) => void;
+}) {
   const [tone, setTone] = useState<Tone>("professional");
   const [length, setLength] = useState<Length>("medium");
   const [extra, setExtra] = useState("");
@@ -161,7 +171,20 @@ function Modal({ onClose }: { onClose: () => void }) {
               Resultado
             </p>
             <p className="text-sm leading-relaxed">{result}</p>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
+              {onApply && (
+                <Button
+                  onClick={() => {
+                    onApply(result);
+                    toast.success("Bio aplicada — guardalá para conservarla");
+                    onClose();
+                  }}
+                  size="sm"
+                >
+                  <Check className="mr-1.5 h-3 w-3" />
+                  Usar esta bio
+                </Button>
+              )}
               <Button onClick={copy} size="sm" variant="outline">
                 <Copy className="mr-1.5 h-3 w-3" />
                 Copiar
@@ -171,6 +194,11 @@ function Modal({ onClose }: { onClose: () => void }) {
                 Regenerar
               </Button>
             </div>
+            {!onApply && (
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Copia esta bio y pégala donde la necesites.
+              </p>
+            )}
           </div>
         )}
       </div>
