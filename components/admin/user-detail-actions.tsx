@@ -15,6 +15,8 @@ import {
   KeyRound,
   Loader2,
   Mail,
+  CreditCard,
+  Activity,
   User as UserIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -76,82 +78,163 @@ export function UserDetailActions({ user }: { user: UserMini }) {
   }
 
   return (
-    <Card className="flex flex-wrap items-center gap-2 p-3">
-      <span className="ml-1 mr-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Acciones admin
-      </span>
+    <Card className="overflow-hidden p-0">
+      {/* Header strip with status */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/15 text-primary">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+            Panel admin
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px]">
+          {user.suspended && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 font-semibold uppercase tracking-wider text-rose-600">
+              <Pause className="h-2.5 w-2.5" />
+              Suspendido
+            </span>
+          )}
+          {user.role === "ADMIN" && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 font-semibold uppercase tracking-wider text-primary">
+              <ShieldCheck className="h-2.5 w-2.5" />
+              Admin
+            </span>
+          )}
+          <span className="rounded-full bg-card px-2 py-0.5 font-mono font-semibold tabular-nums text-foreground ring-1 ring-border">
+            {user.credits} créditos
+          </span>
+        </div>
+      </div>
 
-      <ChangePlanDialog
-        currentPlan={user.plan}
-        userName={user.name}
-        onConfirm={(plan) => withToast(changePlan(user.id, plan), `Plan → ${plan}`)}
-      />
+      {/* 3 groups */}
+      <div className="grid grid-cols-1 divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
+        {/* GROUP: Suscripción */}
+        <ActionGroup label="Suscripción" icon={CreditCard}>
+          <ChangePlanDialog
+            currentPlan={user.plan}
+            userName={user.name}
+            onConfirm={(plan) =>
+              withToast(changePlan(user.id, plan), `Plan → ${plan}`)
+            }
+          />
+          <AdjustCreditsDialog
+            userName={user.name}
+            currentCredits={user.credits}
+            onConfirm={(delta, reason) =>
+              withToast(
+                adjustCredits(user.id, delta, reason),
+                `${delta > 0 ? "+" : ""}${delta} créditos`
+              )
+            }
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              withToast(
+                resetMonthlyCredits(user.id),
+                "Créditos reseteados al plan"
+              )
+            }
+            className="w-full justify-start"
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Reset mensual
+          </Button>
+        </ActionGroup>
 
-      <AdjustCreditsDialog
-        userName={user.name}
-        currentCredits={user.credits}
-        onConfirm={(delta, reason) =>
-          withToast(adjustCredits(user.id, delta, reason), `${delta > 0 ? "+" : ""}${delta} créditos`)
-        }
-      />
+        {/* GROUP: Estado */}
+        <ActionGroup label="Estado" icon={Activity}>
+          <Button
+            variant={user.suspended ? "default" : "outline"}
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              withToast(
+                setSuspended(user.id, !user.suspended),
+                user.suspended ? "Reactivado" : "Suspendido"
+              )
+            }
+            className="w-full justify-start"
+          >
+            {user.suspended ? (
+              <>
+                <Play className="mr-1.5 h-3.5 w-3.5" />
+                Reactivar cuenta
+              </>
+            ) : (
+              <>
+                <Pause className="mr-1.5 h-3.5 w-3.5" />
+                Suspender cuenta
+              </>
+            )}
+          </Button>
+          <div className="text-[11px] leading-relaxed text-muted-foreground">
+            {user.suspended
+              ? "El usuario no puede acceder al CRM ni a Studio IA."
+              : "Cuenta activa. Acceso completo."}
+          </div>
+        </ActionGroup>
 
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={pending}
-        onClick={() => withToast(resetMonthlyCredits(user.id), "Créditos reseteados al plan")}
-      >
-        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-        Reset mensual
-      </Button>
-
-      <Button
-        variant={user.suspended ? "default" : "outline"}
-        size="sm"
-        disabled={pending}
-        onClick={() =>
-          withToast(setSuspended(user.id, !user.suspended), user.suspended ? "Reactivado" : "Suspendido")
-        }
-      >
-        {user.suspended ? (
-          <>
-            <Play className="mr-1.5 h-3.5 w-3.5" />
-            Reactivar
-          </>
-        ) : (
-          <>
-            <Pause className="mr-1.5 h-3.5 w-3.5" />
-            Suspender
-          </>
-        )}
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={pending}
-        onClick={() =>
-          withToast(
-            setRole(user.id, user.role === "ADMIN" ? "USER" : "ADMIN"),
-            user.role === "ADMIN" ? "Rol → USER" : "Rol → ADMIN"
-          )
-        }
-      >
-        {user.role === "ADMIN" ? (
-          <>
-            <UserIcon className="mr-1.5 h-3.5 w-3.5" />
-            Quitar admin
-          </>
-        ) : (
-          <>
-            <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
-            Hacer admin
-          </>
-        )}
-      </Button>
-
-      <PasswordResetDialog userId={user.id} userName={user.name} userEmail={user.email} />
+        {/* GROUP: Privilegios */}
+        <ActionGroup label="Privilegios" icon={ShieldCheck}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              withToast(
+                setRole(user.id, user.role === "ADMIN" ? "USER" : "ADMIN"),
+                user.role === "ADMIN" ? "Rol → USER" : "Rol → ADMIN"
+              )
+            }
+            className="w-full justify-start"
+          >
+            {user.role === "ADMIN" ? (
+              <>
+                <UserIcon className="mr-1.5 h-3.5 w-3.5" />
+                Quitar permisos admin
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+                Hacer admin
+              </>
+            )}
+          </Button>
+          <PasswordResetDialog
+            userId={user.id}
+            userName={user.name}
+            userEmail={user.email}
+          />
+        </ActionGroup>
+      </div>
     </Card>
+  );
+}
+
+function ActionGroup({
+  label,
+  icon: Icon,
+  children,
+}: {
+  label: string;
+  icon: typeof CreditCard;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2 p-4">
+      <div className="flex items-center gap-1.5">
+        <Icon className="h-3 w-3 text-muted-foreground" strokeWidth={2} />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
   );
 }
 
@@ -207,7 +290,7 @@ function PasswordResetDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="w-full justify-start">
           <KeyRound className="mr-1.5 h-3.5 w-3.5" />
           Reset contraseña
         </Button>
@@ -335,9 +418,13 @@ function ChangePlanDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          {currentPlan === "FREE" ? <ArrowUpRight className="mr-1.5 h-3.5 w-3.5" /> : <ArrowDownRight className="mr-1.5 h-3.5 w-3.5" />}
-          Cambiar plan
+        <Button variant="outline" size="sm" className="w-full justify-start">
+          {currentPlan === "FREE" ? (
+            <ArrowUpRight className="mr-1.5 h-3.5 w-3.5" />
+          ) : (
+            <ArrowDownRight className="mr-1.5 h-3.5 w-3.5" />
+          )}
+          Cambiar plan ({currentPlan})
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
@@ -398,7 +485,7 @@ function AdjustCreditsDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="w-full justify-start">
           <Plus className="mr-1 h-3.5 w-3.5" />
           <Minus className="-ml-1.5 mr-1.5 h-3.5 w-3.5" />
           Ajustar créditos
