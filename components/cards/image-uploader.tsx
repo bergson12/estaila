@@ -1,14 +1,36 @@
 "use client";
 
 /**
- * Compact image uploader.
+ * Compact image uploader with optional crop step + size hints.
  * Drops in any form. Handles upload, preview, remove.
  */
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Loader2, Upload, X } from "lucide-react";
+import { Camera, Info, Loader2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AvatarCropper, type CropShape } from "@/components/shared/avatar-cropper";
+
+const SHAPE_HINTS: Record<
+  "circle" | "square" | "wide",
+  { recommended: string; max: string; cropShape: CropShape }
+> = {
+  circle: {
+    recommended: "Cuadrada · 512×512px",
+    max: "máx 5MB · JPG/PNG/WebP",
+    cropShape: "circle",
+  },
+  square: {
+    recommended: "Cuadrada · 1080×1080px",
+    max: "máx 5MB · JPG/PNG/WebP",
+    cropShape: "square",
+  },
+  wide: {
+    recommended: "Portada · 1600×900px (16:9)",
+    max: "máx 5MB · JPG/PNG/WebP",
+    cropShape: "wide",
+  },
+};
 
 export function ImageUploader({
   value,
@@ -27,18 +49,30 @@ export function ImageUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const hint = SHAPE_HINTS[shape];
 
-  async function handleFile(file: File) {
+  function onPickFile(file: File) {
     if (!file.type.startsWith("image/")) {
-      toast.error("Solo imágenes");
+      toast.error("Solo imágenes (JPG, PNG, WebP)");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Máximo 5MB");
+      toast.error(
+        `Imagen muy pesada (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 5MB.`
+      );
       return;
     }
+    // Open cropper with local URL
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  async function uploadBlob(blob: Blob) {
     setUploading(true);
     try {
+      const file = new File([blob], `image-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
       const fd = new FormData();
       fd.append("file", file);
       const r = await fetch("/api/upload", { method: "POST", body: fd });
@@ -49,6 +83,8 @@ export function ImageUploader({
       const data = await r.json();
       onChange(data.url ?? data.path ?? null);
       toast.success("Imagen subida");
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropSrc(null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -129,24 +165,40 @@ export function ImageUploader({
             </>
           )}
         </button>
-        {shape === "wide" && (
-          <p className="text-[10px] text-muted-foreground">
-            JPG/PNG/WebP · máx 5MB
-          </p>
-        )}
+        <div className="mt-0.5 flex items-start gap-1 text-[10px] text-muted-foreground">
+          <Info className="mt-0.5 h-2.5 w-2.5 shrink-0 text-primary/60" />
+          <div>
+            <p>{hint.recommended}</p>
+            <p className="opacity-70">{hint.max}</p>
+          </div>
+        </div>
       </div>
 
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) handleFile(f);
+          if (f) onPickFile(f);
           e.target.value = "";
         }}
       />
+
+      {cropSrc && (
+        <AvatarCropper
+          src={cropSrc}
+          shape={hint.cropShape}
+          outputType="image/jpeg"
+          quality={0.9}
+          onConfirm={uploadBlob}
+          onCancel={() => {
+            URL.revokeObjectURL(cropSrc);
+            setCropSrc(null);
+          }}
+        />
+      )}
     </div>
   );
 }

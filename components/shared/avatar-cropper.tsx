@@ -24,7 +24,45 @@ import { Check, Loader2, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const OUTPUT_SIZE = 512; // px
+export type CropShape = "circle" | "square" | "wide" | "ultrawide";
+
+const PRESETS: Record<
+  CropShape,
+  { aspect: number; outW: number; outH: number; previewW: number; previewH: number; recommended: string }
+> = {
+  circle: {
+    aspect: 1,
+    outW: 512,
+    outH: 512,
+    previewW: 320,
+    previewH: 320,
+    recommended: "512×512px · cuadrada",
+  },
+  square: {
+    aspect: 1,
+    outW: 1080,
+    outH: 1080,
+    previewW: 320,
+    previewH: 320,
+    recommended: "1080×1080px · 1:1",
+  },
+  wide: {
+    aspect: 16 / 9,
+    outW: 1600,
+    outH: 900,
+    previewW: 400,
+    previewH: 225,
+    recommended: "1600×900px · 16:9 (portada)",
+  },
+  ultrawide: {
+    aspect: 3,
+    outW: 1500,
+    outH: 500,
+    previewW: 450,
+    previewH: 150,
+    recommended: "1500×500px · banner panorámico",
+  },
+};
 
 export function AvatarCropper({
   src,
@@ -32,13 +70,20 @@ export function AvatarCropper({
   onCancel,
   outputType = "image/jpeg",
   quality = 0.9,
+  shape = "circle",
 }: {
   src: string;
   onConfirm: (blob: Blob) => void | Promise<void>;
   onCancel: () => void;
   outputType?: "image/jpeg" | "image/png" | "image/webp";
   quality?: number;
+  shape?: CropShape;
 }) {
+  const preset = PRESETS[shape];
+  const PREVIEW_W = preset.previewW;
+  const PREVIEW_H = preset.previewH;
+  const OUT_W = preset.outW;
+  const OUT_H = preset.outH;
   const previewRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -50,20 +95,17 @@ export function AvatarCropper({
   const dragStartRef = useRef({ x: 0, y: 0, px: 0, py: 0 });
   const [processing, setProcessing] = useState(false);
 
-  // Center image initially: fit short side to crop window.
-  const PREVIEW_SIZE = 320;
-
   useEffect(() => {
     if (!imgLoaded || !imgRef.current) return;
     const img = imgRef.current;
     const natW = img.naturalWidth;
     const natH = img.naturalHeight;
     setImgNatural({ w: natW, h: natH });
-    // Initial scale: cover the preview square
-    const initial = Math.max(PREVIEW_SIZE / natW, PREVIEW_SIZE / natH);
+    // Initial scale: cover the preview window (so neither dimension shows the bg)
+    const initial = Math.max(PREVIEW_W / natW, PREVIEW_H / natH);
     setScale(initial);
     setPos({ x: 0, y: 0 });
-  }, [imgLoaded]);
+  }, [imgLoaded, PREVIEW_W, PREVIEW_H]);
 
   function onPointerDown(e: React.PointerEvent) {
     e.preventDefault();
@@ -108,31 +150,24 @@ export function AvatarCropper({
     try {
       const img = imgRef.current;
       const canvas = document.createElement("canvas");
-      canvas.width = OUTPUT_SIZE;
-      canvas.height = OUTPUT_SIZE;
+      canvas.width = OUT_W;
+      canvas.height = OUT_H;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas 2D no soportado");
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      // Render: imitate what the preview shows but at OUTPUT_SIZE.
-      // The image in the preview is positioned via CSS transform
-      // translate(x,y) scale(s) rotate(deg). The preview window is
-      // PREVIEW_SIZE square. We need to map the same transform to
-      // OUTPUT_SIZE square.
-      const ratio = OUTPUT_SIZE / PREVIEW_SIZE;
+      // Preview uses CSS transform translate(x,y) scale(s) rotate(deg).
+      // Map same transform to output canvas. Ratio scales preview→output
+      // coordinates.
+      const ratio = OUT_W / PREVIEW_W;
       ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+      ctx.fillRect(0, 0, OUT_W, OUT_H);
       ctx.save();
-      // Translate to center of canvas
-      ctx.translate(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2);
-      // Apply user pan in canvas coords
+      ctx.translate(OUT_W / 2, OUT_H / 2);
       ctx.translate(pos.x * ratio, pos.y * ratio);
-      // Apply rotation
       ctx.rotate((rotation * Math.PI) / 180);
-      // Apply scale
       ctx.scale(scale * ratio, scale * ratio);
-      // Draw image centered on origin
       ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
       ctx.restore();
 
@@ -144,12 +179,12 @@ export function AvatarCropper({
     } finally {
       setProcessing(false);
     }
-  }, [imgNatural.w, pos, rotation, scale, outputType, quality, onConfirm]);
+  }, [imgNatural.w, pos, rotation, scale, outputType, quality, onConfirm, OUT_W, OUT_H, PREVIEW_W]);
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/85 p-4">
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-5 shadow-2xl"
+        className="w-full max-w-lg rounded-2xl border border-white/10 bg-card p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -162,8 +197,11 @@ export function AvatarCropper({
           </button>
         </div>
 
-        <p className="mb-3 text-xs text-muted-foreground">
-          Arrastra para encuadrar. Usa el slider o la rueda del mouse para zoom.
+        <p className="mb-1 text-xs text-muted-foreground">
+          Arrastra para encuadrar. Slider o rueda del mouse para zoom.
+        </p>
+        <p className="mb-3 text-[11px] font-medium text-primary">
+          Recomendado: {preset.recommended}
         </p>
 
         {/* Preview window */}
@@ -176,11 +214,13 @@ export function AvatarCropper({
             onPointerCancel={onPointerUp}
             onWheel={onWheel}
             style={{
-              width: PREVIEW_SIZE,
-              height: PREVIEW_SIZE,
+              width: PREVIEW_W,
+              height: PREVIEW_H,
               touchAction: "none",
             }}
-            className="relative overflow-hidden rounded-full border-2 border-border bg-muted cursor-grab active:cursor-grabbing select-none"
+            className={`relative overflow-hidden border-2 border-border bg-muted cursor-grab active:cursor-grabbing select-none ${
+              shape === "circle" ? "rounded-full" : "rounded-xl"
+            }`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -201,7 +241,11 @@ export function AvatarCropper({
               }}
             />
             {/* Grid overlay (rule of thirds) */}
-            <div className="pointer-events-none absolute inset-0 rounded-full opacity-30">
+            <div
+              className={`pointer-events-none absolute inset-0 opacity-30 ${
+                shape === "circle" ? "rounded-full" : "rounded-xl"
+              }`}
+            >
               <div className="absolute left-0 right-0 top-1/3 h-px bg-white" />
               <div className="absolute left-0 right-0 top-2/3 h-px bg-white" />
               <div className="absolute top-0 bottom-0 left-1/3 w-px bg-white" />
