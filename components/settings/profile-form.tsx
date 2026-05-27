@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { updateProfile } from "@/lib/actions/profile";
 import { cn, formatDate, initials } from "@/lib/utils";
 import { BioGenerator } from "./bio-generator";
+import { AvatarCropper } from "@/components/shared/avatar-cropper";
 
 type DbUser = {
   id: string;
@@ -342,21 +343,29 @@ function AvatarUploader({
   onChange: (url: string) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
-  async function onPickFile(file: File) {
+  function onPickFile(file: File) {
     if (!file.type.startsWith("image/")) {
       toast.error("Solo imágenes");
       return;
     }
+    // Open the cropper modal with the local object URL.
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+  }
+
+  async function uploadCropped(blob: Blob) {
     setUploading(true);
     try {
-      const { compressImage, formatBytes } = await import(
-        "@/lib/compress-image"
-      );
-      const originalSize = file.size;
-      const compressed = await compressImage(file, "avatar");
+      const { formatBytes } = await import("@/lib/compress-image");
+      // Crop output is already 512×512, encoded as JPEG q=0.9. Skip
+      // re-compression — uploading directly preserves the user's framing.
+      const file = new File([blob], `avatar-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
       const fd = new FormData();
-      fd.append("file", compressed);
+      fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (!res.ok) {
         const errJson = (await res
@@ -367,10 +376,11 @@ function AvatarUploader({
       const data = (await res.json()) as { url: string };
       onChange(data.url);
       toast.success("Foto actualizada", {
-        description: `${formatBytes(originalSize)} → ${formatBytes(
-          compressed.size
-        )}`,
+        description: formatBytes(blob.size),
       });
+      // Release the local URL
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropSrc(null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -379,48 +389,70 @@ function AvatarUploader({
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <Avatar className="h-16 w-16 ring-1 ring-border">
-        <AvatarImage src={value || undefined} />
-        <AvatarFallback className="bg-muted text-lg">
-          <UserIcon className="h-6 w-6 text-muted-foreground" />
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-secondary/40">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) =>
-                e.target.files?.[0] && onPickFile(e.target.files[0])
-              }
-            />
-            {uploading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <ImagePlus className="h-3.5 w-3.5" />
+    <>
+      <div className="flex items-center gap-4">
+        <Avatar className="h-16 w-16 ring-1 ring-border">
+          <AvatarImage src={value || undefined} />
+          <AvatarFallback className="bg-muted text-lg">
+            <UserIcon className="h-6 w-6 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-secondary/40">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onPickFile(f);
+                  // Reset the input so picking the same file twice still fires onChange
+                  e.target.value = "";
+                }}
+              />
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImagePlus className="h-3.5 w-3.5" />
+              )}
+              {uploading
+                ? "Subiendo..."
+                : value
+                  ? "Cambiar foto"
+                  : "Subir foto"}
+            </label>
+            {value && (
+              <button
+                type="button"
+                onClick={() => onChange("")}
+                className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+                Quitar
+              </button>
             )}
-            {uploading ? "Subiendo..." : value ? "Cambiar foto" : "Subir foto"}
-          </label>
-          {value && (
-            <button
-              type="button"
-              onClick={() => onChange("")}
-              className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 className="h-3 w-3" />
-              Quitar
-            </button>
-          )}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            JPG / PNG · podrás ajustar zoom y encuadre antes de guardar
+          </p>
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          JPG / PNG · se redimensiona a 512px y comprime automáticamente
-        </p>
       </div>
-    </div>
+
+      {cropSrc && (
+        <AvatarCropper
+          src={cropSrc}
+          outputType="image/jpeg"
+          quality={0.9}
+          onConfirm={uploadCropped}
+          onCancel={() => {
+            URL.revokeObjectURL(cropSrc);
+            setCropSrc(null);
+          }}
+        />
+      )}
+    </>
   );
 }
 
