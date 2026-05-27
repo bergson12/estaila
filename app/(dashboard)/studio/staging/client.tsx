@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Icon } from "@/components/shared/icon";
 import {
   STAGING_STYLES,
   ROOM_TYPES,
@@ -75,7 +76,7 @@ export function StagingClient({ plan }: { plan: string }) {
                   key={r.value}
                   active={roomType === r.value}
                   onClick={() => setRoomType(r.value)}
-                  emoji={r.emoji}
+                  icon={r.icon}
                   label={r.label}
                 />
               ))}
@@ -89,7 +90,7 @@ export function StagingClient({ plan }: { plan: string }) {
                   key={s.value}
                   active={style === s.value}
                   onClick={() => setStyle(s.value)}
-                  emoji={s.emoji}
+                  icon={s.icon}
                   label={s.label}
                 />
               ))}
@@ -169,7 +170,7 @@ export function StagingClient({ plan }: { plan: string }) {
                   onClick={() =>
                     setBuyerTarget(buyerTarget === b.value ? "" : b.value)
                   }
-                  emoji={b.emoji}
+                  icon={b.icon}
                   label={b.label}
                 />
               ))}
@@ -214,12 +215,12 @@ export function StagingClient({ plan }: { plan: string }) {
 function ChipButton({
   active,
   onClick,
-  emoji,
+  icon,
   label,
 }: {
   active: boolean;
   onClick: () => void;
-  emoji?: string;
+  icon?: string;
   label: string;
 }) {
   return (
@@ -232,7 +233,15 @@ function ChipButton({
           : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
       )}
     >
-      {emoji && <span className="shrink-0 text-sm leading-none">{emoji}</span>}
+      {icon && (
+        <Icon
+          name={icon}
+          className={cn(
+            "h-3.5 w-3.5 shrink-0",
+            active ? "text-primary" : "text-muted-foreground/80"
+          )}
+        />
+      )}
       <span className="truncate">{label}</span>
     </button>
   );

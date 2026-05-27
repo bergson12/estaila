@@ -20,12 +20,21 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { createTicket, type TicketCategory } from "@/lib/actions/support";
 
-const CATEGORIES: { value: TicketCategory; label: string; emoji: string }[] = [
-  { value: "BUG", label: "Reportar error", emoji: "🐛" },
-  { value: "QUESTION", label: "Pregunta / ayuda", emoji: "❓" },
-  { value: "BILLING", label: "Cobros / suscripción", emoji: "💳" },
-  { value: "FEATURE", label: "Sugerir mejora", emoji: "💡" },
-  { value: "OTHER", label: "Otro", emoji: "✉️" },
+import {
+  Bug,
+  CreditCard,
+  HelpCircle,
+  Lightbulb,
+  Mail,
+  type LucideIcon,
+} from "lucide-react";
+
+const CATEGORIES: { value: TicketCategory; label: string; icon: LucideIcon }[] = [
+  { value: "BUG", label: "Reportar error", icon: Bug },
+  { value: "QUESTION", label: "Pregunta / ayuda", icon: HelpCircle },
+  { value: "BILLING", label: "Cobros / suscripción", icon: CreditCard },
+  { value: "FEATURE", label: "Sugerir mejora", icon: Lightbulb },
+  { value: "OTHER", label: "Otro", icon: Mail },
 ];
 
 export function NewTicketDialog({
@@ -87,22 +96,32 @@ export function NewTicketDialog({
               Categoría
             </Label>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setCategory(c.value)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-all",
-                    category === c.value
-                      ? "border-primary/40 bg-primary/10 text-primary"
-                      : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
-                  )}
-                >
-                  <span>{c.emoji}</span>
-                  <span>{c.label}</span>
-                </button>
-              ))}
+              {CATEGORIES.map((c) => {
+                const CatIcon = c.icon;
+                const active = category === c.value;
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCategory(c.value)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-all",
+                      active
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+                    )}
+                  >
+                    <CatIcon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        active ? "text-primary" : "text-muted-foreground/80"
+                      )}
+                      strokeWidth={1.75}
+                    />
+                    <span>{c.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

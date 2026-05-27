@@ -173,7 +173,7 @@ export function KitSection({
                   key={o.key}
                   active={audience === o.key}
                   onClick={() => setAudience(o.key)}
-                  label={`${o.emoji} ${o.label}`}
+                  label={o.label}
                 />
               ))}
             </div>

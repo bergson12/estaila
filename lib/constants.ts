@@ -82,36 +82,38 @@ export const AI_TOOLS = [
 ] as const;
 export type AIToolValue = (typeof AI_TOOLS)[number]["value"];
 
+// Each entry uses a `icon` string mapped to a Lucide icon name.
+// Components import iconFor() helper from lib/utils.ts to render the SVG.
 export const STAGING_STYLES = [
-  { value: "MODERN", label: "Moderno", emoji: "🛋️" },
-  { value: "SCANDINAVIAN", label: "Escandinavo", emoji: "🪵" },
-  { value: "JAPANDI", label: "Japandi", emoji: "🎋" },
-  { value: "MID_CENTURY", label: "Mid-Century", emoji: "🪑" },
-  { value: "CARIBENO", label: "Tropical", emoji: "🌴" },
-  { value: "COLONIAL", label: "Colonial", emoji: "🏛️" },
-  { value: "MINIMALISTA", label: "Minimalista", emoji: "⚪" },
-  { value: "LUXURY", label: "Luxury", emoji: "💎" },
-  { value: "INDUSTRIAL", label: "Industrial", emoji: "⚙️" },
-  { value: "COSTERO", label: "Costero", emoji: "🌊" },
-  { value: "BOHEMIAN", label: "Bohemio", emoji: "🧶" },
-  { value: "FARMHOUSE", label: "Farmhouse", emoji: "🏚️" },
-  { value: "ART_DECO", label: "Art Deco", emoji: "✨" },
-  { value: "AIRBNB", label: "Airbnb", emoji: "🏡" },
-  { value: "FAMILY", label: "Family", emoji: "👨‍👩‍👧" },
-  { value: "OFFICE_PRO", label: "Oficina Pro", emoji: "💼" },
+  { value: "MODERN", label: "Moderno", icon: "Sofa" },
+  { value: "SCANDINAVIAN", label: "Escandinavo", icon: "Mountain" },
+  { value: "JAPANDI", label: "Japandi", icon: "Leaf" },
+  { value: "MID_CENTURY", label: "Mid-Century", icon: "Armchair" },
+  { value: "CARIBENO", label: "Tropical", icon: "Palmtree" },
+  { value: "COLONIAL", label: "Colonial", icon: "Building2" },
+  { value: "MINIMALISTA", label: "Minimalista", icon: "Circle" },
+  { value: "LUXURY", label: "Luxury", icon: "Gem" },
+  { value: "INDUSTRIAL", label: "Industrial", icon: "Factory" },
+  { value: "COSTERO", label: "Costero", icon: "Waves" },
+  { value: "BOHEMIAN", label: "Bohemio", icon: "Flower2" },
+  { value: "FARMHOUSE", label: "Farmhouse", icon: "Home" },
+  { value: "ART_DECO", label: "Art Deco", icon: "Sparkles" },
+  { value: "AIRBNB", label: "Airbnb", icon: "House" },
+  { value: "FAMILY", label: "Family", icon: "Users" },
+  { value: "OFFICE_PRO", label: "Oficina Pro", icon: "Briefcase" },
 ] as const;
 
 export const ROOM_TYPES = [
-  { value: "LIVING", label: "Sala", emoji: "🛋️" },
-  { value: "BEDROOM", label: "Dormitorio", emoji: "🛏️" },
-  { value: "KITCHEN", label: "Cocina", emoji: "🍳" },
-  { value: "DINING", label: "Comedor", emoji: "🍽️" },
-  { value: "BATHROOM", label: "Baño", emoji: "🛁" },
-  { value: "OFFICE", label: "Oficina", emoji: "💻" },
-  { value: "KIDS", label: "Niños", emoji: "🧸" },
-  { value: "EXTERIOR", label: "Exterior", emoji: "🌳" },
-  { value: "BALCONY", label: "Balcón", emoji: "🌇" },
-  { value: "POOL", label: "Piscina", emoji: "🏊" },
+  { value: "LIVING", label: "Sala", icon: "Sofa" },
+  { value: "BEDROOM", label: "Dormitorio", icon: "Bed" },
+  { value: "KITCHEN", label: "Cocina", icon: "ChefHat" },
+  { value: "DINING", label: "Comedor", icon: "Utensils" },
+  { value: "BATHROOM", label: "Baño", icon: "Bath" },
+  { value: "OFFICE", label: "Oficina", icon: "Monitor" },
+  { value: "KIDS", label: "Niños", icon: "Baby" },
+  { value: "EXTERIOR", label: "Exterior", icon: "Trees" },
+  { value: "BALCONY", label: "Balcón", icon: "Sunset" },
+  { value: "POOL", label: "Piscina", icon: "Waves" },
 ] as const;
 
 export const LIGHT_MOODS = [
@@ -123,10 +125,10 @@ export const LIGHT_MOODS = [
 ] as const;
 
 export const BUYER_TARGETS = [
-  { value: "FAMILY", label: "Familia con niños", emoji: "👨‍👩‍👧" },
-  { value: "YOUNG_COUPLE", label: "Pareja joven", emoji: "💑" },
-  { value: "EXECUTIVE", label: "Ejecutivo", emoji: "💼" },
-  { value: "INVESTOR", label: "Inversionista", emoji: "📈" },
-  { value: "RETIREE", label: "Retiro", emoji: "🌅" },
-  { value: "DIGITAL_NOMAD", label: "Nómada digital", emoji: "💻" },
+  { value: "FAMILY", label: "Familia con niños", icon: "Users" },
+  { value: "YOUNG_COUPLE", label: "Pareja joven", icon: "Heart" },
+  { value: "EXECUTIVE", label: "Ejecutivo", icon: "Briefcase" },
+  { value: "INVESTOR", label: "Inversionista", icon: "TrendingUp" },
+  { value: "RETIREE", label: "Retiro", icon: "Sunset" },
+  { value: "DIGITAL_NOMAD", label: "Nómada digital", icon: "Laptop" },
 ] as const;

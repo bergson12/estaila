@@ -1,6 +1,17 @@
 "use client";
 
-import { Check, Copy, Loader2, Sparkles, X } from "lucide-react";
+import {
+  Briefcase,
+  Check,
+  Copy,
+  Gem,
+  Loader2,
+  Palmtree,
+  Smile,
+  Sparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,11 +22,11 @@ import { cn } from "@/lib/utils";
 type Tone = "professional" | "friendly" | "luxury" | "caribbean";
 type Length = "short" | "medium" | "long";
 
-const TONES: { value: Tone; label: string; emoji: string }[] = [
-  { value: "professional", label: "Profesional", emoji: "💼" },
-  { value: "friendly", label: "Amigable", emoji: "😊" },
-  { value: "luxury", label: "Luxury", emoji: "💎" },
-  { value: "caribbean", label: "Caribeño", emoji: "🌴" },
+const TONES: { value: Tone; label: string; icon: LucideIcon }[] = [
+  { value: "professional", label: "Profesional", icon: Briefcase },
+  { value: "friendly", label: "Amigable", icon: Smile },
+  { value: "luxury", label: "Luxury", icon: Gem },
+  { value: "caribbean", label: "Caribeño", icon: Palmtree },
 ];
 
 const LENGTHS: { value: Length; label: string; desc: string }[] = [
@@ -106,21 +117,30 @@ function Modal({
           Tono
         </p>
         <div className="mb-3 grid grid-cols-4 gap-1.5">
-          {TONES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTone(t.value)}
-              className={cn(
-                "flex flex-col items-center gap-0.5 rounded-md border p-2 text-[10px] font-medium transition-colors",
-                tone === t.value
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border bg-card hover:border-primary/30"
-              )}
-            >
-              <span className="text-base leading-none">{t.emoji}</span>
-              {t.label}
-            </button>
-          ))}
+          {TONES.map((t) => {
+            const ToneIcon = t.icon;
+            return (
+              <button
+                key={t.value}
+                onClick={() => setTone(t.value)}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-md border p-2 text-[10px] font-medium transition-colors",
+                  tone === t.value
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                )}
+              >
+                <ToneIcon
+                  className={cn(
+                    "h-4 w-4",
+                    tone === t.value ? "text-primary" : "text-muted-foreground"
+                  )}
+                  strokeWidth={1.75}
+                />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

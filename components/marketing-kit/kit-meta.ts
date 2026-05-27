@@ -25,13 +25,13 @@ export type Goal =
   | "OPEN_HOUSE"
   | "PRICE_DROP";
 
-export const AUDIENCE_OPTIONS: { key: Audience; label: string; emoji: string }[] = [
-  { key: "GENERAL", label: "General", emoji: "🌐" },
-  { key: "FAMILIA", label: "Familia", emoji: "👨‍👩‍👧" },
-  { key: "INVESTOR", label: "Inversor", emoji: "📈" },
-  { key: "FOREIGN", label: "Extranjero", emoji: "🌍" },
-  { key: "FIRST_BUYER", label: "1er comprador", emoji: "🔑" },
-  { key: "LUXURY", label: "Lujo", emoji: "💎" },
+export const AUDIENCE_OPTIONS: { key: Audience; label: string; icon: string }[] = [
+  { key: "GENERAL", label: "General", icon: "Globe" },
+  { key: "FAMILIA", label: "Familia", icon: "Users" },
+  { key: "INVESTOR", label: "Inversor", icon: "TrendingUp" },
+  { key: "FOREIGN", label: "Extranjero", icon: "Plane" },
+  { key: "FIRST_BUYER", label: "1er comprador", icon: "KeyRound" },
+  { key: "LUXURY", label: "Lujo", icon: "Gem" },
 ];
 
 export const TONE_OPTIONS: { key: Tone; label: string; hint: string }[] = [

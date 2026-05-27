@@ -16,11 +16,11 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
-  BUG: "🐛 Error",
-  QUESTION: "❓ Pregunta",
-  BILLING: "💳 Billing",
-  FEATURE: "💡 Sugerencia",
-  OTHER: "✉️ Otro",
+  BUG: "Error",
+  QUESTION: "Pregunta",
+  BILLING: "Billing",
+  FEATURE: "Sugerencia",
+  OTHER: "Otro",
 };
 
 const PRIORITY_DOT: Record<string, string> = {

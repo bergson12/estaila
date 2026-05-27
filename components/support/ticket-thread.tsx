@@ -29,11 +29,11 @@ const STATUS_COLOR: Record<string, string> = {
   CLOSED: "bg-muted text-muted-foreground",
 };
 const CATEGORY_LABEL: Record<string, string> = {
-  BUG: "🐛 Error",
-  QUESTION: "❓ Pregunta",
-  BILLING: "💳 Billing",
-  FEATURE: "💡 Sugerencia",
-  OTHER: "✉️ Otro",
+  BUG: "Error",
+  QUESTION: "Pregunta",
+  BILLING: "Billing",
+  FEATURE: "Sugerencia",
+  OTHER: "Otro",
 };
 
 export function TicketThread({
