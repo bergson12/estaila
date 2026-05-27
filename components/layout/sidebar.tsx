@@ -27,6 +27,7 @@ import {
   Briefcase,
   FileText,
   BarChart3,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
@@ -101,6 +102,7 @@ const ADMIN_NAV = [
   { label: "Usuarios", href: "/admin/users", icon: Users },
   { label: "Revenue", href: "/admin/revenue", icon: TrendingUp },
   { label: "Billing", href: "/admin/billing", icon: Receipt },
+  { label: "Tickets", href: "/admin/soporte", icon: LifeBuoy },
   { label: "Generaciones IA", href: "/admin/generations", icon: Activity },
   { label: "Auditoría", href: "/admin/audit", icon: FileClock },
   { label: "Configuración", href: "/admin/settings", icon: Settings },

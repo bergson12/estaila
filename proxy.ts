@@ -15,7 +15,8 @@ export function proxy(req: NextRequest) {
     path.startsWith("/c/") ||
     path.startsWith("/welcome") ||
     path.startsWith("/invitacion") ||
-    path.startsWith("/propiedad/")
+    path.startsWith("/propiedad/") ||
+    path.startsWith("/legal/")
   ) {
     // If logged-in users hit /welcome, push them into the app.
     if (session && path.startsWith("/welcome")) {
