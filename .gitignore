@@ -60,3 +60,4 @@ prisma/migrations/dev.db*
 
 
 .vercel
+vercel-*.txt
