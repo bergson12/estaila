@@ -16,6 +16,12 @@ export const auth = betterAuth({
     // Only enforce email verification when an email sender is configured —
     // otherwise users would be locked out in environments without Resend.
     requireEmailVerification: !!process.env.RESEND_API_KEY,
+    sendResetPassword: async ({ user, url }) => {
+      const { buildResetPasswordEmail } = await import("./email");
+      const { subject, html } = buildResetPasswordEmail(url, user.name);
+      await sendEmail({ to: user.email, subject, html });
+    },
+    resetPasswordTokenExpiresIn: 60 * 60, // 1h
   },
   emailVerification: {
     sendOnSignUp: true,

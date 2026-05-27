@@ -110,3 +110,46 @@ export function buildVerificationEmail(verifyUrl: string, userName?: string): {
 </body></html>`,
   };
 }
+
+export function buildResetPasswordEmail(resetUrl: string, userName?: string): {
+  subject: string;
+  html: string;
+} {
+  const name = userName?.split(" ")[0] ?? "";
+  return {
+    subject: "Restablece tu contraseña · estaila",
+    html: `
+<!doctype html>
+<html><body style="margin:0;background:#f6f7f9;font-family:'Raleway',Arial,sans-serif;color:#1a1a1a;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:14px;padding:36px 32px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <img src="${APP_URL}/logos/web-black-estaila.png" alt="estaila" style="height:32px;" />
+    </div>
+    <h1 style="font-size:22px;font-weight:700;margin:0 0 12px;letter-spacing:-0.01em;">
+      ${name ? `Hola ${name},` : "Restablecer contraseña"}
+    </h1>
+    <p style="font-size:15px;line-height:1.6;color:#4a4a4a;margin:0 0 24px;">
+      Recibimos una solicitud para restablecer tu contraseña. Click el botón para crear una nueva. El enlace expira en <strong>1 hora</strong>.
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${resetUrl}"
+        style="display:inline-block;background:#00bf63;color:#fff;text-decoration:none;
+        padding:14px 32px;border-radius:10px;font-weight:600;font-size:15px;letter-spacing:0.01em;">
+        Crear nueva contraseña
+      </a>
+    </div>
+    <p style="font-size:13px;color:#7a7a7a;margin:24px 0 0;line-height:1.55;">
+      O copia y pega este enlace:<br />
+      <span style="color:#1a1a1a;word-break:break-all;">${resetUrl}</span>
+    </p>
+    <hr style="border:none;border-top:1px solid #ececec;margin:32px 0 16px;" />
+    <p style="font-size:12px;color:#a0a0a0;margin:0;">
+      Si no solicitaste este cambio, ignora este correo — tu contraseña permanece igual.
+    </p>
+    <p style="font-size:12px;color:#a0a0a0;margin:8px 0 0;">
+      © ${new Date().getFullYear()} estaila · CRM + AI Studio
+    </p>
+  </div>
+</body></html>`,
+  };
+}

@@ -86,7 +86,15 @@ export function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="password">Contraseña</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Contraseña</Label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <Input
             id="password"
             type="password"

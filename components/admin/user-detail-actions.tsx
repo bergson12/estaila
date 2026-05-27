@@ -12,6 +12,9 @@ import {
   RotateCcw,
   ArrowUpRight,
   ArrowDownRight,
+  KeyRound,
+  Loader2,
+  Mail,
   User as UserIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -41,6 +44,10 @@ import {
   setRole,
   resetMonthlyCredits,
 } from "@/lib/actions/admin";
+import {
+  sendPasswordResetEmail,
+  setUserPasswordDirect,
+} from "@/lib/actions/admin-password";
 
 type UserMini = {
   id: string;
@@ -142,7 +149,175 @@ export function UserDetailActions({ user }: { user: UserMini }) {
           </>
         )}
       </Button>
+
+      <PasswordResetDialog userId={user.id} userName={user.name} userEmail={user.email} />
     </Card>
+  );
+}
+
+function PasswordResetDialog({
+  userId,
+  userName,
+  userEmail,
+}: {
+  userId: string;
+  userName: string;
+  userEmail: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"email" | "direct">("email");
+  const [newPw, setNewPw] = useState("");
+  const [working, setWorking] = useState(false);
+
+  async function sendEmail() {
+    setWorking(true);
+    try {
+      const r = await sendPasswordResetEmail({ userId });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success(`Enlace de reset enviado a ${userEmail}`);
+      setOpen(false);
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function setDirect() {
+    if (newPw.length < 6) {
+      toast.error("Mínimo 6 caracteres");
+      return;
+    }
+    setWorking(true);
+    try {
+      const r = await setUserPasswordDirect({ userId, newPassword: newPw });
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success("Contraseña actualizada");
+      setNewPw("");
+      setOpen(false);
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <KeyRound className="mr-1.5 h-3.5 w-3.5" />
+          Reset contraseña
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Resetear contraseña de {userName}</DialogTitle>
+          <DialogDescription>
+            Elige cómo quieres restablecer la contraseña.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("email")}
+              className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left text-xs transition-all ${
+                mode === "email"
+                  ? "border-primary/40 bg-primary/10"
+                  : "border-border bg-card/50 hover:border-foreground/20"
+              }`}
+            >
+              <Mail className="h-3.5 w-3.5 text-primary" />
+              <span className="font-semibold">Enviar enlace al usuario</span>
+              <span className="text-[10px] text-muted-foreground">
+                Recomendado · usuario elige
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("direct")}
+              className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left text-xs transition-all ${
+                mode === "direct"
+                  ? "border-primary/40 bg-primary/10"
+                  : "border-border bg-card/50 hover:border-foreground/20"
+              }`}
+            >
+              <KeyRound className="h-3.5 w-3.5 text-primary" />
+              <span className="font-semibold">Definir manualmente</span>
+              <span className="text-[10px] text-muted-foreground">
+                Solo si no puede acceder al email
+              </span>
+            </button>
+          </div>
+
+          {mode === "email" && (
+            <div className="rounded-lg bg-muted/50 p-3 text-xs">
+              Se enviará un email de reset a{" "}
+              <strong className="font-mono">{userEmail}</strong>. El enlace
+              expira en 1 hora. El usuario crea su propia contraseña — admin
+              nunca la ve.
+            </div>
+          )}
+
+          {mode === "direct" && (
+            <div className="space-y-2">
+              <Label htmlFor="new-pw" className="text-[11px]">
+                Nueva contraseña (mínimo 6 caracteres)
+              </Label>
+              <Input
+                id="new-pw"
+                type="text"
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                placeholder="contraseña-temporal-123"
+                minLength={6}
+                className="font-mono"
+              />
+              <p className="text-[10px] text-amber-600">
+                ⚠️ Avisa al usuario que cambie la contraseña al iniciar
+                sesión.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={working}
+          >
+            Cancelar
+          </Button>
+          {mode === "email" ? (
+            <Button onClick={sendEmail} disabled={working}>
+              {working ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Mail className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Enviar enlace
+            </Button>
+          ) : (
+            <Button
+              onClick={setDirect}
+              disabled={working || newPw.length < 6}
+            >
+              {working ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <KeyRound className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Guardar contraseña
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
