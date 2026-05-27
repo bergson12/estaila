@@ -17,7 +17,13 @@ import { prisma } from "@/lib/db";
 
 export type LiveNotification = {
   id: string;
-  type: "APPOINTMENT" | "LEAD" | "PIPELINE" | "PROPERTY" | "SYSTEM";
+  type:
+    | "APPOINTMENT"
+    | "LEAD"
+    | "PIPELINE"
+    | "PROPERTY"
+    | "INVITATION"
+    | "SYSTEM";
   title: string;
   description: string;
   href: string | null;
@@ -34,7 +40,7 @@ export async function getLiveNotifications(): Promise<LiveNotification[]> {
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const [appointments, leads, pipeline] = await Promise.all([
+  const [appointments, leads, pipeline, invitations] = await Promise.all([
     prisma.appointment.findMany({
       where: {
         userId: user.id,
@@ -69,6 +75,25 @@ export async function getLiveNotifications(): Promise<LiveNotification[]> {
       },
       orderBy: { nextActionDate: "asc" },
       take: 5,
+    }),
+    // Pending org/team invitations for this user (matched by email)
+    prisma.organizationMember.findMany({
+      where: {
+        OR: [
+          { invitedEmail: user.email },
+          { userId: user.id },
+        ],
+        acceptedAt: null,
+        invitationToken: { not: null },
+      },
+      include: {
+        organization: {
+          select: { name: true, slug: true, logoUrl: true },
+        },
+        invitedBy: { select: { name: true, image: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     }),
   ]);
 
@@ -129,6 +154,31 @@ export async function getLiveNotifications(): Promise<LiveNotification[]> {
       when: p.nextActionDate.toISOString(),
       unread: true,
       urgency: overdue ? "high" : "medium",
+    });
+  }
+
+  for (const inv of invitations) {
+    if (!inv.invitationToken) continue;
+    const orgName = inv.organization?.name ?? "una organización";
+    const inviterName = inv.invitedBy?.name ?? "Un administrador";
+    out.push({
+      id: `inv-${inv.id}`,
+      type: "INVITATION",
+      title: `Invitación a ${orgName}`,
+      description: `${inviterName} te invitó como ${
+        inv.role === "OWNER"
+          ? "propietario"
+          : inv.role === "ADMIN"
+            ? "administrador"
+            : inv.role === "VIEWER"
+              ? "lector"
+              : "miembro"
+      }. Tap para aceptar.`,
+      href: `/invitacion/${inv.invitationToken}`,
+      imageUrl: inv.organization?.logoUrl ?? inv.invitedBy?.image ?? null,
+      when: inv.createdAt.toISOString(),
+      unread: true,
+      urgency: "high",
     });
   }
 

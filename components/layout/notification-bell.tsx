@@ -7,8 +7,10 @@ import {
   Calendar,
   ChevronRight,
   Loader2,
+  Mail,
   TrendingUp,
   UserPlus,
+  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,8 +40,11 @@ const TYPE_META: Record<
   LEAD: { icon: UserPlus, tone: "text-emerald-500", label: "Lead" },
   PIPELINE: { icon: TrendingUp, tone: "text-amber-500", label: "Pipeline" },
   PROPERTY: { icon: TrendingUp, tone: "text-purple-500", label: "Propiedad" },
+  INVITATION: { icon: Users, tone: "text-primary", label: "Invitación" },
   SYSTEM: { icon: Bell, tone: "text-muted-foreground", label: "Sistema" },
 };
+// Silence Mail unused import (reserved for future EMAIL type)
+void Mail;
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
