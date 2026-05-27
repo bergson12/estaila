@@ -11,6 +11,7 @@
  */
 
 import { headers } from "next/headers";
+import { hashPassword } from "better-auth/crypto";
 import { requireAdmin } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -50,34 +51,40 @@ export async function setUserPasswordDirect(args: {
     if (args.newPassword.length < 6) {
       return { ok: false, error: "Contraseña mínimo 6 caracteres" };
     }
-    // Use Better Auth's internal context to hash with the same algorithm
-    // Better Auth uses on signup. Available via auth.$context.password.hash().
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ctx = (auth as any).$context;
-    const hasher = ctx?.password?.hash ?? ctx?.context?.password?.hash;
-    if (typeof hasher !== "function") {
-      return {
-        ok: false,
-        error: "Hasher de Better Auth no disponible — usa el flow por email.",
-      };
-    }
-    const hashed = await hasher(args.newPassword);
 
-    // Find the credential account for this user
+    // Hash with Better Auth's official function — produces the same format
+    // Better Auth stores on signup (scrypt-based).
+    const hashed = await hashPassword(args.newPassword);
+
+    // Find or create the credential account for this user. A user who only
+    // signed up with Google has no credential account yet; we create one so
+    // they can also log in with email + the admin-set password.
+    const target = await prisma.user.findUnique({
+      where: { id: args.userId },
+      select: { id: true, email: true },
+    });
+    if (!target) return { ok: false, error: "Usuario no encontrado" };
+
     const account = await prisma.account.findFirst({
       where: { userId: args.userId, providerId: "credential" },
       select: { id: true },
     });
-    if (!account) {
-      return {
-        ok: false,
-        error: "Usuario no tiene cuenta con email/contraseña (¿login con Google?). Usa el flow por email.",
-      };
+
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password: hashed },
+      });
+    } else {
+      await prisma.account.create({
+        data: {
+          userId: args.userId,
+          providerId: "credential",
+          accountId: target.email,
+          password: hashed,
+        },
+      });
     }
-    await prisma.account.update({
-      where: { id: account.id },
-      data: { password: hashed },
-    });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
