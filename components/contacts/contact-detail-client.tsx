@@ -56,6 +56,7 @@ import {
   toggleContactFavorite,
 } from "@/lib/actions/contact";
 import { ContactDialog } from "./contact-dialog";
+import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 type Contact = {
   id: string;
@@ -153,6 +154,7 @@ export function ContactDetailClient({
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "citas" | "data" | "docs"
   >("overview");
@@ -379,10 +381,14 @@ export function ContactDetailClient({
                   </Button>
                 )}
                 {contact.email && (
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-card" asChild>
-                    <a href={`mailto:${contact.email}`} title="Email">
-                      <Mail className="h-4 w-4" />
-                    </a>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full bg-card"
+                    onClick={() => setEmailOpen(true)}
+                    title="Enviar email"
+                  >
+                    <Mail className="h-4 w-4" />
                   </Button>
                 )}
                 <DropdownMenu>
@@ -534,6 +540,13 @@ export function ContactDetailClient({
         Creado {formatDate(contact.createdAt)} · Actualizado{" "}
         {formatDate(contact.updatedAt)}
       </p>
+
+      <SendEmailDialog
+        open={emailOpen}
+        onClose={() => setEmailOpen(false)}
+        contactIds={[contact.id]}
+        contactCount={1}
+      />
 
       <ContactDialog
         open={editOpen}
