@@ -2,9 +2,12 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
-import { prisma } from "./db";
+import { prisma, ensureLightweightMigrations } from "./db";
 
 export async function getCurrentSession() {
+  // Ensure additive schema migrations (e.g. agentBio column) are applied
+  // before Better Auth's prisma adapter runs findUnique. Cached after first run.
+  await ensureLightweightMigrations();
   return await auth.api.getSession({ headers: await headers() });
 }
 

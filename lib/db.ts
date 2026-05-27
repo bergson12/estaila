@@ -48,4 +48,28 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prismaSchemaVersion = SCHEMA_VERSION;
 }
 
+// ----- Auto-apply lightweight schema additions (Turso fresh deploy) -----
+// Columns added in code that need to exist on the prod DB but weren't
+// migrated yet. ALTER IF NOT EXISTS is cheap + idempotent.
+//
+// Pattern: callers that touch User must `await ensureLightweightMigrations()`
+// before their first query. Cached so it only hits DDL once per process.
+let migrationsPromise: Promise<void> | null = null;
+export function ensureLightweightMigrations(): Promise<void> {
+  if (migrationsPromise) return migrationsPromise;
+  const adds: string[] = [
+    `ALTER TABLE "user" ADD COLUMN "agentBio" TEXT`,
+  ];
+  migrationsPromise = (async () => {
+    for (const sql of adds) {
+      try {
+        await prisma.$executeRawUnsafe(sql);
+      } catch {
+        // Column already exists or different error — silently ignore
+      }
+    }
+  })();
+  return migrationsPromise;
+}
+
 export type { Prisma } from "./generated/prisma/client";

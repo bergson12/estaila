@@ -16,26 +16,9 @@ const ProfileSchema = z.object({
 
 export type ProfileInput = z.infer<typeof ProfileSchema>;
 
-/**
- * Auto-add agentBio column if missing (Turso fresh deploy without migration).
- */
-let bioColumnReady = false;
-async function ensureBioColumn() {
-  if (bioColumnReady) return;
-  try {
-    await prisma.$executeRawUnsafe(
-      `ALTER TABLE "user" ADD COLUMN "agentBio" TEXT`
-    );
-  } catch {
-    // Column already exists or different error — Prisma will surface the real one
-  }
-  bioColumnReady = true;
-}
-
 export async function updateProfile(input: ProfileInput) {
   const user = await requireUser();
   const data = ProfileSchema.parse(input);
-  await ensureBioColumn();
 
   await prisma.user.update({
     where: { id: user.id },

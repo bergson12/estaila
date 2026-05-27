@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  // (Schema migrations run inside requireUser via ensureLightweightMigrations)
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
