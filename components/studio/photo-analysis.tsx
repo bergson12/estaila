@@ -2,6 +2,7 @@
 
 import {
   AlertTriangle,
+  ArrowRight,
   Brain,
   CheckCircle2,
   Eye,
@@ -10,6 +11,7 @@ import {
   Star,
   Target,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/card";
@@ -18,6 +20,18 @@ import {
   analyzePhoto,
   type PhotoAnalysis,
 } from "@/lib/actions/analyze-image";
+
+// Map server tool key → studio route
+const TOOL_ROUTE: Record<string, string> = {
+  STAGING: "/studio/staging",
+  DECLUTTER: "/studio/declutter",
+  ENHANCE: "/studio/enhance",
+  STYLE_CHANGE: "/studio/style",
+  SKY: "/studio/sky",
+  TWILIGHT: "/studio/twilight",
+  POOL: "/studio/pool",
+  LAWN: "/studio/lawn",
+};
 
 const TOOL_LABEL: Record<string, string> = {
   STAGING: "Virtual Staging",
@@ -113,6 +127,7 @@ export function PhotoAnalysis({ imageUrl }: { imageUrl: string | null }) {
                 analysis={analysis}
                 collapsed={collapsed}
                 onToggle={() => setCollapsed((c) => !c)}
+                imageUrl={imageUrl ?? ""}
               />
             ) : null}
           </Card>
@@ -126,10 +141,12 @@ function AnalysisContent({
   analysis,
   collapsed,
   onToggle,
+  imageUrl,
 }: {
   analysis: PhotoAnalysis;
   collapsed: boolean;
   onToggle: () => void;
+  imageUrl: string;
 }) {
   if (!analysis.available) {
     const isQuota = analysis.error === "QUOTA_EXHAUSTED";
@@ -278,31 +295,64 @@ function AnalysisContent({
             </div>
           )}
 
-          {/* Suggestion */}
-          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-            <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-              <Sparkles className="h-3 w-3" />
-              Recomendación de la IA
-            </p>
-            <p className="text-xs leading-relaxed">
-              Aplica{" "}
-              <span className="font-semibold text-primary">
-                {TOOL_LABEL[analysis.suggestedTool] ?? analysis.suggestedTool}
-              </span>
-              {analysis.suggestedStyle && (
-                <>
-                  {" "}con estilo{" "}
-                  <span className="font-semibold text-primary">
-                    {analysis.suggestedStyle}
-                  </span>
-                </>
-              )}{" "}
-              para maximizar el atractivo de esta foto.
-            </p>
-          </div>
+          {/* Suggestion — clickable */}
+          <SuggestionCTA analysis={analysis} imageUrl={imageUrl} />
         </motion.div>
       )}
     </div>
+  );
+}
+
+function SuggestionCTA({
+  analysis,
+  imageUrl,
+}: {
+  analysis: PhotoAnalysis;
+  imageUrl: string;
+}) {
+  const router = useRouter();
+  const route = TOOL_ROUTE[analysis.suggestedTool] ?? "/studio";
+  const toolLabel =
+    TOOL_LABEL[analysis.suggestedTool] ?? analysis.suggestedTool;
+
+  function apply() {
+    // Pass photo + style as query params; the studio context picks them up
+    const params = new URLSearchParams({ photoUrl: imageUrl });
+    if (analysis.suggestedStyle) params.set("style", analysis.suggestedStyle);
+    if (analysis.buyerTarget) params.set("buyer", analysis.buyerTarget);
+    router.push(`${route}?${params.toString()}`);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={apply}
+      className="group flex w-full items-start justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-3 text-left transition-all hover:border-primary/50 hover:bg-primary/10"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          <Sparkles className="h-3 w-3" />
+          Recomendación de la IA
+        </p>
+        <p className="text-xs leading-relaxed">
+          Aplica{" "}
+          <span className="font-semibold text-primary">{toolLabel}</span>
+          {analysis.suggestedStyle && (
+            <>
+              {" "}con estilo{" "}
+              <span className="font-semibold text-primary">
+                {analysis.suggestedStyle}
+              </span>
+            </>
+          )}{" "}
+          para maximizar el atractivo de esta foto.
+        </p>
+        <p className="mt-1.5 text-[10px] text-muted-foreground">
+          Tap para abrir {toolLabel.toLowerCase()} con esta foto cargada
+        </p>
+      </div>
+      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+    </button>
   );
 }
 

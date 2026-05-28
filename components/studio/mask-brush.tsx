@@ -66,11 +66,32 @@ export function MaskBrush({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (initialMask) {
-      // Restore previous mask
+      // Restore previous mask — but convert from white-on-black format
+      // back to semi-transparent green overlay so the image shows through.
       const m = new Image();
       m.crossOrigin = "anonymous";
       m.onload = () => {
-        ctx.drawImage(m, 0, 0, canvas.width, canvas.height);
+        const tmp = document.createElement("canvas");
+        tmp.width = canvas.width;
+        tmp.height = canvas.height;
+        const tctx = tmp.getContext("2d");
+        if (!tctx) return;
+        tctx.drawImage(m, 0, 0, canvas.width, canvas.height);
+        const data = tctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < data.data.length; i += 4) {
+          const r = data.data[i];
+          if (r > 128) {
+            // White pixel = mask area → paint as green overlay
+            data.data[i] = 0;
+            data.data[i + 1] = 191;
+            data.data[i + 2] = 99;
+            data.data[i + 3] = 153; // ~60% opacity
+          } else {
+            // Black background → fully transparent
+            data.data[i + 3] = 0;
+          }
+        }
+        ctx.putImageData(data, 0, 0);
       };
       m.src = initialMask;
     }
