@@ -204,6 +204,93 @@ function parseDataUrl(
   return { mime: match[1], data: match[2] };
 }
 
+/**
+ * Resolve a remote URL or local /public path to a base64 buffer + mime.
+ * Used so we can multi-image input the original + current frame to Gemini.
+ */
+async function fetchImageAsBase64(
+  urlOrPath: string
+): Promise<{ data: string; mime: string }> {
+  if (/^https?:\/\//i.test(urlOrPath)) {
+    const r = await fetch(urlOrPath);
+    if (!r.ok)
+      throw new Error(`No se pudo descargar imagen: ${urlOrPath} (${r.status})`);
+    const ab = await r.arrayBuffer();
+    const mime =
+      r.headers.get("content-type")?.split(";")[0]?.trim() || "image/jpeg";
+    return { data: Buffer.from(ab).toString("base64"), mime };
+  }
+  const srcFs = path.join(
+    process.cwd(),
+    "public",
+    urlOrPath.replace(/^\//, "")
+  );
+  const buf = await readFile(srcFs);
+  const ext = path.extname(srcFs).toLowerCase();
+  const mime =
+    ext === ".png"
+      ? "image/png"
+      : ext === ".webp"
+        ? "image/webp"
+        : "image/jpeg";
+  return { data: buf.toString("base64"), mime };
+}
+
+/**
+ * Master continuity preamble — prepended to EVERY Gemini call so the model
+ * always anchors on the original architectural facts and produces an edit
+ * that reads as the same photo with a small change, not a brand-new scene.
+ *
+ * When `withOriginalRef === true`, two reference images are included and the
+ * prompt explains their roles. Otherwise only one image is sent.
+ */
+function buildContinuityPreamble(withOriginalRef: boolean): string {
+  const lines: string[] = [
+    `You are a professional real-estate photo editor. The user has uploaded a property photo and wants ONE specific edit. This edit may be the 1st, 2nd, or even 5th consecutive modification of the same scene. Visual continuity between versions is the absolute top priority.`,
+    ``,
+    `CONTEXT IMAGES YOU ARE BEING GIVEN:`,
+  ];
+  if (withOriginalRef) {
+    lines.push(
+      `- Image 1 = ORIGINAL UPLOAD. This is the architectural ground truth. Camera angle, walls, windows, doors, ceiling, floor geometry, lens perspective and lighting direction in this image are LAW — you must reproduce them.`,
+      `- Image 2 = CURRENT WORKING VERSION. This is the most recent edited frame. Furniture, decor and style choices already applied here must be preserved unless the task explicitly overwrites them.`,
+      `Your output must look like a natural next step from Image 2, while still respecting every architectural fact from Image 1.`
+    );
+  } else {
+    lines.push(
+      `- Image 1 = the photo to edit. Treat its architecture, camera angle, lens, and lighting as the immutable ground truth.`
+    );
+  }
+  lines.push(
+    ``,
+    `ALWAYS PRESERVE (do NOT change under any circumstance):`,
+    `• Exact property structure and architecture`,
+    `• Camera angle, framing, and lens perspective`,
+    `• Real proportions of the space`,
+    `• Windows, doors, columns, ceilings, floors, moldings`,
+    `• Base lighting and direction of light`,
+    `• Natural shadow direction and intensity`,
+    `• Original photo grain, sharpness, and color profile`,
+    `• Composition, depth, focal distance`,
+    ``,
+    `NEVER:`,
+    `• Repaint or rebuild architectural elements`,
+    `• Shift camera angle, FOV, or perspective`,
+    `• Alter real-world proportions`,
+    `• Touch anything the user did not ask about`,
+    `• Add text, logos, watermarks, or signage`,
+    ``,
+    `VISUAL STYLE TARGET:`,
+    `• Photorealistic, MLS-grade real-estate photography`,
+    `• High-end architectural magazine quality`,
+    `• Realistic materials and colors, never artificial or over-saturated`,
+    `• Premium real-estate lighting (cool natural daylight unless the task requires otherwise)`,
+    ``,
+    `THE ONLY EDIT YOU PERFORM (everything else stays identical):`
+  );
+  return lines.join("\n");
+}
+
 export class GeminiProcessor implements ImageProcessor {
   constructor(
     private apiKey: string,
@@ -213,75 +300,74 @@ export class GeminiProcessor implements ImageProcessor {
   async process(input: ProcessInput): Promise<ProcessResult> {
     const start = Date.now();
 
-    // Build prompt
+    // 1) Build task-specific prompt fragment
     const builder = TOOL_PROMPTS[input.tool] ?? (() => "Improve this real-estate photo.");
-    let prompt = builder(input.options);
+    let taskPrompt = builder(input.options);
 
-    // Resolve source — local file OR remote URL
-    let buf: Buffer;
-    let mime = "image/jpeg";
-    if (/^https?:\/\//i.test(input.inputUrl)) {
-      const r = await fetch(input.inputUrl);
-      if (!r.ok) throw new Error(`No se pudo descargar imagen origen: ${r.status}`);
-      const ab = await r.arrayBuffer();
-      buf = Buffer.from(ab);
-      mime = r.headers.get("content-type")?.split(";")[0]?.trim() || "image/jpeg";
-    } else {
-      const srcFs = path.join(
-        process.cwd(),
-        "public",
-        input.inputUrl.replace(/^\//, "")
-      );
-      buf = await readFile(srcFs);
-      const ext = path.extname(srcFs).toLowerCase();
-      mime =
-        ext === ".png"
-          ? "image/png"
-          : ext === ".webp"
-            ? "image/webp"
-            : "image/jpeg";
-    }
-    const base64 = buf.toString("base64");
-
-    // Extra text the user may have typed in the "detalles extra" textarea.
+    // 2) Optional textarea extra
     if (input.options?.extraPrompt?.trim()) {
-      prompt += `\n\nADDITIONAL USER INSTRUCTIONS: ${input.options.extraPrompt.trim()}`;
+      taskPrompt += `\n\nADDITIONAL USER INSTRUCTIONS: ${input.options.extraPrompt.trim()}`;
     }
 
-    // Build the multimodal parts list. We always send the prompt + source image.
-    // If the user painted a mask, we send it as a SECOND inlineData and reference
-    // it explicitly — this is how Nanobanana (gemini-2.5-flash-image) does
-    // mask-guided inpainting.
+    // 3) Resolve images:
+    //    - currentImg = the photo the user has on screen NOW (last pipeline output or original)
+    //    - originalImg = the very first upload, only when it differs from current
+    const currentImg = await fetchImageAsBase64(input.inputUrl);
+    const originalUrl = input.options?.originalUrl;
+    const includeOriginal =
+      typeof originalUrl === "string" && originalUrl !== input.inputUrl;
+    const originalImg = includeOriginal
+      ? await fetchImageAsBase64(originalUrl)
+      : null;
+
+    // 4) Mask (only present when the user painted with the magic brush)
+    const maskParsed = parseDataUrl(input.options?.maskDataUrl);
+
+    // 5) Compose the final prompt:
+    //    [continuity preamble] + [optional mask rules] + [task]
+    const continuity = buildContinuityPreamble(includeOriginal);
+    const maskPreamble = maskParsed
+      ? [
+          ``,
+          `MASK-GUIDED EDIT MODE — the task applies ONLY to the area painted WHITE in the LAST image attached (the "mask").`,
+          `1. WHITE pixels in the mask = the region to MODIFY. Apply the task strictly inside this region.`,
+          `2. BLACK pixels in the mask = REGION TO PRESERVE bit-for-bit from the CURRENT WORKING VERSION (same colors, texture, furniture, lighting, shadows, composition, perspective).`,
+          `3. Where you remove or replace something inside the white area, inpaint so the edge blends seamlessly with the surrounding unmodified pixels.`,
+          `4. Do NOT extend edits beyond the masked area.`,
+          ``,
+        ].join("\n")
+      : "";
+
+    const fullPrompt = `${continuity}\n${maskPreamble}\n${taskPrompt}`;
+
+    // 6) Build multimodal parts list. Order matters — Gemini reads them
+    //    in sequence, so the prompt comes first, then images in the
+    //    same order they were named in the preamble.
     const reqParts: Array<
       { text: string } | { inlineData: { mimeType: string; data: string } }
-    > = [];
+    > = [{ text: fullPrompt }];
 
-    const maskParsed = parseDataUrl(input.options?.maskDataUrl);
+    if (originalImg) {
+      // Image 1 = ORIGINAL (architectural anchor)
+      reqParts.push({
+        inlineData: { mimeType: originalImg.mime, data: originalImg.data },
+      });
+      // Image 2 = CURRENT WORKING VERSION (last edited frame)
+      reqParts.push({
+        inlineData: { mimeType: currentImg.mime, data: currentImg.data },
+      });
+    } else {
+      // Single source image — first iteration of the pipeline
+      reqParts.push({
+        inlineData: { mimeType: currentImg.mime, data: currentImg.data },
+      });
+    }
+
     if (maskParsed) {
-      // Strong, explicit mask instruction goes BEFORE the prompt so the model
-      // anchors on the constraint first.
-      const maskPreamble = [
-        `MASK-GUIDED EDIT MODE — the request below applies ONLY to the area painted WHITE in the second image (the "mask").`,
-        `RULES:`,
-        `1. WHITE pixels in the mask = the region to MODIFY. Apply the task strictly inside this region.`,
-        `2. BLACK pixels in the mask = REGION TO PRESERVE. Every pixel outside the white area must remain BIT-FOR-BIT identical to the first image: same colors, same texture, same furniture, same lighting, same shadows, same composition, same perspective.`,
-        `3. Where you remove or replace something inside the white area, inpaint so the edge blends seamlessly with the surrounding unmodified pixels.`,
-        `4. Do NOT extend edits beyond the masked area, even if it would look "better" — the user picked this exact zone deliberately.`,
-        ``,
-        `TASK INSIDE THE WHITE AREA:`,
-      ].join("\n");
-      prompt = `${maskPreamble}\n${prompt}`;
-
-      reqParts.push({ text: prompt });
-      // First image: source (the photo to edit)
-      reqParts.push({ inlineData: { mimeType: mime, data: base64 } });
-      // Second image: mask (white = edit, black = keep)
+      // Mask always goes last so the model treats it as the constraint overlay.
       reqParts.push({
         inlineData: { mimeType: maskParsed.mime, data: maskParsed.data },
       });
-    } else {
-      reqParts.push({ text: prompt });
-      reqParts.push({ inlineData: { mimeType: mime, data: base64 } });
     }
 
     // Call Gemini

@@ -136,12 +136,21 @@ export function StudioProvider({
       setIsGenerating(true);
       setResult(null);
       try {
+        // Send original pipeline anchor when we're past step 0, so Gemini
+        // can use it as the immutable architectural reference.
+        const pipelineOriginal = pipeline.originalUrl;
+        const originalUrl =
+          pipelineOriginal && pipelineOriginal !== image.url
+            ? pipelineOriginal
+            : undefined;
+
         const out = await generate({
           tool,
           inputUrl: image.url,
           options: {
             ...(options ?? {}),
             ...(maskDataUrl ? { maskDataUrl } : {}),
+            ...(originalUrl ? { originalUrl } : {}),
           } as ProcessOptions,
         });
 
