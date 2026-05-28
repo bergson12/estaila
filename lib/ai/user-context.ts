@@ -78,6 +78,37 @@ const TOOL_LABELS: Record<string, string> = {
   REMOVE_OBJECT: "Quitar objeto",
 };
 
+/**
+ * Heurística: ¿la pregunta del usuario necesita leer SUS datos?
+ * Si no, saltamos las ~12 queries del snapshot y respondemos rápido.
+ */
+const DATA_INTENT_RE =
+  /\b(contacto|contactos|tel[eé]fono|n[uú]mero|celular|correo|email|cliente|lead|propiedad|propiedades|listado|inmueble|casa|apartamento|precio|tarjeta|sitio|portal|link|enlace|foto|fotos|galer[ií]a|edit[eé]|generad|cita|citas|agenda|reuni[oó]n|visita|finanza|ingreso|gasto|balance|comisi[oó]n|mi |mis |tengo|cu[aá]nt|cu[aá]l)\b/i;
+
+export function needsUserData(message: string): boolean {
+  return DATA_INTENT_RE.test(message);
+}
+
+/** Resuelve la promesa o devuelve `fallback` si tarda más de `ms`. */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p.catch(() => fallback),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+const QUERY_TIMEOUT_MS = 4000;
+
+type SnapProp = {
+  id: string;
+  title: string;
+  priceUSD: unknown;
+  location: string | null;
+  operation: string;
+  slug: string | null;
+  publicEnabled: boolean;
+};
+
 export async function buildUserContextSnapshot(
   userId: string,
   message: string
@@ -101,105 +132,138 @@ export async function buildUserContextSnapshot(
     income,
     expense,
   ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        name: true,
-        email: true,
-        agentRole: true,
-        agentLocation: true,
-        agentPhone: true,
-        plan: true,
-        credits: true,
-      },
-    }),
-    prisma.digitalCard.findFirst({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      select: { slug: true, title: true, isActive: true },
-    }),
-    prisma.site.findUnique({
-      where: { userId },
-      select: { slug: true, published: true, title: true },
-    }),
-    prisma.contact.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      take: 15,
-      select: { id: true, name: true, phone: true, email: true, type: true },
-    }),
-    kw.length
-      ? prisma.contact.findMany({
-          where: {
-            userId,
-            OR: kw.map((k) => ({ name: { contains: k } })),
-          },
-          take: 8,
-          select: { id: true, name: true, phone: true, email: true, type: true },
-        })
-      : Promise.resolve([]),
-    prisma.property.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        title: true,
-        priceUSD: true,
-        location: true,
-        operation: true,
-        slug: true,
-        publicEnabled: true,
-      },
-    }),
-    kw.length
-      ? prisma.property.findMany({
-          where: {
-            userId,
-            OR: kw.map((k) => ({ title: { contains: k } })),
-          },
-          take: 8,
-          select: {
-            id: true,
-            title: true,
-            priceUSD: true,
-            location: true,
-            operation: true,
-            slug: true,
-            publicEnabled: true,
-          },
-        })
-      : Promise.resolve([]),
-    prisma.contact.count({ where: { userId } }),
-    prisma.property.count({ where: { userId } }),
-    prisma.aIGeneration.findMany({
-      where: { userId, status: "COMPLETED", outputUrl: { not: null } },
-      orderBy: { completedAt: "desc" },
-      take: 5,
-      select: { tool: true, outputUrl: true, completedAt: true },
-    }),
-    prisma.appointment.findMany({
-      where: {
-        userId,
-        startAt: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) },
-      },
-      orderBy: { startAt: "asc" },
-      take: 8,
-      select: {
-        title: true,
-        startAt: true,
-        location: true,
-        contactId: true,
-      },
-    }),
-    prisma.transaction.aggregate({
-      where: { userId, category: "INGRESO", date: { gte: monthStart } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: { userId, category: "GASTO", date: { gte: monthStart } },
-      _sum: { amount: true },
-    }),
+    withTimeout(
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          name: true,
+          email: true,
+          agentRole: true,
+          agentLocation: true,
+          agentPhone: true,
+          plan: true,
+          credits: true,
+        },
+      }),
+      QUERY_TIMEOUT_MS,
+      null
+    ),
+    withTimeout(
+      prisma.digitalCard.findFirst({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        select: { slug: true, title: true, isActive: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      null
+    ),
+    withTimeout(
+      prisma.site.findUnique({
+        where: { userId },
+        select: { slug: true, published: true, title: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      null
+    ),
+    withTimeout(
+      prisma.contact.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        take: 15,
+        select: { id: true, name: true, phone: true, email: true, type: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      [] as { id: string; name: string; phone: string | null; email: string | null; type: string }[]
+    ),
+    withTimeout(
+      kw.length
+        ? prisma.contact.findMany({
+            where: { userId, OR: kw.map((k) => ({ name: { contains: k } })) },
+            take: 8,
+            select: { id: true, name: true, phone: true, email: true, type: true },
+          })
+        : Promise.resolve([] as { id: string; name: string; phone: string | null; email: string | null; type: string }[]),
+      QUERY_TIMEOUT_MS,
+      [] as { id: string; name: string; phone: string | null; email: string | null; type: string }[]
+    ),
+    withTimeout(
+      prisma.property.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        take: 8,
+        select: {
+          id: true,
+          title: true,
+          priceUSD: true,
+          location: true,
+          operation: true,
+          slug: true,
+          publicEnabled: true,
+        },
+      }) as unknown as Promise<SnapProp[]>,
+      QUERY_TIMEOUT_MS,
+      [] as SnapProp[]
+    ),
+    withTimeout(
+      (kw.length
+        ? prisma.property.findMany({
+            where: { userId, OR: kw.map((k) => ({ title: { contains: k } })) },
+            take: 8,
+            select: {
+              id: true,
+              title: true,
+              priceUSD: true,
+              location: true,
+              operation: true,
+              slug: true,
+              publicEnabled: true,
+            },
+          })
+        : Promise.resolve([])) as unknown as Promise<SnapProp[]>,
+      QUERY_TIMEOUT_MS,
+      [] as SnapProp[]
+    ),
+    withTimeout(prisma.contact.count({ where: { userId } }), QUERY_TIMEOUT_MS, 0),
+    withTimeout(prisma.property.count({ where: { userId } }), QUERY_TIMEOUT_MS, 0),
+    withTimeout(
+      prisma.aIGeneration.findMany({
+        where: { userId, status: "COMPLETED", outputUrl: { not: null } },
+        orderBy: { completedAt: "desc" },
+        take: 5,
+        select: { tool: true, outputUrl: true, completedAt: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      [] as { tool: string; outputUrl: string | null; completedAt: Date | null }[]
+    ),
+    withTimeout(
+      prisma.appointment.findMany({
+        where: {
+          userId,
+          startAt: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) },
+        },
+        orderBy: { startAt: "asc" },
+        take: 8,
+        select: { title: true, startAt: true, location: true, contactId: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      [] as { title: string; startAt: Date; location: string | null; contactId: string | null }[]
+    ),
+    withTimeout(
+      prisma.transaction.aggregate({
+        where: { userId, category: "INGRESO", date: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      { _sum: { amount: null } }
+    ),
+    withTimeout(
+      prisma.transaction.aggregate({
+        where: { userId, category: "GASTO", date: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      QUERY_TIMEOUT_MS,
+      { _sum: { amount: null } }
+    ),
   ]);
 
   // Merge recent + matched contacts/properties, dedupe by id, matched first
@@ -212,10 +276,14 @@ export async function buildUserContextSnapshot(
     .map((a) => a.contactId)
     .filter((x): x is string => !!x);
   const apptContacts = apptContactIds.length
-    ? await prisma.contact.findMany({
-        where: { id: { in: apptContactIds } },
-        select: { id: true, name: true },
-      })
+    ? await withTimeout(
+        prisma.contact.findMany({
+          where: { id: { in: apptContactIds } },
+          select: { id: true, name: true },
+        }),
+        QUERY_TIMEOUT_MS,
+        [] as { id: string; name: string }[]
+      )
     : [];
   const apptContactName = new Map(apptContacts.map((c) => [c.id, c.name]));
 

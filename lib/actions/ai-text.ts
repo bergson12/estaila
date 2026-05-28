@@ -7,10 +7,9 @@ import { ask, chat, type ChatMessage } from "@/lib/ai/deepseek";
 import {
   CRM_ROUTES,
   CRM_ENTITIES,
-  WIZARDS,
   RESPONSE_SHAPE,
 } from "@/lib/ai/crm-context";
-import { buildUserContextSnapshot } from "@/lib/ai/user-context";
+import { buildUserContextSnapshot, needsUserData } from "@/lib/ai/user-context";
 
 // ============================================================
 // Agent bio generation
@@ -259,12 +258,13 @@ async function realEstateChatInner(args: {
     select: { name: true, plan: true, credits: true, agentLocation: true },
   });
 
-  // Full data snapshot only in free-form chat mode (so the bot can answer
-  // "dame el número de Juan", "última foto", "link de mi tarjeta"). Skip in
-  // wizard mode to keep responses fast.
-  const snapshot = args.wizard
-    ? ""
-    : await buildUserContextSnapshot(user.id, args.message);
+  // Data snapshot ONLY when the question actually needs the user's data
+  // (e.g. "número de Juan", "mi tarjeta", "última foto"). For general
+  // questions we skip the ~12 DB queries entirely → respuesta rápida.
+  const snapshot =
+    args.wizard || !needsUserData(args.message)
+      ? ""
+      : await buildUserContextSnapshot(user.id, args.message);
 
   // In wizard mode use a slimmer system prompt: just the relevant wizard
   // template + the response shape. CRM_ROUTES / CRM_ENTITIES bloat the
@@ -287,13 +287,12 @@ Ayudas a agentes inmobiliarios con:
 - Onboarding del CRM y navegación
 - Crear datos: contactos, propiedades, citas — si el usuario te da los datos.
 
+CONTEXTO: ${dbUser?.name ?? user.name} · ${dbUser?.agentLocation ?? "zona n/d"} · plan ${dbUser?.plan ?? "FREE"} · ${dbUser?.credits ?? 0} créditos IA.
 ${snapshot}
 
 ${CRM_ROUTES}
 
 ${CRM_ENTITIES}
-
-${WIZARDS}
 
 ${RESPONSE_SHAPE}
 
@@ -324,9 +323,9 @@ REGLAS:
   try {
     raw = await chat(messages, {
       temperature: args.wizard ? 0.3 : 0.6,
-      maxTokens: 4096,
+      maxTokens: 1500,
       jsonMode: true,
-      timeoutMs: 55000,
+      timeoutMs: 30000,
     });
   } catch (e) {
     const msg = (e as Error).message;
@@ -346,9 +345,9 @@ REGLAS:
       ];
       raw = await chat(retryMessages, {
         temperature: 0.7, // slightly higher to escape deterministic empty
-        maxTokens: 4096,
+        maxTokens: 1500,
         jsonMode: true,
-        timeoutMs: 55000,
+        timeoutMs: 30000,
       });
     } else {
       throw e;
