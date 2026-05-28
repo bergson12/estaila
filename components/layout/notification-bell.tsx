@@ -46,11 +46,15 @@ const TYPE_META: Record<
 // Silence Mail unused import (reserved for future EMAIL type)
 void Mail;
 
+const DISMISS_KEY = "estaila:notifications:dismissed";
+
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<LiveNotification[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [permission, setPermission] = useState<PermissionState>("default");
+  // IDs already seen (badge cleared once the user opens the bell).
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const popoverRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -58,6 +62,35 @@ export function NotificationBell() {
   useEffect(() => {
     setPermission(readPermission());
   }, []);
+
+  // Hydrate dismissed set from localStorage
+  useEffect(() => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(DISMISS_KEY) ?? "[]");
+      if (Array.isArray(arr)) setDismissed(new Set(arr));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // When the dropdown is open and items are loaded, mark them all as seen so
+  // the badge clears. New notifications (new IDs) will surface again later.
+  useEffect(() => {
+    if (!open || !items || items.length === 0) return;
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      for (const i of items) next.add(i.id);
+      try {
+        localStorage.setItem(
+          DISMISS_KEY,
+          JSON.stringify([...next].slice(-300))
+        );
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, [open, items]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,8 +188,11 @@ export function NotificationBell() {
     }
   }, [items, permission]);
 
-  const unreadCount = items?.filter((i) => i.unread).length ?? 0;
-  const hasHigh = items?.some((i) => i.urgency === "high");
+  const unreadCount =
+    items?.filter((i) => i.unread && !dismissed.has(i.id)).length ?? 0;
+  const hasHigh = items?.some(
+    (i) => i.urgency === "high" && i.unread && !dismissed.has(i.id)
+  );
 
   return (
     <div className="relative">

@@ -37,8 +37,10 @@ create_property { title (req), category?, operation?, priceUSD?, bedrooms?, bath
   → category: CASA|APARTAMENTO|SOLAR|TERRENO|LOCAL_COMERCIAL
   → operation: EN_VENTA|EN_ALQUILER
 
-create_appointment { title (req), startAt (req, ISO date), endAt?, contactId?, propertyId?, location?, notes? }
+create_appointment { title (req), startAt (req, ISO date), endAt?, contactName?, propertyTitle?, location?, notes? }
   → Para agendar visitas, llamadas, firmas.
+  → Si el usuario menciona un contacto ("con Felipe"), incluye contactName con su nombre exacto.
+  → Si menciona una propiedad, incluye propertyTitle. NO inventes IDs; el sistema los resuelve por nombre.
 
 Reglas:
 - Solo sugiere create_* cuando el usuario te DA datos concretos.
@@ -112,8 +114,8 @@ FORMATO DE RESPUESTA (JSON estricto, sin markdown fences):
     },
     {
       "type": "create_appointment",
-      "label": "Agendar visita mañana 10am",
-      "data": { "title": "Visita Casa Miraflores", "startAt": "2026-05-26T10:00:00.000Z" }
+      "label": "Agendar visita con Felipe mañana 10am",
+      "data": { "title": "Visita con Felipe", "startAt": "2026-05-26T10:00:00.000Z", "contactName": "Felipe Ayala" }
     },
     {
       "type": "ai_tool",

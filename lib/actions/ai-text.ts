@@ -185,7 +185,7 @@ function buildWizardSystemPrompt(
       'Título (ej: "Visita Casa Miraflores")',
       'Fecha y hora (ej: "mañana 3pm")',
       "Duración aprox en minutos (default 60)",
-      "Asociar a contacto o propiedad (opcional)",
+      "¿Con qué contacto? (incluye contactName en el action) y/o propiedad (propertyTitle)",
       "Ubicación física",
       "Notas (opcional)",
     ],
@@ -431,6 +431,10 @@ export async function chatCreateAppointment(data: {
   endAt?: string;
   contactId?: string;
   propertyId?: string;
+  /** Nombre del contacto mencionado en el chat — se resuelve a contactId. */
+  contactName?: string;
+  /** Título de la propiedad mencionada — se resuelve a propertyId. */
+  propertyTitle?: string;
   location?: string;
   notes?: string;
 }): Promise<{ id: string }> {
@@ -439,20 +443,45 @@ export async function chatCreateAppointment(data: {
   if (!data.startAt) throw new Error("Fecha requerida");
   const startAt = new Date(data.startAt);
   if (isNaN(startAt.getTime())) throw new Error("Fecha inválida");
+
+  // Resolve contact/property by name when the chatbot didn't supply IDs
+  // (the model only knows names from the snapshot, not IDs).
+  let contactId = data.contactId ?? null;
+  if (!contactId && data.contactName?.trim()) {
+    const match = await prisma.contact.findFirst({
+      where: { userId: user.id, name: { contains: data.contactName.trim() } },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true },
+    });
+    contactId = match?.id ?? null;
+  }
+
+  let propertyId = data.propertyId ?? null;
+  if (!propertyId && data.propertyTitle?.trim()) {
+    const match = await prisma.property.findFirst({
+      where: { userId: user.id, title: { contains: data.propertyTitle.trim() } },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true },
+    });
+    propertyId = match?.id ?? null;
+  }
+
   const appt = await prisma.appointment.create({
     data: {
       userId: user.id,
       title: data.title.trim(),
       startAt,
       endAt: data.endAt ? new Date(data.endAt) : null,
-      contactId: data.contactId ?? null,
-      propertyId: data.propertyId ?? null,
+      contactId,
+      propertyId,
       location: data.location?.trim() ?? null,
       notes: data.notes?.trim() ?? null,
     },
     select: { id: true },
   });
   revalidatePath("/agenda");
+  if (contactId) revalidatePath(`/contactos/${contactId}`);
+  if (propertyId) revalidatePath(`/propiedades/${propertyId}`);
   return appt;
 }
 
