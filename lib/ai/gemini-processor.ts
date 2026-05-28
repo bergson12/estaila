@@ -52,19 +52,21 @@ const TOOL_PROMPTS: Record<string, Prompter> = {
 
   DECLUTTER: (opts) => {
     const mode = opts?.declutterMode ?? "AUTO";
-    const what =
+    const target =
       mode === "FURNITURE"
-        ? "furniture only — keep plants, art, and architectural decoration"
+        ? "ALL furniture: sofas, chairs, tables, beds, dressers, shelves, TV stands, desks. KEEP plants, framed art on walls, and built-in architectural decoration (moldings, columns)."
         : mode === "PEOPLE"
-          ? "people only — leave the room exactly as is otherwise"
+          ? "ALL people, pets, and reflections of people. Leave every object, piece of furniture, and decoration exactly as it is."
           : mode === "PERSONAL"
-            ? "personal items, papers, clothes, toys, and general clutter"
-            : "ALL furniture, people, personal objects, and clutter";
+            ? "personal clutter: papers, magazines, clothes, shoes, toys, cables, food, dishes, toiletries, remote controls, phones, bags. Keep furniture and structural elements intact."
+            : "EVERY single piece of furniture, every personal object, every person, every loose item. Leave the room completely empty — bare walls, bare floor, only architectural elements remaining.";
     return [
-      `Remove ${what} from this room.`,
-      `Inpaint cleanly where objects used to be. The result should look like a clean, empty, ready-to-show real-estate photo.`,
-      `STRUCTURAL PRESERVATION (critical): do NOT modify walls, windows, doors, columns, ceilings, floors, or room dimensions.`,
-      `No watermarks. No text. No new objects added.`,
+      `TASK: object removal / inpainting for real-estate photography.`,
+      `Remove ${target}`,
+      `Inpaint behind removed objects so walls, floors, ceilings, and architectural surfaces look continuous, clean, and photorealistic — as if the objects were never there. Match texture, color, lighting, shadows, and perspective perfectly.`,
+      `RESULT: a clean, empty, professionally-shot listing photo ready for virtual staging.`,
+      `STRUCTURAL PRESERVATION (critical): do NOT modify walls, windows, doors, columns, ceilings, floors, room dimensions, or camera perspective. The viewpoint must be IDENTICAL.`,
+      `Do NOT add new objects, furniture, text, watermarks, logos, or signage.`,
     ].join("\n");
   },
 
@@ -188,6 +190,20 @@ function humanizeDensity(d?: string): string {
   return "balanced, well-proportioned";
 }
 
+/**
+ * Decode a `data:image/png;base64,xxxxx` URL into `{ mime, data }`.
+ * Returns null if not a data URL (so a remote https mask URL would fall
+ * through — we don't currently support that, MaskBrush always emits data URLs).
+ */
+function parseDataUrl(
+  dataUrl: string | undefined | null
+): { mime: string; data: string } | null {
+  if (!dataUrl || !dataUrl.startsWith("data:")) return null;
+  const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
+  if (!match) return null;
+  return { mime: match[1], data: match[2] };
+}
+
 export class GeminiProcessor implements ImageProcessor {
   constructor(
     private apiKey: string,
@@ -199,7 +215,7 @@ export class GeminiProcessor implements ImageProcessor {
 
     // Build prompt
     const builder = TOOL_PROMPTS[input.tool] ?? (() => "Improve this real-estate photo.");
-    const prompt = builder(input.options);
+    let prompt = builder(input.options);
 
     // Resolve source — local file OR remote URL
     let buf: Buffer;
@@ -227,6 +243,47 @@ export class GeminiProcessor implements ImageProcessor {
     }
     const base64 = buf.toString("base64");
 
+    // Extra text the user may have typed in the "detalles extra" textarea.
+    if (input.options?.extraPrompt?.trim()) {
+      prompt += `\n\nADDITIONAL USER INSTRUCTIONS: ${input.options.extraPrompt.trim()}`;
+    }
+
+    // Build the multimodal parts list. We always send the prompt + source image.
+    // If the user painted a mask, we send it as a SECOND inlineData and reference
+    // it explicitly — this is how Nanobanana (gemini-2.5-flash-image) does
+    // mask-guided inpainting.
+    const reqParts: Array<
+      { text: string } | { inlineData: { mimeType: string; data: string } }
+    > = [];
+
+    const maskParsed = parseDataUrl(input.options?.maskDataUrl);
+    if (maskParsed) {
+      // Strong, explicit mask instruction goes BEFORE the prompt so the model
+      // anchors on the constraint first.
+      const maskPreamble = [
+        `MASK-GUIDED EDIT MODE — the request below applies ONLY to the area painted WHITE in the second image (the "mask").`,
+        `RULES:`,
+        `1. WHITE pixels in the mask = the region to MODIFY. Apply the task strictly inside this region.`,
+        `2. BLACK pixels in the mask = REGION TO PRESERVE. Every pixel outside the white area must remain BIT-FOR-BIT identical to the first image: same colors, same texture, same furniture, same lighting, same shadows, same composition, same perspective.`,
+        `3. Where you remove or replace something inside the white area, inpaint so the edge blends seamlessly with the surrounding unmodified pixels.`,
+        `4. Do NOT extend edits beyond the masked area, even if it would look "better" — the user picked this exact zone deliberately.`,
+        ``,
+        `TASK INSIDE THE WHITE AREA:`,
+      ].join("\n");
+      prompt = `${maskPreamble}\n${prompt}`;
+
+      reqParts.push({ text: prompt });
+      // First image: source (the photo to edit)
+      reqParts.push({ inlineData: { mimeType: mime, data: base64 } });
+      // Second image: mask (white = edit, black = keep)
+      reqParts.push({
+        inlineData: { mimeType: maskParsed.mime, data: maskParsed.data },
+      });
+    } else {
+      reqParts.push({ text: prompt });
+      reqParts.push({ inlineData: { mimeType: mime, data: base64 } });
+    }
+
     // Call Gemini
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
     const res = await fetch(url, {
@@ -236,14 +293,7 @@ export class GeminiProcessor implements ImageProcessor {
         "X-goog-api-key": this.apiKey,
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType: mime, data: base64 } },
-            ],
-          },
-        ],
+        contents: [{ parts: reqParts }],
         generationConfig: {
           responseModalities: ["IMAGE"],
         },
