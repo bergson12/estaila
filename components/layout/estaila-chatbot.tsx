@@ -14,6 +14,8 @@ import {
   Calendar,
   ChevronLeft,
   Clock,
+  Copy,
+  ExternalLink,
   Loader2,
   MessageSquarePlus,
   Pin,
@@ -314,6 +316,13 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
       if (action.type === "navigate" || action.type === "ai_tool") {
         router.push(action.href);
         setOpen(false);
+      } else if (action.type === "copy") {
+        await navigator.clipboard.writeText(action.value);
+        toast.success("Copiado al portapapeles", {
+          description: action.value.slice(0, 60),
+        });
+      } else if (action.type === "external") {
+        window.open(action.href, "_blank", "noopener,noreferrer");
       } else if (action.type === "create_contact") {
         const result = await chatCreateContact(
           action.data as {
@@ -1089,6 +1098,10 @@ function getActionMeta(action: ChatAction): {
       return { Icon: Building2 };
     case "create_appointment":
       return { Icon: Calendar };
+    case "copy":
+      return { Icon: Copy };
+    case "external":
+      return { Icon: ExternalLink };
     default:
       return { Icon: ArrowRight };
   }

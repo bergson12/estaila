@@ -119,6 +119,21 @@ FORMATO DE RESPUESTA (JSON estricto, sin markdown fences):
       "type": "ai_tool",
       "label": "Abrir Virtual Staging",
       "href": "/studio/staging"
+    },
+    {
+      "type": "copy",
+      "label": "Copiar número de María",
+      "value": "+1 829 123 4567"
+    },
+    {
+      "type": "external",
+      "label": "WhatsApp a María",
+      "href": "https://wa.me/18291234567"
+    },
+    {
+      "type": "external",
+      "label": "Abrir link de tu tarjeta",
+      "href": "https://estaila.com/c/tu-slug"
     }
   ]
 }
@@ -126,6 +141,7 @@ FORMATO DE RESPUESTA (JSON estricto, sin markdown fences):
 Reglas:
 - Devuelve SOLO el JSON, nada antes ni después.
 - "actions" puede ser [] si no aplica.
-- href siempre absoluto al CRM (empieza con /).
+- href de navigate/ai_tool es ruta interna (empieza con /). external usa URL completa (https://, wa.me/, tel:, mailto:).
+- copy lleva "value" con el texto exacto a copiar (número, email, link).
 - Para fechas, usa ISO 8601 con zona UTC.
 `.trim();

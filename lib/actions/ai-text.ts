@@ -10,6 +10,7 @@ import {
   WIZARDS,
   RESPONSE_SHAPE,
 } from "@/lib/ai/crm-context";
+import { buildUserContextSnapshot } from "@/lib/ai/user-context";
 
 // ============================================================
 // Agent bio generation
@@ -142,7 +143,11 @@ export type ChatAction =
   | { type: "ai_tool"; label: string; href: string }
   | { type: "create_contact"; label: string; data: Record<string, string | undefined> }
   | { type: "create_property"; label: string; data: Record<string, unknown> }
-  | { type: "create_appointment"; label: string; data: Record<string, unknown> };
+  | { type: "create_appointment"; label: string; data: Record<string, unknown> }
+  /** Copy a literal value (phone, email, public link) to the clipboard. */
+  | { type: "copy"; label: string; value: string }
+  /** Open an external URL: wa.me, tel:, mailto:, or a public estaila link. */
+  | { type: "external"; label: string; href: string };
 
 export type ChatResponse = {
   text: string;
@@ -254,23 +259,12 @@ async function realEstateChatInner(args: {
     select: { name: true, plan: true, credits: true, agentLocation: true },
   });
 
-  // Live stats only needed in free-form chat mode. Skip in wizard mode
-  // to save 3 round-trips against Turso (each ~100ms from cold-start regions).
-  const [propCount, contactCount, todayAppts] = args.wizard
-    ? [0, 0, 0]
-    : await Promise.all([
-        prisma.property.count({ where: { userId: user.id } }),
-        prisma.contact.count({ where: { userId: user.id } }),
-        prisma.appointment.count({
-          where: {
-            userId: user.id,
-            startAt: {
-              gte: new Date(),
-              lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
-            },
-          },
-        }),
-      ]);
+  // Full data snapshot only in free-form chat mode (so the bot can answer
+  // "dame el número de Juan", "última foto", "link de mi tarjeta"). Skip in
+  // wizard mode to keep responses fast.
+  const snapshot = args.wizard
+    ? ""
+    : await buildUserContextSnapshot(user.id, args.message);
 
   // In wizard mode use a slimmer system prompt: just the relevant wizard
   // template + the response shape. CRM_ROUTES / CRM_ENTITIES bloat the
@@ -283,22 +277,17 @@ async function realEstateChatInner(args: {
       )
     : `Eres "Estaila Assistant", el asistente IA del CRM inmobiliario Estaila.
 
-CONTEXTO DEL USUARIO:
-- Nombre: ${dbUser?.name ?? user.name}
-- Zona: ${dbUser?.agentLocation ?? "no especificada"}
-- Plan: ${dbUser?.plan ?? "FREE"}
-- Créditos IA: ${dbUser?.credits ?? 0}
-- Propiedades cargadas: ${propCount}
-- Contactos cargados: ${contactCount}
-- Citas próximas (24h): ${todayAppts}
-
 ROL:
 Ayudas a agentes inmobiliarios con:
+- Consultar SUS datos: número/email de un contacto, su última foto editada,
+  el link de su tarjeta o sitio, sus propiedades, próximas citas, finanzas.
 - Estrategia (pricing, posicionamiento, buyer personas, negociación)
 - Contenido (posts, descripciones MLS, WhatsApp, captions)
 - Marketing 30/60/90 días
 - Onboarding del CRM y navegación
 - Crear datos: contactos, propiedades, citas — si el usuario te da los datos.
+
+${snapshot}
 
 ${CRM_ROUTES}
 
@@ -310,7 +299,10 @@ ${RESPONSE_SHAPE}
 
 REGLAS:
 - Respuestas concisas, accionables. Markdown ligero. Bullets cuando ayuden.
-- No inventes precios ni datos. Si falta info, pregunta concisamente.
+- Para datos personales del usuario, usa SIEMPRE el bloque "DATOS DEL USUARIO".
+  No inventes números, links ni precios. Si no está ahí, dilo y sugiere dónde verlo.
+- Cuando devuelvas un número/email/link, añade un action "copy" con el valor exacto.
+  Para teléfonos añade también "external" wa.me/<numero> o tel:<numero>.
 - Hablas español por defecto. Inglés si el usuario lo hace.
 - Hasta 4 acciones por respuesta. Solo las más útiles.
 - Cuando alguien diga "agéndame con Juan mañana 3pm", devuelve create_appointment con la fecha calculada.
