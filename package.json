@@ -19,6 +19,17 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msw",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@dnd-kit/core": "^6.3.1",
