@@ -9,6 +9,7 @@
  */
 
 import {
+  AlertCircle,
   ArrowRight,
   Calendar,
   ChevronLeft,
@@ -18,6 +19,7 @@ import {
   Pin,
   PinOff,
   Plus,
+  RefreshCw,
   Send,
   Sparkles,
   Trash2,
@@ -53,7 +55,13 @@ const FAB_DISMISSED_KEY = "estaila:chatbot:fab-collapsed";
 
 type WizardKind = "CONTACT" | "PROPERTY" | "APPOINTMENT";
 
-type StoredTurn = ChatTurn & { actions?: ChatAction[] };
+type StoredTurn = ChatTurn & {
+  actions?: ChatAction[];
+  /** Mark this turn as an error so we render the pretty error card */
+  errorCode?: "empty" | "quota" | "network" | "unknown";
+  /** Original user message to allow retry */
+  retryOf?: string;
+};
 
 const SUGGESTED = [
   "¿Cómo posicionar el precio de una casa en Punta Cana?",
@@ -219,17 +227,33 @@ export function EstailaChatbot() {
         message: text,
         wizard,
       });
+
+      // Classify error for nicer UX
+      let errorCode: StoredTurn["errorCode"] | undefined;
+      if (response.errorDetail) {
+        const err = response.errorDetail.toLowerCase();
+        if (err.includes("vacía") || err.includes("empty") || err.includes("finish_reason")) {
+          errorCode = "empty";
+        } else if (err.includes("quota") || err.includes("429") || err.includes("balance") || err.includes("credit")) {
+          errorCode = "quota";
+        } else if (err.includes("network") || err.includes("timeout") || err.includes("aborterror")) {
+          errorCode = "network";
+        } else {
+          errorCode = "unknown";
+        }
+      }
+
       setHistory((h) => [
         ...h,
         {
           role: "assistant",
-          content: response.text,
-          actions: response.actions,
+          content: errorCode ? "" : response.text, // hide raw text on error
+          actions: errorCode ? [] : response.actions,
+          errorCode,
+          retryOf: errorCode ? text : undefined,
         },
       ]);
-      if (response.errorDetail) {
-        toast.error(response.errorDetail, { duration: 12000 });
-      }
+      // No toast — the inline card is the feedback now
 
       // Persist turn only if it didn't fail
       if (activeConvoId && !response.errorDetail) {
@@ -245,14 +269,14 @@ export function EstailaChatbot() {
         });
       }
     } catch (e) {
-      // Network / redacted RSC error. Show whatever Next gave us.
-      const msg = (e as Error).message ?? "Error desconocido";
-      toast.error(msg, { duration: 12000 });
+      // Network / redacted RSC error. Show pretty card.
       setHistory((h) => [
         ...h,
         {
           role: "assistant",
-          content: `⚠️ ${msg}`,
+          content: "",
+          errorCode: "network",
+          retryOf: text,
         },
       ]);
     } finally {
@@ -511,21 +535,44 @@ export function EstailaChatbot() {
                         m.role === "user" ? "items-end" : "items-start"
                       )}
                     >
-                      <div
-                        className={cn(
-                          "max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
-                          m.role === "user"
-                            ? "rounded-br-sm bg-primary text-primary-foreground"
-                            : "rounded-bl-sm border border-border bg-card text-foreground"
-                        )}
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {m.content}
-                      </div>
+                      {m.role === "assistant" && m.errorCode ? (
+                        <ErrorCard
+                          code={m.errorCode}
+                          onRetry={
+                            m.retryOf
+                              ? () => {
+                                  // Remove this error bubble + the last user msg
+                                  // then resend
+                                  setHistory((h) =>
+                                    h.slice(0, Math.max(0, h.length - 2))
+                                  );
+                                  void send(m.retryOf);
+                                }
+                              : undefined
+                          }
+                          onUpgrade={() => {
+                            router.push("/pricing");
+                            setOpen(false);
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            "max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
+                            m.role === "user"
+                              ? "rounded-br-sm bg-primary text-primary-foreground"
+                              : "rounded-bl-sm border border-border bg-card text-foreground"
+                          )}
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {m.content}
+                        </div>
+                      )}
                       {m.role === "assistant" &&
+                        !m.errorCode &&
                         m.actions &&
                         m.actions.length > 0 && (
                           <div className="mt-1.5 flex max-w-[85%] flex-wrap gap-1.5">
@@ -844,6 +891,96 @@ function ConvoRow({
 // ============================================================
 // Action chip
 // ============================================================
+
+// ============================================================
+// Pretty error card (replaces raw error text in the chat)
+// ============================================================
+
+function ErrorCard({
+  code,
+  onRetry,
+  onUpgrade,
+}: {
+  code: "empty" | "quota" | "network" | "unknown";
+  onRetry?: () => void;
+  onUpgrade?: () => void;
+}) {
+  const meta = {
+    empty: {
+      title: "El asistente tuvo un hipo",
+      desc: "La IA no devolvió respuesta esta vez. Suele resolverse al reintentar — a veces el modelo se traba con preguntas ambiguas.",
+      tip: "Si pasa seguido, intenta una pregunta más simple.",
+      showUpgrade: false,
+    },
+    quota: {
+      title: "Sin créditos de IA disponibles",
+      desc: "Tu cuenta agotó los créditos del plan actual. Compra más créditos o sube de plan para seguir.",
+      tip: "Los créditos se recargan cada mes automáticamente.",
+      showUpgrade: true,
+    },
+    network: {
+      title: "Conexión interrumpida",
+      desc: "No pudimos contactar al asistente. Puede ser temporal de tu lado o del servicio de IA.",
+      tip: "Verifica tu Internet y reintenta.",
+      showUpgrade: false,
+    },
+    unknown: {
+      title: "Algo salió mal",
+      desc: "Ocurrió un error inesperado. Si persiste, abre un ticket de soporte.",
+      tip: "El equipo fue notificado automáticamente.",
+      showUpgrade: false,
+    },
+  }[code];
+
+  return (
+    <div className="w-full max-w-[85%] overflow-hidden rounded-2xl rounded-bl-sm border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+      <div className="flex items-start gap-3 p-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600">
+          <AlertCircle className="h-4 w-4" strokeWidth={2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-tight text-foreground">
+            {meta.title}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {meta.desc}
+          </p>
+          <p className="mt-1.5 text-[11px] italic text-muted-foreground/80">
+            💡 {meta.tip}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 border-t border-amber-500/20 bg-amber-500/5 px-3 py-2">
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="inline-flex items-center gap-1.5 rounded-md bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-amber-600"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Reintentar
+          </button>
+        )}
+        {meta.showUpgrade && onUpgrade && (
+          <button
+            onClick={onUpgrade}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Zap className="h-3 w-3" />
+            Comprar créditos
+          </button>
+        )}
+        {!meta.showUpgrade && (
+          <a
+            href="/pricing"
+            className="ml-auto text-[10px] text-muted-foreground/70 transition-colors hover:text-foreground"
+          >
+            ¿Necesitas más capacidad? →
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ActionChip({
   action,
