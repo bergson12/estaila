@@ -52,7 +52,9 @@ export function BeforeAfter({
     <div
       ref={wrapperRef}
       className={cn(
-        "relative w-full overflow-hidden rounded-xl border border-border bg-muted select-none cursor-ew-resize",
+        // w-fit so the wrapper shrinks to the AFTER image's rendered box;
+        // mx-auto centers it. max-w-full keeps it inside the panel.
+        "relative mx-auto w-fit max-w-full overflow-hidden rounded-xl border border-border bg-muted select-none cursor-ew-resize",
         className
       )}
       onPointerDown={(e) => {
@@ -61,37 +63,29 @@ export function BeforeAfter({
       }}
       onDoubleClick={() => setPos(50)}
     >
-      {/* AFTER — full image, defines container size */}
+      {/* AFTER — in normal flow, defines the container's box (width + height).
+          Capped to viewport height; width follows aspect ratio. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={afterUrl}
         alt={alt}
         draggable={false}
-        className="block h-auto w-full object-cover"
+        className="block max-h-[calc(100vh-16rem)] w-auto max-w-full object-contain"
         style={afterFilter ? { filter: afterFilter } : undefined}
       />
 
-      {/* BEFORE — overlaid, clipped to left portion */}
-      <div
-        className="pointer-events-none absolute inset-y-0 left-0 overflow-hidden"
-        style={{ width: `${pos}%` }}
-      >
-        <div className="absolute inset-0" style={{ width: "100vw", maxWidth: "100%" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={beforeUrl}
-            alt={alt}
-            draggable={false}
-            className="block h-full w-full object-cover"
-            style={{
-              width: wrapperRef.current?.clientWidth
-                ? `${wrapperRef.current.clientWidth}px`
-                : "100%",
-              maxWidth: "none",
-            }}
-          />
-        </div>
-      </div>
+      {/* BEFORE — absolutely overlaid on the SAME box, same size as AFTER.
+          We reveal only the left portion with clip-path so the image is
+          clipped (never resized) — this keeps both frames pixel-aligned
+          even when the AI output has a slightly different aspect ratio. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={beforeUrl}
+        alt={alt}
+        draggable={false}
+        className="pointer-events-none absolute inset-0 block h-full w-full object-cover"
+        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+      />
 
       {/* Divider handle */}
       <div

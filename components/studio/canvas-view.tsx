@@ -31,7 +31,7 @@ export function CanvasView({
     <div className="space-y-3">
       <PhotoAnalysis imageUrl={image.url} />
 
-      <div className="relative overflow-hidden rounded-xl border border-border bg-muted [&_img]:mx-auto [&_img]:max-h-[calc(100vh-16rem)] [&_img]:w-auto [&_img]:object-contain">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
         <AnimatePresence mode="wait">
           {result ? (
             <motion.div
@@ -66,7 +66,7 @@ export function CanvasView({
               <img
                 src={image.url}
                 alt=""
-                className="block"
+                className="mx-auto block max-h-[calc(100vh-16rem)] w-auto object-contain"
               />
               <AnimatePresence>
                 {isGenerating && (
