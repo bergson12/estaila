@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { brandedImageUrl } from "@/lib/public-url";
 import {
   listMyPropertiesLite,
   listMyContactsLite,
@@ -104,7 +105,7 @@ export function DownloadModal({
   }
 
   function copyUrl() {
-    navigator.clipboard.writeText(outputUrl);
+    navigator.clipboard.writeText(brandedImageUrl(outputUrl));
     toast.success("URL copiada al portapapeles");
   }
 
@@ -345,7 +346,7 @@ export function SendToContactDialog({
         // ignore — best effort
       });
 
-      const fullMsg = `${message}\n\n${outputUrl}`;
+      const fullMsg = `${message}\n\n${brandedImageUrl(outputUrl)}`;
       const phone = selected.phone.replace(/[^\d+]/g, "");
       const wa = `https://wa.me/${phone.replace(
         /^\+/,

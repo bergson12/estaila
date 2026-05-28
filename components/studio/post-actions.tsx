@@ -24,6 +24,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { brandedImageUrl } from "@/lib/public-url";
 import {
   DownloadModal,
   SaveToPropertyDialog,
@@ -49,7 +50,7 @@ export function PostActions({
   const [downloadOpen, setDownloadOpen] = useState(false);
 
   function copyUrl() {
-    navigator.clipboard.writeText(outputUrl);
+    navigator.clipboard.writeText(brandedImageUrl(outputUrl));
     toast.success("URL copiada al portapapeles");
   }
 

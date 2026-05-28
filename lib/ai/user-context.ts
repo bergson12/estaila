@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { brandedImageUrl } from "@/lib/public-url";
 
 /**
  * Builds a compact, privacy-scoped snapshot of the signed-in user's CRM data
@@ -305,7 +306,7 @@ export async function buildUserContextSnapshot(
       lines.push(
         `- ${TOOL_LABELS[g.tool] ?? g.tool} · ${
           g.completedAt ? fmtDate(g.completedAt) : ""
-        } · ${g.outputUrl}`
+        } · ${brandedImageUrl(g.outputUrl)}`
       );
     }
   }

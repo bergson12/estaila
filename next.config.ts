@@ -1,5 +1,13 @@
 import type { NextConfig } from "next";
 
+// Vercel Blob serves files from its own CDN host (*.public.blob.vercel-storage.com)
+// and does NOT support custom domains. To make shared links read as estaila.com,
+// we proxy /cdn/* at the edge to the blob store. Override the store base with the
+// BLOB_PUBLIC_BASE_URL env var if the store changes.
+const BLOB_PUBLIC_BASE_URL =
+  process.env.BLOB_PUBLIC_BASE_URL ??
+  "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com";
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -16,6 +24,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "ik.imagekit.io" },
     ],
+  },
+  async rewrites() {
+    return [
+      // Branded image links: estaila.com/cdn/<key> → Vercel Blob CDN
+      { source: "/cdn/:path*", destination: `${BLOB_PUBLIC_BASE_URL}/:path*` },
+    ];
   },
 };
 
