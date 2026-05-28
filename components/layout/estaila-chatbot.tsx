@@ -103,7 +103,30 @@ const WIZARD_TEMPLATES: {
   },
 ];
 
-export function EstailaChatbot() {
+// Per-plan character cap for the chatbot input. Bumps with tier.
+const CHAR_LIMITS: Record<string, number> = {
+  FREE: 280,
+  SOLO: 800,
+  PRO: 2000,
+  TEAM: 3000,
+  AGENCY: 8000,
+};
+
+function charLimitForPlan(plan: string): number {
+  return CHAR_LIMITS[plan.toUpperCase()] ?? CHAR_LIMITS.FREE;
+}
+
+// Reserved for future plan badge in chatbot header
+export const _PLAN_LABEL: Record<string, string> = {
+  FREE: "Free",
+  SOLO: "Solo",
+  PRO: "Pro",
+  TEAM: "Team",
+  AGENCY: "Agency",
+};
+
+export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
+  const maxChars = charLimitForPlan(plan);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<"chat" | "history">("chat");
@@ -606,27 +629,62 @@ export function EstailaChatbot() {
                     e.preventDefault();
                     send();
                   }}
-                  className="flex items-center gap-2 border-t border-border bg-card p-2.5"
+                  className="border-t border-border bg-card p-2.5"
                 >
-                  <input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={
-                      wizard
-                        ? "Responde una pregunta a la vez..."
-                        : "Pregunta o pide crear algo..."
-                    }
-                    disabled={sending}
-                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40 disabled:opacity-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!input.trim() || sending}
-                    className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
-                  >
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => {
+                        // Hard clip at maxChars even if paste exceeds (browser
+                        // respects maxLength for typing but paste can sneak in)
+                        const v = e.target.value;
+                        setInput(v.length > maxChars ? v.slice(0, maxChars) : v);
+                      }}
+                      maxLength={maxChars}
+                      placeholder={
+                        wizard
+                          ? "Responde una pregunta a la vez..."
+                          : "Pregunta o pide crear algo..."
+                      }
+                      disabled={sending}
+                      className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40 disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!input.trim() || sending}
+                      className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+                    >
                     <Send className="h-3.5 w-3.5" />
                   </button>
+                  </div>
+                  {/* Char counter — only shown when getting close to limit */}
+                  {input.length > maxChars * 0.7 && (
+                    <div className="mt-1.5 flex items-center justify-between text-[10px]">
+                      <span
+                        className={cn(
+                          "font-mono tabular-nums",
+                          input.length >= maxChars
+                            ? "font-semibold text-amber-600"
+                            : input.length > maxChars * 0.9
+                              ? "text-amber-600"
+                              : "text-muted-foreground"
+                        )}
+                      >
+                        {input.length} / {maxChars}
+                      </span>
+                      {input.length >= maxChars && plan !== "AGENCY" && (
+                        <a
+                          href="/pricing"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                          onClick={() => setOpen(false)}
+                        >
+                          <Zap className="h-2.5 w-2.5" />
+                          Sube a {plan === "FREE" ? "Solo" : plan === "SOLO" ? "Pro" : plan === "PRO" ? "Team" : "Agency"} para más
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </form>
               </>
             )}

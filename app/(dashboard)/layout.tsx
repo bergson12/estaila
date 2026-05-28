@@ -125,7 +125,9 @@ export default async function DashboardLayout({
           </div>
         </div>
       )}
-      {isDeepSeekConfigured() && <EstailaChatbot />}
+      {isDeepSeekConfigured() && (
+        <EstailaChatbot plan={sidebarUser.plan ?? "FREE"} />
+      )}
     </div>
   );
 }
