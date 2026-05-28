@@ -6,6 +6,7 @@ import { StudioShell } from "@/components/studio/studio-shell";
 import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
+import { useApplySuggestion } from "@/components/studio/use-apply-suggestion";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +44,8 @@ export function StagingClient({ plan }: { plan: string }) {
   const [buyerTarget, setBuyerTarget] = useState<string>("");
   const [luxuryLevel, setLuxuryLevel] = useState<string>("MID");
   const [extraPrompt, setExtraPrompt] = useState("");
+
+  useApplySuggestion({ setRoomType, setStyle, setBuyerTarget });
 
   function handleGenerate() {
     runGenerate({

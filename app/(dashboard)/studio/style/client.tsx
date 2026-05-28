@@ -6,6 +6,7 @@ import { StudioShell } from "@/components/studio/studio-shell";
 import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
+import { useApplySuggestion } from "@/components/studio/use-apply-suggestion";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ export function StyleClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
   const [style, setStyle] = useState<string>("MODERN");
   const [customPrompt, setCustomPrompt] = useState("");
+
+  useApplySuggestion({ setStyle });
 
   return (
     <StudioShell

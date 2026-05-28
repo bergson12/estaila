@@ -22,6 +22,15 @@ type StudioResult = {
   processingTimeMs: number;
 };
 
+/** Subset of PhotoAnalysis that the sidebar may auto-apply to its state. */
+export type StudioSuggestion = {
+  roomType: string; // raw label from analysis, e.g. "Sala"
+  suggestedTool: string; // STAGING / ENHANCE / ...
+  suggestedStyle: string | null; // MODERN / CARIBENO / ...
+  buyerTarget: string | null; // "Familia con niños" / ...
+  appliedAt: number; // bumps each time, so consumer can re-react
+};
+
 type StudioContextValue = {
   tool: AIToolName;
   toolLabel: string;
@@ -39,6 +48,9 @@ type StudioContextValue = {
   /** Optional brush-painted mask (data URL, white-on-black PNG) restricting the AI's effect zone. */
   maskDataUrl: string | null;
   setMaskDataUrl: (m: string | null) => void;
+  /** Latest IA analysis suggestion. PhotoAnalysis writes here; sidebar reads. */
+  suggestion: StudioSuggestion | null;
+  setSuggestion: (s: StudioSuggestion | null) => void;
 };
 
 const Ctx = createContext<StudioContextValue | null>(null);
@@ -68,6 +80,7 @@ export function StudioProvider({
   const [isGenerating, setIsGenerating] = useState(false);
   const [credits, setCredits] = useState(initialCredits);
   const [maskDataUrl, setMaskDataUrl] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<StudioSuggestion | null>(null);
 
   // After mount, hydrate from pipeline store
   useEffect(() => {
@@ -199,6 +212,8 @@ export function StudioProvider({
         fromPipeline,
         maskDataUrl,
         setMaskDataUrl,
+        suggestion,
+        setSuggestion,
       }}
     >
       {children}

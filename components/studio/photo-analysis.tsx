@@ -20,6 +20,7 @@ import {
   analyzePhoto,
   type PhotoAnalysis,
 } from "@/lib/actions/analyze-image";
+import { useStudio } from "./studio-context";
 
 // Map server tool key → studio route
 const TOOL_ROUTE: Record<string, string> = {
@@ -45,6 +46,7 @@ const TOOL_LABEL: Record<string, string> = {
 };
 
 export function PhotoAnalysis({ imageUrl }: { imageUrl: string | null }) {
+  const studio = useStudio();
   const [analysis, setAnalysis] = useState<PhotoAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -66,6 +68,16 @@ export function PhotoAnalysis({ imageUrl }: { imageUrl: string | null }) {
       const r = await analyzePhoto(imageUrl);
       setAnalysis(r);
       setLastAnalyzedUrl(imageUrl);
+      // Push to context so the sidebar can auto-apply matching options
+      if (r.available) {
+        studio.setSuggestion({
+          roomType: r.roomType,
+          suggestedTool: r.suggestedTool,
+          suggestedStyle: r.suggestedStyle,
+          buyerTarget: r.buyerTarget,
+          appliedAt: Date.now(),
+        });
+      }
     } finally {
       setLoading(false);
     }
