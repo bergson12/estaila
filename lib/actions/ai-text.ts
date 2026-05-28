@@ -327,12 +327,41 @@ REGLAS:
 
   // Sin límites estrictos: max_tokens al techo del modelo (deepseek-chat
   // soporta hasta 8192), timeout al máximo del plan Vercel.
-  const raw = await chat(messages, {
-    temperature: args.wizard ? 0.3 : 0.6,
-    maxTokens: 4096,
-    jsonMode: true,
-    timeoutMs: 55000,
-  });
+  // Auto-retry if DeepSeek returns empty or finish_reason=stop without parseable JSON.
+  let raw: string;
+  try {
+    raw = await chat(messages, {
+      temperature: args.wizard ? 0.3 : 0.6,
+      maxTokens: 4096,
+      jsonMode: true,
+      timeoutMs: 55000,
+    });
+  } catch (e) {
+    const msg = (e as Error).message;
+    // If empty response or stop-without-output, retry once with a stronger system
+    // prompt that forces minimum output.
+    if (msg.includes("vacía") || msg.includes("empty")) {
+      console.warn("[realEstateChat] empty on first try — retrying with stronger prompt");
+      const retryMessages: ChatMessage[] = [
+        {
+          role: "system",
+          content:
+            system +
+            `\n\nIMPORTANTE: SIEMPRE devuelve JSON válido con un campo "text" no vacío. Si el mensaje del usuario es ambiguo o complejo, RESPONDE preguntando aclaración en lugar de quedarte en silencio.`,
+        },
+        ...args.history.map((t) => ({ role: t.role, content: t.content })),
+        { role: "user", content: args.message },
+      ];
+      raw = await chat(retryMessages, {
+        temperature: 0.7, // slightly higher to escape deterministic empty
+        maxTokens: 4096,
+        jsonMode: true,
+        timeoutMs: 55000,
+      });
+    } else {
+      throw e;
+    }
+  }
 
   try {
     const parsed = JSON.parse(raw) as ChatResponse;
