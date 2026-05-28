@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Activity,
   ArrowLeft,
+  Bot,
   Briefcase,
   Building2,
   Calendar,
@@ -48,6 +49,7 @@ const NAV = [
   { label: "Finanzas", href: "/finanzas", icon: Wallet },
   { label: "Mi Sitio", href: "/sitio", icon: Globe },
   { label: "Mi Empresa", href: "/empresa", icon: Briefcase },
+  { label: "Asistente IA", href: "/asistente", icon: Bot },
   { label: "Studio IA", href: "/studio", icon: Sparkles },
 ] as const;
 

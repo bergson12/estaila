@@ -12,6 +12,7 @@ import {
   Calendar,
   ChevronDown,
   CreditCard,
+  Bot,
   FileClock,
   Globe,
   KanbanSquare,
@@ -69,6 +70,7 @@ const NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Agenda", href: "/agenda", icon: Calendar },
   { label: "Contactos", href: "/contactos", icon: Users },
   { label: "Pipeline", href: "/pipeline", icon: KanbanSquare },
+  { label: "Asistente IA", href: "/asistente", icon: Bot },
   { label: "Marketing", href: "/marketing", icon: Megaphone },
   { label: "Finanzas", href: "/finanzas", icon: Wallet },
 ];

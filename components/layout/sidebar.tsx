@@ -14,6 +14,7 @@ import {
   Megaphone,
   Wallet,
   Sparkles,
+  Bot,
   Settings,
   LogOut,
   CreditCard,
@@ -81,6 +82,7 @@ const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: "Herramientas",
     items: [
+      { label: "Asistente IA", href: "/asistente", icon: Bot },
       { label: "Studio IA", href: "/studio", icon: Sparkles },
       { label: "Marketing", href: "/marketing", icon: Megaphone },
       { label: "Documentos", href: "/documentos", icon: FileText },

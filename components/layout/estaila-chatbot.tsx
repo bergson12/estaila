@@ -306,6 +306,9 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
       ]);
     } finally {
       setSending(false);
+      // Keep the composer focused so the user can keep typing without losing
+      // focus / the mobile keyboard when the answer arrives.
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }
 
@@ -656,8 +659,7 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
                           ? "Responde una pregunta a la vez..."
                           : "Pregunta o pide crear algo..."
                       }
-                      disabled={sending}
-                      className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40 disabled:opacity-50"
+                      className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary/40"
                     />
                     <button
                       type="submit"
@@ -963,7 +965,7 @@ function ConvoRow({
 // Pretty error card (replaces raw error text in the chat)
 // ============================================================
 
-function ErrorCard({
+export function ErrorCard({
   code,
   onRetry,
   onUpgrade,
@@ -1049,7 +1051,7 @@ function ErrorCard({
   );
 }
 
-function ActionChip({
+export function ActionChip({
   action,
   onClick,
   disabled,
