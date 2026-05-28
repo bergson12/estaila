@@ -84,8 +84,12 @@ jobs:
       - name: Write rclone config
         run: |
           mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+          # Decode base64-encoded config (avoids line-ending / quote corruption)
+          echo "${{ secrets.RCLONE_CONFIG }}" | base64 -d > ~/.config/rclone/rclone.conf
+          # Verify it parses
           rclone listremotes
+          echo "--- Config preview ---"
+          head -1 ~/.config/rclone/rclone.conf
 
       # --------------------------------------------------------------
       # 4. Upload daily snapshot to Drive
