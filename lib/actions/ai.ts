@@ -235,6 +235,58 @@ export async function getRecentGenerations(limit = 8) {
   });
 }
 
+export type GalleryItem = {
+  id: string;
+  tool: string;
+  inputUrl: string;
+  outputUrl: string;
+  style: string | null;
+  roomType: string | null;
+  createdAt: string; // ISO
+};
+
+/** Full gallery of completed generations (newest first). */
+export async function listMyGenerations(limit = 120): Promise<GalleryItem[]> {
+  const user = await requireUser();
+  const rows = await prisma.aIGeneration.findMany({
+    where: { userId: user.id, status: "COMPLETED", outputUrl: { not: null } },
+    orderBy: { completedAt: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      tool: true,
+      inputUrl: true,
+      outputUrl: true,
+      style: true,
+      roomType: true,
+      completedAt: true,
+      createdAt: true,
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    tool: r.tool,
+    inputUrl: r.inputUrl,
+    outputUrl: r.outputUrl as string,
+    style: r.style,
+    roomType: r.roomType,
+    createdAt: (r.completedAt ?? r.createdAt).toISOString(),
+  }));
+}
+
+/** Remove a generation from the gallery (does not touch property photos). */
+export async function deleteGeneration(id: string): Promise<{ ok: boolean }> {
+  const user = await requireUser();
+  const gen = await prisma.aIGeneration.findFirst({
+    where: { id, userId: user.id },
+    select: { id: true },
+  });
+  if (!gen) throw new Error("Generación no encontrada");
+  await prisma.aIGeneration.delete({ where: { id: gen.id } });
+  revalidatePath("/studio/galeria");
+  return { ok: true };
+}
+
 /** Lightweight property list for the post-generation save dialog. */
 export async function listMyPropertiesLite(): Promise<
   { id: string; title: string; location: string | null; coverUrl: string | null }[]

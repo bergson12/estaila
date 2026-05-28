@@ -8,6 +8,7 @@ import {
   Sunset,
   Waves,
   Trees,
+  Images,
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
@@ -143,6 +144,28 @@ export default async function StudioPage() {
             </Card>
           </Link>
         ))}
+
+        {/* Galería — destino de las fotos generadas */}
+        <Link href="/studio/galeria" className="group">
+          <Card className="relative flex h-full flex-col justify-between overflow-hidden border-dashed p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+            <div>
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                <Images className="h-5 w-5" strokeWidth={1.75} />
+              </div>
+              <h3 className="text-sm font-semibold">Galería</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Todas tus fotos generadas. Muévelas a una propiedad, compártelas
+                o descárgalas.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Sin costo</span>
+              <span className="font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                Abrir →
+              </span>
+            </div>
+          </Card>
+        </Link>
       </div>
     </div>
   );

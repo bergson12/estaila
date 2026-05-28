@@ -12,6 +12,7 @@ import {
   Waves,
   Trees,
   Sparkles,
+  Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,26 @@ export function ToolNav() {
           </Link>
         );
       })}
+
+      {/* Galería — fotos generadas */}
+      <Link
+        href="/studio/galeria"
+        className={cn(
+          "group mt-1 flex items-center gap-2 rounded-md border-t border-border/60 px-2 pt-2.5 text-xs transition-colors",
+          pathname === "/studio/galeria"
+            ? "text-primary"
+            : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <Images
+          className={cn(
+            "h-3.5 w-3.5 shrink-0",
+            pathname === "/studio/galeria" && "text-primary"
+          )}
+          strokeWidth={1.75}
+        />
+        <span className="flex-1 truncate">Galería</span>
+      </Link>
     </aside>
   );
 }
