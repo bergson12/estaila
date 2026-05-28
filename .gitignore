@@ -64,3 +64,7 @@ vercel-*.txt
 
 # Obsidian notes (local)
 .obsidian/
+
+# Notas Obsidian locales (memoria de trabajo, no parte de la app)
+/Contexto del Proyecto - estaila.md
+/Pendientes y Errores - estaila.md
