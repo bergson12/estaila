@@ -61,3 +61,6 @@ prisma/migrations/dev.db*
 
 .vercel
 vercel-*.txt
+
+# Obsidian notes (local)
+.obsidian/
