@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Raleway, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
@@ -31,6 +31,26 @@ export const metadata: Metadata = {
   title: "estaila — CRM + Studio IA",
   description:
     "CRM inmobiliario con herramientas de edición de fotos por IA. Para agentes inmobiliarios independientes en todo el mundo.",
+  applicationName: "estaila",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "estaila",
+  },
+  icons: {
+    icon: "/logos/iso-estaila.png",
+    shortcut: "/logos/iso-estaila.png",
+    apple: "/logos/iso-estaila.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#00bf63",
+  width: "device-width",
+  initialScale: 1,
+  // Permite que env(safe-area-inset-*) funcione bajo el notch / Dynamic Island
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
