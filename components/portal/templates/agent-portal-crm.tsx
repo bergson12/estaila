@@ -13,7 +13,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
-  Calendar,
   Clock,
   Mail,
   MapPin,
@@ -27,8 +26,6 @@ import { LanguageProvider, useLang } from "@/components/marketing-site/language-
 import { LangToggle } from "@/components/marketing-site/lang-toggle";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { PortalData } from "../types";
 
 export function AgentPortalCrm(props: PortalData) {
