@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * Agent portal /p/[slug] — aligned with CRM panel design language.
- * Same tokens (bg-background, primary blue, bg-card border) as the dashboard.
+ * Agent portal /p/[slug] — handoff "Agente independiente" design.
+ * Theme-aware (light/dark) + per-agent branding via site.primaryColor.
+ * Display type: Space Grotesk (global --font-display). Accent: brand green.
  */
 
 import Link from "next/link";
@@ -12,10 +13,14 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  Calendar,
+  Clock,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
+  ShieldCheck,
+  Sparkles,
   Star,
 } from "lucide-react";
 import { LanguageProvider, useLang } from "@/components/marketing-site/language-context";
@@ -38,72 +43,89 @@ const COPY = {
   es: {
     nav: { catalog: "Propiedades", about: "Sobre mí", contact: "Contacto" },
     hero: {
-      kicker: "Portal del agente",
+      kicker: "Asesor inmobiliario",
       greet: "Hola, soy",
-      sub: "Mi catálogo activo y la mejor forma de hablarme.",
+      sub: "Te acompaño a comprar, vender o alquilar con confianza. Mi cartera activa y la forma más rápida de hablarme.",
       cta: "Ver propiedades",
-      ctaAlt: "Hablar conmigo",
+      ctaAlt: "Hablemos",
     },
     catalog: {
-      eyebrow: "CATÁLOGO ACTIVO",
-      title: "Propiedades disponibles",
+      eyebrow: "CARTERA",
+      title: "Propiedades destacadas",
       sub: "Selección actual. Para opciones fuera de cartera, escríbeme.",
       empty: "Catálogo en preparación",
-      filterAll: "Todas",
-      filterSale: "Venta",
-      filterRent: "Alquiler",
+      seeAll: "Ver todas",
+    },
+    why: {
+      eyebrow: "POR QUÉ YO",
+      title: "Acompañamiento real, de principio a fin.",
+      reasons: [
+        ["Respuesta rápida", "Te contesto el mismo día, siempre."],
+        ["Asesoría honesta", "Te digo lo que necesitas saber para decidir bien."],
+        ["Marketing con IA", "Tus propiedades mejor presentadas, llegan a más gente."],
+      ] as [string, string][],
     },
     contact: {
       eyebrow: "CONTACTO",
-      title: "Conversemos.",
-      sub: "WhatsApp es el canal más rápido. Respondo el mismo día.",
-      whatsapp: "WhatsApp",
-      email: "Email",
-      phone: "Teléfono",
+      title: "¿Listo para dar el siguiente paso?",
+      sub: "Cuéntame qué buscas y te ayudo a encontrarlo. Sin compromiso.",
+      whatsapp: "Escríbeme por WhatsApp",
+      meeting: "Agendar reunión",
+      email: "Enviar email",
     },
-    about: { eyebrow: "SOBRE MÍ", title: "Mi propuesta." },
-    inquire: "Consultar",
-    perMonth: "/ mes",
+    stats: { active: "Activas", total: "Total" },
     rentSuffix: " / mes",
+    inquire: "Consultar",
+    verified: "Asesor verificado",
   },
   en: {
     nav: { catalog: "Properties", about: "About", contact: "Contact" },
     hero: {
-      kicker: "Agent portal",
+      kicker: "Real estate advisor",
       greet: "Hi, I'm",
-      sub: "My active catalog and the fastest way to reach me.",
+      sub: "I help you buy, sell or rent with confidence. My active portfolio and the fastest way to reach me.",
       cta: "Browse properties",
-      ctaAlt: "Talk to me",
+      ctaAlt: "Let's talk",
     },
     catalog: {
-      eyebrow: "ACTIVE CATALOG",
-      title: "Available properties",
+      eyebrow: "PORTFOLIO",
+      title: "Featured properties",
       sub: "Current selection. For off-list options, message me.",
       empty: "Catalog in preparation",
-      filterAll: "All",
-      filterSale: "Sale",
-      filterRent: "Rental",
+      seeAll: "See all",
+    },
+    why: {
+      eyebrow: "WHY ME",
+      title: "Real support, from start to finish.",
+      reasons: [
+        ["Fast replies", "I get back to you the same day, always."],
+        ["Honest advice", "I tell you what you need to know to decide well."],
+        ["AI marketing", "Your listings, better presented, reaching more people."],
+      ] as [string, string][],
     },
     contact: {
       eyebrow: "CONTACT",
-      title: "Let's talk.",
-      sub: "WhatsApp is fastest. I reply same-day.",
-      whatsapp: "WhatsApp",
-      email: "Email",
-      phone: "Phone",
+      title: "Ready for the next step?",
+      sub: "Tell me what you're looking for and I'll help you find it. No pressure.",
+      whatsapp: "Message me on WhatsApp",
+      meeting: "Book a meeting",
+      email: "Send email",
     },
-    about: { eyebrow: "ABOUT", title: "My approach." },
-    inquire: "Inquire",
-    perMonth: "/ mo",
+    stats: { active: "Active", total: "Total" },
     rentSuffix: " / mo",
+    inquire: "Inquire",
+    verified: "Verified advisor",
   },
 };
 
 type Copy = typeof COPY.es;
 
+const REASON_ICONS = [Clock, ShieldCheck, Sparkles];
+
 function PortalContent({ site, agent, properties }: PortalData) {
   const { lang } = useLang();
   const t = COPY[lang];
+  const accent = site.primaryColor || undefined;
   const firstName = (agent.name ?? "").split(/\s+/)[0] || agent.name;
   const initials =
     (agent.name ?? "—")
@@ -116,49 +138,55 @@ function PortalContent({ site, agent, properties }: PortalData) {
   const active = properties.filter(
     (p) => p.status !== "VENDIDA" && p.status !== "ALQUILADA"
   );
+  const waHref = site.whatsapp
+    ? `https://wa.me/${site.whatsapp.replace(/\D/g, "")}`
+    : null;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Topbar */}
+    <div className="relative min-h-screen bg-background font-sans text-foreground">
+      {/* ===================== NAV ===================== */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-3 md:px-8">
+        <div className="mx-auto flex max-w-[1120px] items-center justify-between px-5 py-3.5 md:px-8">
           <Link href={`/p/${site.slug}`} className="flex items-center gap-2.5">
-            {site.logoUrl ? (
+            {agent.image ? (
+              <Image
+                src={agent.image}
+                alt={agent.name}
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-full border border-border object-cover"
+              />
+            ) : site.logoUrl ? (
               <Image
                 src={site.logoUrl}
                 alt={agent.name}
-                width={28}
-                height={28}
-                className="rounded-md object-cover"
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-md object-cover"
               />
             ) : (
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-md text-primary-foreground"
-                style={{ background: site.primaryColor ?? "var(--primary)" }}
+              <span
+                className="grid h-9 w-9 place-items-center rounded-full text-sm font-bold text-white"
+                style={{ background: accent ?? "var(--primary)" }}
               >
-                <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
-              </div>
+                {initials}
+              </span>
             )}
-            <div className="flex flex-col leading-none">
-              <span className="text-sm font-semibold tracking-tight">
-                {site.title ?? agent.name}
-              </span>
-              <span className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                {t.hero.kicker}
-              </span>
-            </div>
+            <span className="font-display text-base font-bold tracking-tight">
+              {site.title ?? agent.name}
+            </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 md:flex">
-            <a href="#catalog" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+          <nav className="hidden items-center gap-7 md:flex">
+            <a href="#catalog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               {t.nav.catalog}
             </a>
             {site.about && (
-              <a href="#about" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+              <a href="#about" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                 {t.nav.about}
               </a>
             )}
-            <a href="#contact" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+            <a href="#contact" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               {t.nav.contact}
             </a>
           </nav>
@@ -166,15 +194,11 @@ function PortalContent({ site, agent, properties }: PortalData) {
           <div className="flex items-center gap-2">
             <LangToggle />
             <ThemeToggle />
-            {site.whatsapp && (
-              <Button asChild size="sm">
-                <a
-                  href={`https://wa.me/${site.whatsapp.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+            {waHref && (
+              <Button asChild size="sm" style={accent ? { background: accent } : undefined}>
+                <a href={waHref} target="_blank" rel="noreferrer">
                   <MessageCircle className="mr-1 h-3.5 w-3.5" strokeWidth={2} />
-                  {t.contact.whatsapp}
+                  {t.hero.ctaAlt}
                 </a>
               </Button>
             )}
@@ -183,131 +207,129 @@ function PortalContent({ site, agent, properties }: PortalData) {
       </header>
 
       <main>
-        {/* HERO */}
-        <section className="relative overflow-hidden border-b border-border/60 px-5 py-20 md:px-8 md:py-28">
-          <div className="ambient-glow" aria-hidden />
-          <div className="absolute inset-0 bg-dots opacity-50" aria-hidden />
-
-          <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center lg:gap-12">
-            <div className="lg:col-span-7">
-              <Badge
-                variant="secondary"
-                className="gap-1.5 border border-border bg-card/60 text-[11px] text-muted-foreground"
+        {/* ===================== HERO ===================== */}
+        <section className="relative overflow-hidden border-b border-border/60">
+          <div
+            className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full opacity-60 blur-2xl"
+            style={{
+              background: `radial-gradient(circle, color-mix(in srgb, ${accent ?? "var(--primary)"} 18%, transparent), transparent 70%)`,
+            }}
+            aria-hidden
+          />
+          <div className="relative mx-auto grid max-w-[1120px] grid-cols-1 items-center gap-[clamp(32px,5vw,64px)] px-5 py-[clamp(44px,6vw,84px)] md:px-8 lg:grid-cols-[1.1fr_.9fr]">
+            <div>
+              <span
+                className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-display text-[13px] font-semibold"
+                style={{
+                  color: accent ?? "var(--primary)",
+                  borderColor: `color-mix(in srgb, ${accent ?? "var(--primary)"} 25%, transparent)`,
+                  background: `color-mix(in srgb, ${accent ?? "var(--primary)"} 8%, transparent)`,
+                }}
               >
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" strokeWidth={0} />
+                <Star className="h-3.5 w-3.5" strokeWidth={2} />
                 {t.hero.kicker}
-              </Badge>
-              <h1 className="mt-6 text-[clamp(40px,7vw,80px)] font-semibold leading-[1.02] tracking-[-0.035em]">
+              </span>
+              <h1 className="mt-5 text-[clamp(36px,5vw,62px)] font-bold leading-[1.02] tracking-[-0.035em]">
                 {t.hero.greet}{" "}
-                <span
-                  className="italic text-primary"
-                  style={{
-                    fontFamily: "var(--font-cormorant), Georgia, serif",
-                    fontWeight: 500,
-                  }}
-                >
-                  {firstName}
-                </span>
+                <span style={{ color: accent ?? "var(--primary)" }}>{firstName}</span>
                 <span className="text-muted-foreground">.</span>
               </h1>
-              {site.tagline ? (
-                <p className="mt-5 max-w-[52ch] text-base text-muted-foreground md:text-lg">
-                  {site.tagline}
-                </p>
-              ) : (
-                <p className="mt-5 max-w-[52ch] text-base text-muted-foreground md:text-lg">
-                  {t.hero.sub}
-                </p>
-              )}
-              <div className="mt-9 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg" className="h-11 px-6">
+              <p className="mt-5 max-w-[48ch] text-[clamp(16px,1.4vw,19px)] leading-[1.6] text-muted-foreground">
+                {site.tagline ?? t.hero.sub}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                {waHref && (
+                  <Button asChild size="lg" className="h-12 px-6" style={accent ? { background: accent } : undefined}>
+                    <a href={waHref} target="_blank" rel="noreferrer">
+                      <MessageCircle className="mr-1.5 h-[18px] w-[18px]" strokeWidth={2} />
+                      {t.hero.ctaAlt}
+                    </a>
+                  </Button>
+                )}
+                <Button asChild size="lg" variant="outline" className="h-12 px-6">
                   <a href="#catalog">
                     {t.hero.cta}
                     <ArrowRight className="ml-1.5 h-4 w-4" strokeWidth={2} />
                   </a>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="h-11 px-6">
-                  <a href="#contact">{t.hero.ctaAlt}</a>
-                </Button>
               </div>
-              <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-muted-foreground">
-                <Stat n={active.length} l={lang === "es" ? "Activas" : "Active"} />
-                <Stat n={properties.length} l={lang === "es" ? "Total" : "Total"} />
+              <div className="mt-10 flex flex-wrap gap-x-9 gap-y-4">
+                <HeroStat n={active.length} l={t.stats.active} accent={accent} />
+                <HeroStat n={properties.length} l={t.stats.total} accent={accent} />
                 {site.email && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Mail className="h-3 w-3" strokeWidth={1.75} />
-                    {site.email}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="inline-flex items-center gap-1.5 font-display text-base font-bold tracking-tight">
+                      <Mail className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <span className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                      {site.email}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Agent card */}
-            <div className="lg:col-span-5">
-              <div className="relative rounded-2xl border border-border bg-card p-6 shadow-lg">
-                <div className="flex items-center gap-4">
-                  {agent.image ? (
-                    <Image
-                      src={agent.image}
-                      alt={agent.name}
-                      width={68}
-                      height={68}
-                      className="h-16 w-16 rounded-full border border-border object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-xl font-semibold text-primary">
+            {/* Agent photo */}
+            <div className="relative mx-auto w-full max-w-[400px]">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-muted to-muted/50 shadow-xl">
+                {agent.image ? (
+                  <Image
+                    src={agent.image}
+                    alt={agent.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 400px"
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="grid h-full place-items-center">
+                    <span
+                      className="font-display text-6xl font-bold"
+                      style={{ color: accent ?? "var(--primary)" }}
+                    >
                       {initials}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-lg font-semibold tracking-tight">{agent.name}</p>
-                    <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      estaila × {site.slug.toUpperCase()}
-                    </p>
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-5 left-4 flex items-center gap-3 rounded-2xl border border-border bg-background p-3.5 shadow-xl">
+                <span
+                  className="grid h-10 w-10 place-items-center rounded-xl text-white"
+                  style={{ background: accent ?? "var(--primary)" }}
+                >
+                  <ShieldCheck className="h-5 w-5" strokeWidth={2} />
+                </span>
+                <div>
+                  <div className="font-display text-sm font-bold leading-tight">
+                    {t.verified}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">
+                    estaila · {site.slug}
                   </div>
                 </div>
-                <ul className="mt-6 space-y-2.5 border-t border-border pt-5 text-sm">
-                  {site.whatsapp && (
-                    <ContactRow
-                      icon={MessageCircle}
-                      label="WhatsApp"
-                      value={site.whatsapp}
-                      href={`https://wa.me/${site.whatsapp.replace(/\D/g, "")}`}
-                    />
-                  )}
-                  {site.email && (
-                    <ContactRow
-                      icon={Mail}
-                      label="Email"
-                      value={site.email}
-                      href={`mailto:${site.email}`}
-                    />
-                  )}
-                  {site.phone && (
-                    <ContactRow
-                      icon={Phone}
-                      label="Tel"
-                      value={site.phone}
-                      href={`tel:${site.phone.replace(/\D/g, "")}`}
-                    />
-                  )}
-                </ul>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CATALOG */}
-        <section id="catalog" className="relative border-b border-border/60 px-5 py-24 md:px-8 md:py-32">
-          <div className="mx-auto max-w-[1280px]">
-            <SectionHead eyebrow={t.catalog.eyebrow} title={t.catalog.title} sub={t.catalog.sub} />
+        {/* ===================== CATALOG ===================== */}
+        <section id="catalog" className="relative scroll-mt-16 border-b border-border/60 px-5 py-[clamp(48px,6vw,88px)] md:px-8">
+          <div className="mx-auto max-w-[1120px]">
+            <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <Eyebrow accent={accent}>{t.catalog.eyebrow}</Eyebrow>
+                <h2 className="mt-2.5 font-display text-[clamp(28px,3.4vw,42px)] font-bold tracking-[-0.03em]">
+                  {t.catalog.title}
+                </h2>
+              </div>
+            </div>
 
             {active.length === 0 ? (
-              <div className="mt-14 rounded-xl border border-dashed border-border bg-card/40 p-16 text-center">
+              <div className="rounded-2xl border border-dashed border-border bg-card/40 p-16 text-center">
                 <p className="text-base text-muted-foreground">{t.catalog.empty}</p>
               </div>
             ) : (
-              <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {active.map((p, i) => (
                   <PropertyCard
                     key={p.id}
@@ -316,6 +338,7 @@ function PortalContent({ site, agent, properties }: PortalData) {
                     slug={site.slug}
                     lang={lang}
                     t={t}
+                    accent={accent}
                   />
                 ))}
               </div>
@@ -323,90 +346,149 @@ function PortalContent({ site, agent, properties }: PortalData) {
           </div>
         </section>
 
-        {/* ABOUT */}
-        {site.about && (
-          <section id="about" className="relative border-b border-border/60 bg-card/20 px-5 py-24 md:px-8 md:py-32">
-            <div className="mx-auto grid max-w-[1080px] grid-cols-1 gap-12 lg:grid-cols-12 lg:items-start">
-              <div className="lg:col-span-4">
-                <Eyebrow>{t.about.eyebrow}</Eyebrow>
-                <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
-                  {t.about.title}
-                </h2>
-              </div>
-              <div className="lg:col-span-8">
-                <p
-                  className="text-lg leading-relaxed text-foreground/90 md:text-xl"
-                  style={{ fontFamily: "var(--font-cormorant), Georgia, serif" }}
-                >
-                  <span className="text-3xl text-primary">“</span>
-                  {site.about}
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* CONTACT */}
-        <section id="contact" className="relative overflow-hidden border-b border-border/60 px-5 py-24 md:px-8 md:py-32">
-          <div className="ambient-glow opacity-60" aria-hidden />
-          <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center lg:gap-14">
-            <div className="lg:col-span-6">
-              <Eyebrow>{t.contact.eyebrow}</Eyebrow>
-              <h2 className="mt-3 text-[clamp(36px,6vw,68px)] font-semibold leading-[1.05] tracking-[-0.03em]">
-                {t.contact.title.replace(".", "")}
-                <span
-                  className="italic text-primary"
-                  style={{
-                    fontFamily: "var(--font-cormorant), Georgia, serif",
-                    fontWeight: 500,
-                  }}
-                >
-                  .
-                </span>
+        {/* ===================== WHY ME + ABOUT ===================== */}
+        <section
+          id="about"
+          className="relative scroll-mt-16 border-b border-border/60 bg-card/20 px-5 py-[clamp(48px,6vw,88px)] md:px-8"
+        >
+          <div className="mx-auto grid max-w-[1120px] grid-cols-1 items-center gap-[clamp(32px,5vw,64px)] lg:grid-cols-2">
+            <div>
+              <Eyebrow accent={accent}>{t.why.eyebrow}</Eyebrow>
+              <h2 className="mt-3 font-display text-[clamp(26px,3.2vw,40px)] font-bold leading-[1.1] tracking-[-0.03em]">
+                {t.why.title}
               </h2>
-              <p className="mt-5 max-w-[44ch] text-base text-muted-foreground md:text-lg">
-                {t.contact.sub}
-              </p>
+              <div className="mt-8 flex flex-col gap-5">
+                {t.why.reasons.map(([title, desc], i) => {
+                  const Icon = REASON_ICONS[i] ?? Sparkles;
+                  return (
+                    <div key={title} className="flex gap-4">
+                      <span
+                        className="grid h-12 w-12 flex-none place-items-center rounded-xl border border-border bg-background"
+                        style={{ color: accent ?? "var(--primary)" }}
+                      >
+                        <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
+                      </span>
+                      <div>
+                        <div className="font-display text-[17px] font-semibold tracking-tight">
+                          {title}
+                        </div>
+                        <p className="mt-1 text-[14.5px] leading-[1.5] text-muted-foreground">
+                          {desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="lg:col-span-6">
-              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                {site.whatsapp && (
-                  <ContactBigRow
-                    icon={MessageCircle}
-                    label={t.contact.whatsapp}
-                    value={site.whatsapp}
-                    href={`https://wa.me/${site.whatsapp.replace(/\D/g, "")}`}
+
+            {/* About / quote card */}
+            <div className="rounded-3xl border border-border bg-background p-[clamp(28px,3vw,40px)] shadow-md">
+              <div className="flex gap-1 text-amber-500">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-amber-500" strokeWidth={0} />
+                ))}
+              </div>
+              <p className="mt-5 text-[clamp(18px,1.6vw,22px)] font-medium leading-[1.5] tracking-[-0.01em] text-foreground/90">
+                {site.about ??
+                  (lang === "es"
+                    ? "Mi compromiso es simple: acompañarte con transparencia en cada paso, para que tu próxima decisión inmobiliaria sea la correcta."
+                    : "My commitment is simple: to guide you transparently every step of the way, so your next real estate decision is the right one.")}
+              </p>
+              <div className="mt-6 flex items-center gap-3 border-t border-border pt-5">
+                {agent.image ? (
+                  <Image
+                    src={agent.image}
+                    alt={agent.name}
+                    width={44}
+                    height={44}
+                    className="h-11 w-11 rounded-full border border-border object-cover"
                   />
+                ) : (
+                  <span
+                    className="grid h-11 w-11 place-items-center rounded-full font-display text-sm font-bold text-white"
+                    style={{ background: accent ?? "var(--primary)" }}
+                  >
+                    {initials}
+                  </span>
                 )}
-                {site.email && (
-                  <ContactBigRow
-                    icon={Mail}
-                    label={t.contact.email}
-                    value={site.email}
-                    href={`mailto:${site.email}`}
-                  />
-                )}
-                {site.phone && (
-                  <ContactBigRow
-                    icon={Phone}
-                    label={t.contact.phone}
-                    value={site.phone}
-                    href={`tel:${site.phone.replace(/\D/g, "")}`}
-                  />
-                )}
-              </ul>
+                <div>
+                  <div className="font-display text-[15px] font-semibold tracking-tight">
+                    {agent.name}
+                  </div>
+                  <div className="text-[13px] text-muted-foreground">{t.hero.kicker}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===================== CONTACT CTA ===================== */}
+        <section id="contact" className="scroll-mt-16 px-5 py-[clamp(48px,6vw,88px)] md:px-8">
+          <div className="relative mx-auto max-w-[1120px] overflow-hidden rounded-[26px] bg-foreground px-[clamp(28px,5vw,64px)] py-[clamp(40px,5vw,72px)] text-center text-background">
+            <div
+              className="pointer-events-none absolute -top-24 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full opacity-50 blur-2xl"
+              style={{
+                background: `radial-gradient(circle, color-mix(in srgb, ${accent ?? "var(--primary)"} 45%, transparent), transparent 70%)`,
+              }}
+              aria-hidden
+            />
+            <h2 className="relative font-display text-[clamp(28px,3.6vw,46px)] font-bold tracking-[-0.03em]">
+              {t.contact.title}
+            </h2>
+            <p className="relative mx-auto mt-4 max-w-[480px] text-[17px] leading-[1.6] text-background/65">
+              {t.contact.sub}
+            </p>
+            <div className="relative mt-8 flex flex-wrap justify-center gap-3.5">
+              {waHref && (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: accent ?? "var(--primary)" }}
+                >
+                  <MessageCircle className="h-[18px] w-[18px]" strokeWidth={2} />
+                  {t.contact.whatsapp}
+                </a>
+              )}
+              {site.email && (
+                <a
+                  href={`mailto:${site.email}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-background/25 px-6 py-3.5 text-[15px] font-semibold text-background transition-colors hover:bg-background/10"
+                >
+                  <Mail className="h-[18px] w-[18px]" strokeWidth={2} />
+                  {t.contact.email}
+                </a>
+              )}
+              {site.phone && (
+                <a
+                  href={`tel:${site.phone.replace(/\D/g, "")}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-background/25 px-6 py-3.5 text-[15px] font-semibold text-background transition-colors hover:bg-background/10"
+                >
+                  <Phone className="h-[18px] w-[18px]" strokeWidth={2} />
+                  {site.phone}
+                </a>
+              )}
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-card/30">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-4 px-5 py-6 md:px-8">
-          <p className="text-xs text-muted-foreground">
+      {/* ===================== FOOTER ===================== */}
+      <footer className="border-t border-border/60 bg-card/30">
+        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5 py-6 md:px-8">
+          <p className="text-[13px] text-muted-foreground">
             © {new Date().getFullYear()} · {agent.name}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              {lang === "es" ? "Hecho con" : "Made with"}
+              <span className="font-display font-bold text-foreground">
+                estaila
+                <span style={{ color: accent ?? "var(--primary)" }}>.</span>
+              </span>
+            </span>
             <LangToggle />
             <ThemeToggle />
           </div>
@@ -426,12 +508,14 @@ function PropertyCard({
   slug,
   lang,
   t,
+  accent,
 }: {
   p: PortalData["properties"][0];
   delay: number;
   slug: string;
   lang: "es" | "en";
   t: Copy;
+  accent?: string;
 }) {
   const reduced = useReducedMotion();
   const price = p.priceUSD
@@ -453,7 +537,7 @@ function PropertyCard({
     >
       <Link
         href={`/p/${slug}/${p.id}`}
-        className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-1 hover:border-foreground/20 hover:shadow-lg"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-1 hover:shadow-lg"
       >
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {p.featuredPhoto ? (
@@ -469,26 +553,17 @@ function PropertyCard({
               <Building2 className="h-10 w-10 text-muted-foreground/40" strokeWidth={1} />
             </div>
           )}
-          <Badge
-            variant="secondary"
-            className={cn(
-              "absolute left-3 top-3 border text-[10px] font-medium uppercase tracking-wider backdrop-blur",
-              isRent
-                ? "border-amber-500/30 bg-amber-500/15 text-amber-600"
-                : "border-emerald-500/30 bg-emerald-500/15 text-emerald-600"
-            )}
+          <span
+            className="absolute left-3 top-3 rounded-full px-3 py-1 font-display text-[11px] font-bold text-white"
+            style={{ background: accent ?? "var(--primary)" }}
           >
-            {isRent
-              ? lang === "es"
-                ? "Alquiler"
-                : "Rental"
-              : lang === "es"
-              ? "Venta"
-              : "Sale"}
-          </Badge>
+            {isRent ? (lang === "es" ? "Alquiler" : "Rental") : lang === "es" ? "Venta" : "Sale"}
+          </span>
         </div>
         <div className="flex flex-1 flex-col p-5">
-          <h3 className="line-clamp-1 text-base font-semibold tracking-tight">{p.title}</h3>
+          <h3 className="line-clamp-1 font-display text-base font-bold tracking-tight">
+            {p.title}
+          </h3>
           {p.location && (
             <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="h-3 w-3" strokeWidth={1.75} />
@@ -497,9 +572,7 @@ function PropertyCard({
           )}
 
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
-            {p.bedrooms !== null && p.bedrooms > 0 && (
-              <span>{p.bedrooms} hab</span>
-            )}
+            {p.bedrooms !== null && p.bedrooms > 0 && <span>{p.bedrooms} hab</span>}
             {p.bathrooms !== null && p.bathrooms !== undefined && (
               <span>{p.bathrooms} baños</span>
             )}
@@ -512,7 +585,7 @@ function PropertyCard({
           <div className="mt-auto flex items-end justify-between pt-5">
             <div>
               {price ? (
-                <p className="font-mono text-lg font-semibold tabular-nums tracking-tight">
+                <p className="font-display text-lg font-bold tabular-nums tracking-tight">
                   {price}
                   {isRent && (
                     <span className="ml-0.5 text-xs font-normal text-muted-foreground">
@@ -525,7 +598,7 @@ function PropertyCard({
               )}
             </div>
             <ArrowUpRight
-              className="h-4 w-4 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary"
+              className="h-4 w-4 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
               strokeWidth={1.75}
             />
           </div>
@@ -539,110 +612,33 @@ function PropertyCard({
 // SHARED ATOMS
 // ============================================================
 
-function Stat({ n, l }: { n: number; l: string }) {
+function HeroStat({ n, l, accent }: { n: number; l: string; accent?: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="font-mono text-base font-semibold tabular-nums text-foreground">{n}</span>
-      <span>{l}</span>
-    </span>
-  );
-}
-
-function ContactRow({
-  icon: Icon,
-  label,
-  value,
-  href,
-}: {
-  icon: typeof MessageCircle;
-  label: string;
-  value: string;
-  href: string;
-}) {
-  return (
-    <li>
-      <a href={href} target="_blank" rel="noreferrer" className="group flex items-center gap-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors group-hover:text-primary">
-          <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="truncate text-sm font-medium">{value}</p>
-        </div>
-        <ArrowUpRight
-          className="h-3.5 w-3.5 text-muted-foreground/50 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
-          strokeWidth={1.75}
-        />
-      </a>
-    </li>
-  );
-}
-
-function ContactBigRow({
-  icon: Icon,
-  label,
-  value,
-  href,
-}: {
-  icon: typeof MessageCircle;
-  label: string;
-  value: string;
-  href: string;
-}) {
-  return (
-    <li>
-      <a
-        href={href}
-        target="_blank"
-        rel="noreferrer"
-        className="group flex items-center justify-between gap-4 p-5 transition-colors hover:bg-card/70"
+    <div className="flex flex-col">
+      <span
+        className="font-display text-[clamp(26px,3vw,36px)] font-bold leading-none tracking-[-0.03em]"
+        style={{ color: accent ?? "var(--primary)" }}
       >
-        <div className="flex min-w-0 items-center gap-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Icon className="h-4 w-4" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className="mt-0.5 truncate text-base font-semibold tracking-tight">{value}</p>
-          </div>
-        </div>
-        <ArrowUpRight
-          className="h-4 w-4 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
-          strokeWidth={1.75}
-        />
-      </a>
-    </li>
+        {n}
+      </span>
+      <span className="mt-1 text-[13px] text-muted-foreground">{l}</span>
+    </div>
   );
 }
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-      <span className="text-primary">●</span> <span className="ml-1">{children}</span>
-    </p>
-  );
-}
-
-function SectionHead({
-  eyebrow,
-  title,
-  sub,
+function Eyebrow({
+  children,
+  accent,
 }: {
-  eyebrow: string;
-  title: string;
-  sub?: string;
+  children: React.ReactNode;
+  accent?: string;
 }) {
   return (
-    <div className="mx-auto max-w-[720px] text-center">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-5xl">
-        {title}
-      </h2>
-      {sub && (
-        <p className="mx-auto mt-5 max-w-[56ch] text-base text-muted-foreground md:text-lg">
-          {sub}
-        </p>
-      )}
-    </div>
+    <p
+      className="font-display text-[12.5px] font-semibold uppercase tracking-[0.12em]"
+      style={{ color: accent ?? "var(--primary)" }}
+    >
+      {children}
+    </p>
   );
 }

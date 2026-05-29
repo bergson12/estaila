@@ -38,6 +38,17 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PortalData } from "../types";
 
+function agentInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "—"
+  );
+}
+
 const CATEGORIES = [
   { key: "ALL", label: "Todas", icon: Home },
   { key: "CASA", label: "Casa", icon: Home },
@@ -163,6 +174,14 @@ export function PortalMobileHome({ site, agent, properties }: PortalData) {
 
       {/* === CONTENT === */}
       <main className="mx-auto max-w-md px-4 py-5">
+        {/* Agent hero — personal brand intro */}
+        <AgentHero
+          site={site}
+          agent={agent}
+          active={active.length}
+          total={properties.length}
+        />
+
         {/* Featured (Suggested Listing) */}
         {featured && (
           <section className="mb-6">
@@ -213,6 +232,100 @@ export function PortalMobileHome({ site, agent, properties }: PortalData) {
 }
 
 // ============================================================
+// AGENT HERO — personal brand intro
+// ============================================================
+
+function AgentHero({
+  site,
+  agent,
+  active,
+  total,
+}: {
+  site: PortalData["site"];
+  agent: PortalData["agent"];
+  active: number;
+  total: number;
+}) {
+  const accent = site.primaryColor || undefined;
+  const firstName = (agent.name ?? "").split(/\s+/)[0] || agent.name;
+  const waHref = site.whatsapp
+    ? `https://wa.me/${site.whatsapp.replace(/\D/g, "")}`
+    : null;
+
+  return (
+    <section className="mb-6">
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-5">
+        <div
+          className="pointer-events-none absolute -right-12 -top-16 h-44 w-44 rounded-full opacity-50 blur-2xl"
+          style={{
+            background: `radial-gradient(circle, color-mix(in srgb, ${accent ?? "var(--primary)"} 35%, transparent), transparent 70%)`,
+          }}
+          aria-hidden
+        />
+        <div className="relative flex items-center gap-3.5">
+          <Avatar
+            className="h-16 w-16 ring-2"
+            style={{ ["--tw-ring-color" as string]: accent ?? "var(--primary)" }}
+          >
+            {agent.image && <AvatarImage src={agent.image} alt={agent.name} />}
+            <AvatarFallback
+              className="font-display text-base font-bold text-white"
+              style={{ background: accent ?? "var(--primary)" }}
+            >
+              {agentInitials(agent.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              Asesor inmobiliario
+            </p>
+            <p className="font-display text-xl font-bold leading-tight tracking-tight">
+              Hola, soy {firstName}
+              <span style={{ color: accent ?? "var(--primary)" }}>.</span>
+            </p>
+          </div>
+        </div>
+
+        {site.tagline && (
+          <p className="relative mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {site.tagline}
+          </p>
+        )}
+
+        <div className="relative mt-4 flex gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium">
+            <span
+              className="font-display font-bold tabular-nums"
+              style={{ color: accent ?? "var(--primary)" }}
+            >
+              {active}
+            </span>
+            Activas
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium">
+            <span className="font-display font-bold tabular-nums">{total}</span>
+            Total
+          </span>
+        </div>
+
+        {waHref && (
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            className="relative mt-4 flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white transition-opacity active:opacity-90"
+            style={{ background: accent ?? "var(--primary)" }}
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2} />
+            Hablemos por WhatsApp
+          </a>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
 // SECTION HEADER
 // ============================================================
 
@@ -220,7 +333,7 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-3 flex items-baseline justify-between">
       <div>
-        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        <h2 className="font-display text-base font-bold tracking-tight">{title}</h2>
         {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
       </div>
       <button
@@ -317,7 +430,7 @@ function FeaturedCard({
               <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 Recomendación
               </p>
-              <p className="mt-0.5 truncate text-base font-semibold tracking-tight">
+              <p className="mt-0.5 truncate font-display text-base font-bold tracking-tight">
                 {p.title}
               </p>
               {p.location && (
@@ -455,7 +568,7 @@ function PropertyGridCard({
         )}
       </div>
       <div className="p-3">
-        <p className="line-clamp-1 text-sm font-semibold tracking-tight">
+        <p className="line-clamp-1 font-display text-sm font-bold tracking-tight">
           {p.title}
         </p>
         {p.location && (
