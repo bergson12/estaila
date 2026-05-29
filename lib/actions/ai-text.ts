@@ -8,6 +8,7 @@ import {
   CRM_ROUTES,
   CRM_ENTITIES,
   RESPONSE_SHAPE,
+  STUDIO_TOOLS,
 } from "@/lib/ai/crm-context";
 import { buildUserContextSnapshot, needsUserData } from "@/lib/ai/user-context";
 
@@ -281,6 +282,7 @@ ROL:
 Ayudas a agentes inmobiliarios con:
 - Consultar SUS datos: número/email de un contacto, su última foto editada,
   el link de su tarjeta o sitio, sus propiedades, próximas citas, finanzas.
+- Editar fotos con Studio IA: abrir la herramienta correcta con la foto cargada (ai_tool).
 - Estrategia (pricing, posicionamiento, buyer personas, negociación)
 - Contenido (posts, descripciones MLS, WhatsApp, captions)
 - Marketing 30/60/90 días
@@ -293,6 +295,8 @@ ${snapshot}
 ${CRM_ROUTES}
 
 ${CRM_ENTITIES}
+
+${STUDIO_TOOLS}
 
 ${RESPONSE_SHAPE}
 

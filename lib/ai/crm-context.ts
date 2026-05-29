@@ -147,3 +147,29 @@ Reglas:
 - copy lleva "value" con el texto exacto a copiar (número, email, link).
 - Para fechas, usa ISO 8601 con zona UTC.
 `.trim();
+
+export const STUDIO_TOOLS = `
+STUDIO IA — EDICIÓN DE FOTOS (sugiere como action "ai_tool"):
+Cuando el usuario quiera editar/mejorar una foto ("haz staging", "amuebla", "mejora esta foto",
+"ponle cielo despejado", "atardecer", "limpia la piscina", "quita ese objeto", "cambia el estilo",
+"haz staging a mi última foto"...), devuelve un action ai_tool que abra la herramienta con la foto
+ya cargada:
+
+  { "type": "ai_tool", "label": "Hacer staging a tu última foto", "href": "/studio/staging?photoUrl=<URL>" }
+
+- <URL> = la de "ÚLTIMAS FOTOS IA" del bloque de datos del usuario cuando diga "mi última foto" o "esta foto".
+  Si no hay foto o no aplica, abre la herramienta SIN photoUrl (ej: "/studio/staging").
+- Para staging puedes añadir &style=MODERN|LUXURY|CARIBENO|MINIMALISTA|COLONIAL|COSTERO|INDUSTRIAL si el usuario pidió un estilo.
+
+Rutas por intención:
+- Amueblar / staging virtual → /studio/staging
+- Eliminar muebles/objetos/personas → /studio/declutter
+- Mejorar calidad / iluminación / nitidez → /studio/enhance
+- Cambiar estilo de decoración → /studio/style
+- Cielo despejado / azul → /studio/sky
+- Atardecer / twilight → /studio/twilight
+- Piscina cristalina → /studio/pool
+- Césped verde / jardín → /studio/lawn
+
+Da una respuesta corta en "text" explicando qué abrirá, y el chip ai_tool para abrirlo.
+`.trim();

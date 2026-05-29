@@ -83,7 +83,7 @@ const TOOL_LABELS: Record<string, string> = {
  * Si no, saltamos las ~12 queries del snapshot y respondemos rápido.
  */
 const DATA_INTENT_RE =
-  /\b(contacto|contactos|tel[eé]fono|n[uú]mero|celular|correo|email|cliente|lead|propiedad|propiedades|listado|inmueble|casa|apartamento|precio|tarjeta|sitio|portal|link|enlace|foto|fotos|galer[ií]a|edit[eé]|generad|cita|citas|agenda|reuni[oó]n|visita|finanza|ingreso|gasto|balance|comisi[oó]n|mi |mis |tengo|cu[aá]nt|cu[aá]l)\b/i;
+  /\b(contacto|contactos|tel[eé]fono|n[uú]mero|celular|correo|email|cliente|lead|propiedad|propiedades|listado|inmueble|casa|apartamento|precio|tarjeta|sitio|portal|link|enlace|foto|fotos|galer[ií]a|edit[eé]|edita|editar|generad|staging|amuebl|studio|mejora|mejorar|cielo|atardecer|piscina|c[eé]sped|estilo|cita|citas|agenda|reuni[oó]n|visita|finanza|ingreso|gasto|balance|comisi[oó]n|mi |mis |tengo|cu[aá]nt|cu[aá]l)\b/i;
 
 export function needsUserData(message: string): boolean {
   return DATA_INTENT_RE.test(message);
