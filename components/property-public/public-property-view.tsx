@@ -5,16 +5,17 @@ import {
   Bath,
   Bed,
   Building2,
+  Calendar,
   Car,
+  Check,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
+  Layers,
   Loader2,
   Mail,
   MapPin,
   MessageCircle,
-  Maximize2,
   Phone,
+  Ruler,
   Send,
 } from "lucide-react";
 import { useState, useTransition } from "react";
@@ -25,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { submitPublicLead } from "@/lib/actions/lead";
 import { cn, initials } from "@/lib/utils";
 
@@ -103,12 +103,24 @@ const CAT_LABEL: Record<string, string> = {
   SOLAR: "Solar",
 };
 
+// White-label brand palette — exposed as CSS vars so a future agent.brandColor
+// can override #00BF63 without touching the markup.
+const BRAND_VARS = {
+  "--brand": "#00BF63",
+  "--brand-700": "#00904a",
+} as React.CSSProperties;
+
 function formatPrice(amount: number | null, currency: "USD" | "DOP") {
   if (amount == null) return "Consultar precio";
-  return `${currency === "USD" ? "US$" : "RD$"}${amount.toLocaleString(
+  return `${currency === "USD" ? "US$ " : "RD$ "}${amount.toLocaleString(
     "en-US",
     { maximumFractionDigits: 0 }
   )}`;
+}
+
+function waLink(phone: string, text: string) {
+  const num = phone.replace(/[^\d+]/g, "").replace(/^\+/, "");
+  return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
 }
 
 export function PublicPropertyView({
@@ -120,221 +132,259 @@ export function PublicPropertyView({
   agent: PublicAgent;
   trackingRef: string | null;
 }) {
-  const [photoIdx, setPhotoIdx] = useState(0);
-  const photos = property.photos.length > 0 ? property.photos : [];
+  const [mainIdx, setMainIdx] = useState(0);
+  const photos = property.photos;
+  const hasPhotos = photos.length > 0;
+  const thumbs = photos.slice(1, 4);
+  const extraCount = Math.max(0, photos.length - 4);
+
+  const opLabel = OP_LABEL[property.operation] ?? property.operation;
+  const catLabel = CAT_LABEL[property.category] ?? property.category;
+  const place = property.location ?? property.address ?? "Rep. Dominicana";
+  const priceLabel =
+    property.operation === "EN_ALQUILER" || property.operation === "ALQUILADA"
+      ? "Precio de alquiler"
+      : "Precio de venta";
+  const price =
+    property.priceUSD != null
+      ? formatPrice(property.priceUSD, "USD")
+      : formatPrice(property.priceDOP, "DOP");
+
+  const firstName = agent.name.split(" ")[0];
+  const waMsg = `Hola ${firstName}, vi la propiedad "${property.title}" y me interesa. ¿Podrías darme más información?`;
 
   function scrollToLead() {
     document
       .getElementById("contact-form")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-
-  function nextPhoto() {
-    setPhotoIdx((i) => (i + 1) % photos.length);
-  }
-  function prevPhoto() {
-    setPhotoIdx((i) => (i - 1 + photos.length) % photos.length);
+  function scrollToGallery() {
+    document
+      .getElementById("galeria")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
-    <div className="relative min-h-screen bg-background">
-      {/* ======================== HERO ======================== */}
-      <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden bg-secondary">
-        {photos[photoIdx] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photos[photoIdx]}
-            alt={property.title}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
-            <Building2 className="h-20 w-20" />
+    <div
+      style={BRAND_VARS}
+      className="min-h-screen bg-white font-sans text-zinc-900"
+    >
+      {/* ======================== TOP BAR (agent brand) ======================== */}
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-3 px-[clamp(18px,4vw,32px)] py-3.5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--brand)] font-display text-lg font-bold text-white">
+              {initials(agent.name).charAt(0)}
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-display text-[15px] font-bold leading-tight">
+                {agent.name}
+              </div>
+              <div className="truncate text-[11.5px] text-zinc-500">
+                {agent.role ?? "Asesor inmobiliario"}
+              </div>
+            </div>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
-
-        {/* Photo navigation arrows */}
-        {photos.length > 1 && (
-          <>
+          {agent.phone ? (
+            <a
+              href={waLink(agent.phone, waMsg)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-700)]"
+            >
+              <MessageCircle className="h-4 w-4" strokeWidth={2} />
+              <span className="hidden sm:inline">Contactar</span>
+            </a>
+          ) : (
             <button
               type="button"
-              onClick={prevPhoto}
-              aria-label="Foto anterior"
-              className="absolute left-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/60"
+              onClick={scrollToLead}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-700)]"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <Mail className="h-4 w-4" strokeWidth={2} />
+              <span className="hidden sm:inline">Contactar</span>
             </button>
-            <button
-              type="button"
-              onClick={nextPhoto}
-              aria-label="Foto siguiente"
-              className="absolute right-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black/60"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-            <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
-              {photos.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setPhotoIdx(i)}
-                  aria-label={`Foto ${i + 1}`}
-                  className={cn(
-                    "h-1.5 rounded-full transition-all",
-                    i === photoIdx ? "w-8 bg-white" : "w-1.5 bg-white/50"
-                  )}
-                />
-              ))}
-            </div>
-          </>
-        )}
+          )}
+        </div>
+      </header>
 
-        {/* Hero text overlay */}
-        <div className="absolute inset-x-0 bottom-0 z-10 mx-auto max-w-6xl px-6 pb-10 text-white sm:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
-                {OP_LABEL[property.operation] ?? property.operation}
-              </span>
-              <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium backdrop-blur-md">
-                {CAT_LABEL[property.category] ?? property.category}
-              </span>
+      <div className="mx-auto max-w-[1120px] px-[clamp(18px,4vw,32px)] pb-20 pt-[clamp(20px,3vw,32px)]">
+        {/* ======================== HEADER (breadcrumb + title + price) ======================== */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-5 flex flex-wrap items-end justify-between gap-4"
+        >
+          <div className="min-w-0">
+            <div className="mb-2 text-[13px] text-zinc-500">
+              {catLabel} · {place} · {opLabel}
             </div>
-            <h1 className="mt-4 max-w-3xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="text-[clamp(26px,3.4vw,40px)] font-bold leading-[1.05] tracking-tight">
               {property.title}
             </h1>
-            <p className="mt-3 flex items-center gap-1.5 text-base text-white/85">
-              <MapPin className="h-4 w-4" strokeWidth={1.75} />
-              {property.location ?? property.address ?? "Ubicación reservada"}
-            </p>
-            <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
-              <p className="font-mono text-3xl font-bold tabular-nums sm:text-4xl">
-                {formatPrice(property.priceUSD, "USD")}
-              </p>
-              <Button
-                size="lg"
-                onClick={scrollToLead}
-                className="rounded-full bg-white text-black hover:bg-white/90"
-              >
-                Solicitar visita
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
+            <div className="mt-2 flex items-center gap-1.5 text-[15px] text-zinc-600">
+              <MapPin className="h-4 w-4 text-[var(--brand)]" strokeWidth={2} />
+              {place}
             </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ======================== SPECS ROW ======================== */}
-      <section className="border-b border-border bg-card">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px bg-border sm:grid-cols-4">
-          <SpecTile
-            icon={<Bed className="h-4 w-4" />}
-            label="Habitaciones"
-            value={property.bedrooms?.toString() ?? "—"}
-          />
-          <SpecTile
-            icon={<Bath className="h-4 w-4" />}
-            label="Baños"
-            value={property.bathrooms?.toString() ?? "—"}
-          />
-          <SpecTile
-            icon={<Car className="h-4 w-4" />}
-            label="Parqueos"
-            value={property.parking?.toString() ?? "—"}
-          />
-          <SpecTile
-            icon={<Maximize2 className="h-4 w-4" />}
-            label="Metros²"
-            value={
-              property.metersSquared != null
-                ? `${property.metersSquared} m²`
-                : "—"
-            }
-          />
-        </div>
-      </section>
-
-      {/* ======================== DETAILS + GALLERY ======================== */}
-      <section className="mx-auto max-w-6xl px-6 py-12 sm:px-8 lg:py-16">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-12">
-            {/* Description */}
-            {property.description && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                  Sobre esta propiedad
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-                  Descripción
-                </h2>
-                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-foreground/85">
-                  {property.description}
-                </p>
+          </div>
+          <div className="text-left sm:text-right">
+            <div className="text-[13px] text-zinc-500">{priceLabel}</div>
+            <div className="font-display text-[clamp(26px,3.4vw,38px)] font-bold tracking-tight tabular-nums">
+              {price}
+            </div>
+            {property.priceUSD != null && property.priceDOP != null && (
+              <div className="text-[13px] text-zinc-500 tabular-nums">
+                {formatPrice(property.priceDOP, "DOP")}
               </div>
             )}
+          </div>
+        </motion.div>
 
-            {/* Photo grid */}
-            {photos.length > 1 && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                  Galería
+        {/* ======================== GALLERY (main + thumbs) ======================== */}
+        <div
+          className={cn(
+            "grid gap-3",
+            thumbs.length > 0 ? "md:grid-cols-[1fr_280px]" : "grid-cols-1"
+          )}
+        >
+          <div className="relative overflow-hidden rounded-[18px] bg-zinc-100">
+            {hasPhotos ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photos[mainIdx]}
+                alt={property.title}
+                className="h-[clamp(300px,42vw,460px)] w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-[clamp(300px,42vw,460px)] items-center justify-center text-zinc-300">
+                <Building2 className="h-16 w-16" strokeWidth={1.25} />
+              </div>
+            )}
+            <span className="absolute left-4 top-4 rounded-full bg-[var(--brand)] px-3 py-1.5 font-display text-xs font-bold text-white">
+              {opLabel}
+            </span>
+          </div>
+
+          {thumbs.length > 0 && (
+            <div className="grid grid-rows-3 gap-3">
+              {thumbs.map((url, i) => {
+                const idx = i + 1;
+                const isLast = i === thumbs.length - 1;
+                return (
+                  <button
+                    type="button"
+                    key={url + idx}
+                    onClick={() => setMainIdx(idx)}
+                    className={cn(
+                      "relative h-full min-h-[100px] overflow-hidden rounded-[14px] bg-zinc-100 outline-offset-2 transition-all",
+                      mainIdx === idx && "outline outline-[3px] outline-[var(--brand)]"
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`Foto ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    {isLast && extraCount > 0 && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          scrollToGallery();
+                        }}
+                        className="absolute inset-0 grid place-items-center bg-zinc-900/55 font-display text-[15px] font-bold text-white"
+                      >
+                        +{extraCount} fotos
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ======================== SPECS ROW ======================== */}
+        <div className="mt-6 flex flex-wrap gap-3">
+          {property.bedrooms != null && (
+            <SpecPill icon={<Bed className="h-5 w-5" strokeWidth={1.75} />} value={String(property.bedrooms)} label="Habitaciones" />
+          )}
+          {property.bathrooms != null && (
+            <SpecPill icon={<Bath className="h-5 w-5" strokeWidth={1.75} />} value={String(property.bathrooms)} label="Baños" />
+          )}
+          {property.metersSquared != null && (
+            <SpecPill icon={<Ruler className="h-5 w-5" strokeWidth={1.75} />} value={`${property.metersSquared} m²`} label="Área" />
+          )}
+          {property.parking != null && (
+            <SpecPill icon={<Car className="h-5 w-5" strokeWidth={1.75} />} value={String(property.parking)} label="Parqueos" />
+          )}
+          <SpecPill icon={<Layers className="h-5 w-5" strokeWidth={1.75} />} value={catLabel} label="Tipo" />
+        </div>
+
+        {/* ======================== BODY (content + sticky contact) ======================== */}
+        <div className="mt-11 grid grid-cols-1 gap-9 lg:grid-cols-[1fr_360px]">
+          <div className="min-w-0">
+            {property.description && (
+              <section>
+                <h2 className="text-2xl font-bold tracking-tight">Descripción</h2>
+                <p className="mt-3.5 whitespace-pre-line text-base leading-[1.7] text-zinc-600">
+                  {property.description}
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-                  {photos.length} fotos de la propiedad
+              </section>
+            )}
+
+            {/* Full gallery */}
+            {photos.length > 1 && (
+              <section id="galeria" className="mt-11 scroll-mt-24">
+                <h2 className="text-2xl font-bold tracking-tight">
+                  Galería · {photos.length} fotos
                 </h2>
-                <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
                   {photos.map((url, i) => (
                     <button
                       type="button"
                       key={url + i}
-                      onClick={() => setPhotoIdx(i)}
-                      className="group aspect-[4/3] overflow-hidden rounded-xl border border-border bg-secondary"
+                      onClick={() => {
+                        setMainIdx(i);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="group aspect-[4/3] overflow-hidden rounded-[14px] bg-zinc-100"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={url}
                         alt={`Foto ${i + 1}`}
-                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
                       />
                     </button>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
 
             {/* Map + POIs */}
             {property.lat != null && property.lng != null && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                  Ubicación
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-                  {property.location ?? "En el mapa"}
-                </h2>
+              <section className="mt-11">
+                <h2 className="text-2xl font-bold tracking-tight">Ubicación</h2>
                 {property.pois.filter((p) => p.pinned).length > 0 && (
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {property.pois
                       .filter((p) => p.pinned)
                       .map((p) => (
                         <span
                           key={p.id}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-700"
                         >
                           <span
                             className="h-2 w-2 rounded-full"
-                            style={{
-                              backgroundColor: p.color ?? "var(--primary)",
-                            }}
+                            style={{ backgroundColor: p.color ?? "var(--brand)" }}
                           />
                           {p.name}
                           {p.distanceM != null && (
-                            <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                            <span className="text-[10px] text-zinc-400 tabular-nums">
                               ·{" "}
                               {p.distanceM < 1000
                                 ? `${p.distanceM}m`
@@ -345,7 +395,7 @@ export function PublicPropertyView({
                       ))}
                   </div>
                 )}
-                <div className="mt-6">
+                <div className="mt-5 overflow-hidden rounded-[18px] border border-zinc-200">
                   <PropertyMap
                     property={{
                       id: property.id,
@@ -358,89 +408,109 @@ export function PublicPropertyView({
                     variant="full"
                   />
                 </div>
-              </div>
+              </section>
             )}
           </div>
 
-          {/* Sticky agent + actions */}
-          <aside className="lg:sticky lg:top-6 lg:self-start">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-14 w-14 ring-2 ring-border">
-                  <AvatarImage src={agent.avatar ?? undefined} />
-                  <AvatarFallback className="bg-primary/15 text-base font-semibold text-primary">
+          {/* Sticky contact card */}
+          <aside>
+            <div className="rounded-[20px] border border-zinc-200 bg-white p-6 shadow-[0_4px_14px_rgba(16,24,32,.07),0_2px_4px_rgba(16,24,32,.04)] lg:sticky lg:top-[88px]">
+              <div className="flex items-center gap-3.5">
+                {agent.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={agent.avatar}
+                    alt={agent.name}
+                    className="h-14 w-14 rounded-full object-cover ring-2 ring-white"
+                  />
+                ) : (
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-[var(--brand)]/15 font-display text-lg font-bold text-[var(--brand-700)]">
                     {initials(agent.name)}
-                  </AvatarFallback>
-                </Avatar>
+                  </span>
+                )}
                 <div className="min-w-0">
-                  <p className="text-base font-semibold tracking-tight">
+                  <div className="truncate font-display text-[17px] font-bold leading-tight">
                     {agent.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  </div>
+                  <div className="truncate text-[13px] text-zinc-500">
                     {agent.role ?? "Asesor inmobiliario"}
-                  </p>
+                  </div>
                   {agent.location && (
-                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <MapPin className="h-2.5 w-2.5" />
-                      {agent.location}
-                    </p>
+                    <div className="mt-0.5 flex items-center gap-1 text-[11px] text-zinc-400">
+                      <MapPin className="h-3 w-3" strokeWidth={2} />
+                      <span className="truncate">{agent.location}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-5 space-y-2">
+              <div className="mt-5 flex flex-col gap-2.5">
                 {agent.phone && (
                   <a
-                    href={`https://wa.me/${agent.phone.replace(/[^\d+]/g, "").replace(/^\+/, "")}?text=${encodeURIComponent(
-                      `Hola ${agent.name.split(" ")[0]}, vi tu propiedad "${property.title}" y me interesa.`
-                    )}`}
+                    href={waLink(agent.phone, waMsg)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-700)]"
                   >
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
+                    <MessageCircle className="h-4 w-4" strokeWidth={2} />
+                    Escribir por WhatsApp
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={scrollToLead}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+                >
+                  <Calendar className="h-4 w-4" strokeWidth={2} />
+                  Agendar visita
+                </button>
+                {agent.phone && (
+                  <a
+                    href={`tel:${agent.phone.replace(/[^\d+]/g, "")}`}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                  >
+                    <Phone className="h-4 w-4" strokeWidth={2} />
+                    Llamar ahora
                   </a>
                 )}
                 {agent.email && (
                   <a
                     href={`mailto:${agent.email}?subject=${encodeURIComponent(`Interés en ${property.title}`)}`}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-secondary/50"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
                   >
-                    <Mail className="h-4 w-4" />
-                    Email
+                    <Mail className="h-4 w-4" strokeWidth={2} />
+                    Enviar email
                   </a>
                 )}
-                <Button
-                  onClick={scrollToLead}
-                  className="w-full"
-                  variant="ink"
-                  size="lg"
-                >
-                  Solicitar visita
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Button>
+              </div>
+
+              <div className="mt-[18px] flex flex-col gap-2.5 border-t border-zinc-200 pt-[18px] text-[13.5px] text-zinc-600">
+                <span className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[var(--brand)]" strokeWidth={2.5} />
+                  Respuesta en menos de 1 hora
+                </span>
+                <span className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-[var(--brand)]" strokeWidth={2.5} />
+                  Visitas presenciales y virtuales
+                </span>
               </div>
             </div>
           </aside>
         </div>
-      </section>
+      </div>
 
       {/* ======================== LEAD FORM ======================== */}
-      <section
-        id="contact-form"
-        className="border-y border-border bg-secondary/30 py-16"
-      >
-        <div className="mx-auto max-w-3xl px-6 sm:px-8">
+      <section id="contact-form" className="scroll-mt-20 border-y border-zinc-200 bg-zinc-50 py-16">
+        <div className="mx-auto max-w-3xl px-[clamp(18px,4vw,32px)]">
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand-700)]">
               Solicita información
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
               ¿Te interesa esta propiedad?
             </h2>
-            <p className="mt-3 max-w-prose text-sm text-muted-foreground sm:text-base">
-              Déjanos tu contacto y te llamamos para coordinar una visita o
+            <p className="mx-auto mt-3 max-w-prose text-sm text-zinc-500 sm:text-base">
+              Déjanos tu contacto y te escribimos para coordinar una visita o
               enviarte más información.
             </p>
           </div>
@@ -449,14 +519,17 @@ export function PublicPropertyView({
       </section>
 
       {/* ======================== FOOTER ======================== */}
-      <footer className="bg-card py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 text-center sm:px-8">
-          <p className="text-sm font-semibold tracking-tight">
-            estaila<span className="text-primary">.</span>
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            Propiedad publicada por {agent.name} · Compartido vía estaila CRM
-          </p>
+      <footer className="bg-white py-8">
+        <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-3 px-[clamp(18px,4vw,32px)]">
+          <span className="text-[13px] text-zinc-400">
+            Propiedad publicada por {agent.name}
+          </span>
+          <span className="flex items-center gap-1.5 text-[13px] text-zinc-400">
+            Hecho con
+            <span className="font-display font-bold text-zinc-900">
+              estaila<span className="text-[var(--brand)]">.</span>
+            </span>
+          </span>
         </div>
       </footer>
     </div>
@@ -464,27 +537,29 @@ export function PublicPropertyView({
 }
 
 // ============================================================
-// SPEC TILE
+// SPEC PILL
 // ============================================================
 
-function SpecTile({
+function SpecPill({
   icon,
-  label,
   value,
+  label,
 }: {
   icon: React.ReactNode;
-  label: string;
   value: string;
+  label: string;
 }) {
   return (
-    <div className="bg-card px-6 py-5">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span className="text-primary">{icon}</span>
-        {label}
+    <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,32,.05)]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-zinc-50 text-[var(--brand)]">
+        {icon}
+      </span>
+      <div>
+        <div className="font-display text-lg font-bold leading-none tracking-tight">
+          {value}
+        </div>
+        <div className="mt-1 text-xs text-zinc-500">{label}</div>
       </div>
-      <p className="mt-2 font-mono text-2xl font-semibold tabular-nums">
-        {value}
-      </p>
     </div>
   );
 }
@@ -542,15 +617,15 @@ function LeadForm({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-10 text-center"
+        className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-[var(--brand)]/30 bg-[var(--brand)]/10 p-10 text-center"
       >
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand)] text-white">
           <CheckCircle2 className="h-7 w-7" strokeWidth={2} />
         </span>
-        <h3 className="text-2xl font-semibold tracking-tight">
+        <h3 className="text-2xl font-bold tracking-tight">
           ¡Gracias por tu interés!
         </h3>
-        <p className="max-w-prose text-sm text-muted-foreground">
+        <p className="max-w-prose text-sm text-zinc-500">
           Recibimos tu mensaje. Te contactaremos en breve por el canal que
           dejaste.
         </p>
@@ -561,7 +636,7 @@ function LeadForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8"
+      className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_4px_14px_rgba(16,24,32,.07)] sm:p-8"
     >
       {/* Honeypot — invisible to humans, bots fill it */}
       <input
@@ -610,14 +685,22 @@ function LeadForm({
           />
         </Field>
       </div>
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <p className="text-[11px] text-muted-foreground">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[11px] text-zinc-400">
           No compartimos tu información. Solo para contactarte sobre esta
           propiedad.
         </p>
-        <Button type="submit" disabled={pending} variant="ink" size="lg">
-          {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-          <Send className="mr-1.5 h-4 w-4" />
+        <Button
+          type="submit"
+          disabled={pending}
+          size="lg"
+          className="bg-[var(--brand)] text-white hover:bg-[var(--brand-700)]"
+        >
+          {pending ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="mr-1.5 h-4 w-4" />
+          )}
           Enviar
         </Button>
       </div>
@@ -636,7 +719,7 @@ function Field({
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <Label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
         {label}
       </Label>
       {children}
