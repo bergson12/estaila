@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Raleway, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const raleway = Raleway({
-  variable: "--font-raleway",
+// Brand fonts (design handoff): Space Grotesk = display/headings,
+// Hanken Grotesk = body/UI.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const hankenGrotesk = Hanken_Grotesk({
+  variable: "--font-hanken",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -18,13 +27,15 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 // Legacy aliases — older components still reference these variable names.
-// Pointing them at Raleway keeps a unified type system across the app.
+// --font-raleway now points to Hanken (body) so nothing breaks; decorative
+// display aliases point to Space Grotesk.
 const fontAliases = {
-  "--font-inter": "var(--font-raleway)",
-  "--font-cormorant": "var(--font-raleway)",
-  "--font-playfair": "var(--font-raleway)",
-  "--font-fraunces": "var(--font-raleway)",
-  "--font-instrument": "var(--font-raleway)",
+  "--font-raleway": "var(--font-hanken)",
+  "--font-inter": "var(--font-hanken)",
+  "--font-cormorant": "var(--font-space-grotesk)",
+  "--font-playfair": "var(--font-space-grotesk)",
+  "--font-fraunces": "var(--font-space-grotesk)",
+  "--font-instrument": "var(--font-hanken)",
 } as React.CSSProperties;
 
 export const metadata: Metadata = {
@@ -61,7 +72,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${raleway.variable} ${jetbrainsMono.variable} antialiased`}
+      className={`${spaceGrotesk.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       style={fontAliases}
       suppressHydrationWarning
     >
