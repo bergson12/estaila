@@ -13,8 +13,11 @@ import {
   Bot,
   Building2,
   Calendar,
+  Download,
+  ImagePlus,
   Loader2,
   MessageSquarePlus,
+  MessageSquareText,
   PanelLeft,
   Send,
   Sparkles,
@@ -42,6 +45,13 @@ import {
   type ConversationSummary,
 } from "@/lib/actions/ai-text";
 import { ErrorCard, ActionChip } from "@/components/layout/estaila-chatbot";
+import { GeneratePanel, type GenResult } from "./generate-panel";
+import { BeforeAfter } from "@/components/studio/before-after";
+import {
+  DownloadModal,
+  SaveToPropertyDialog,
+  SendToContactDialog,
+} from "@/components/studio/photo-dialogs";
 
 type WizardKind = "CONTACT" | "PROPERTY" | "APPOINTMENT";
 
@@ -51,6 +61,13 @@ type Turn = {
   actions?: ChatAction[];
   errorCode?: "empty" | "quota" | "network" | "unknown";
   retryOf?: string;
+  /** Studio IA result rendered inline (before/after + photo actions). */
+  image?: {
+    beforeUrl: string;
+    afterUrl: string;
+    generationId: string;
+    toolLabel: string;
+  };
 };
 
 const CHAR_LIMITS: Record<string, number> = {
@@ -97,6 +114,12 @@ export function AsistenteChat({
   const [conversations, setConversations] =
     useState<ConversationSummary[]>(initialConversations);
   const [railOpen, setRailOpen] = useState(false);
+  const [genOpen, setGenOpen] = useState(false);
+  const [downloadFor, setDownloadFor] = useState<{ url: string } | null>(null);
+  const [saveFor, setSaveFor] = useState<{ id: string } | null>(null);
+  const [shareFor, setShareFor] = useState<{ id: string; url: string } | null>(
+    null
+  );
   const [, startTransition] = useTransition();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -259,6 +282,30 @@ export function AsistenteChat({
     }
   }
 
+  function handleGenResult(r: GenResult) {
+    setHistory((h) => [
+      ...h,
+      {
+        role: "assistant",
+        content:
+          (r.fallbackUsed === "mock"
+            ? `Preview con filtro (Gemini sin cuota). `
+            : `Listo · ${r.toolLabel}. `) +
+          `Te quedan ${r.remaining} crédito${r.remaining === 1 ? "" : "s"}.`,
+        image: {
+          beforeUrl: r.beforeUrl,
+          afterUrl: r.afterUrl,
+          generationId: r.generationId,
+          toolLabel: r.toolLabel,
+        },
+      },
+    ]);
+    setTimeout(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 50);
+  }
+
   const empty = history.length === 0;
 
   return (
@@ -340,6 +387,36 @@ export function AsistenteChat({
                     {m.content}
                   </div>
                 )}
+                {m.image && (
+                  <div className="mt-2 w-full max-w-[80%] space-y-2">
+                    <BeforeAfter
+                      beforeUrl={m.image.beforeUrl}
+                      afterUrl={m.image.afterUrl}
+                    />
+                    <div className="flex flex-wrap gap-1.5">
+                      <ImgChip
+                        icon={Download}
+                        label="Descargar"
+                        onClick={() => setDownloadFor({ url: m.image!.afterUrl })}
+                      />
+                      <ImgChip
+                        icon={Building2}
+                        label="Guardar en propiedad"
+                        onClick={() => setSaveFor({ id: m.image!.generationId })}
+                      />
+                      <ImgChip
+                        icon={MessageSquareText}
+                        label="Compartir"
+                        onClick={() =>
+                          setShareFor({
+                            id: m.image!.generationId,
+                            url: m.image!.afterUrl,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
                 {m.role === "assistant" && !m.errorCode && m.actions && m.actions.length > 0 && (
                   <div className="mt-2 flex max-w-[80%] flex-wrap gap-1.5">
                     {m.actions.map((a, idx) => (
@@ -375,6 +452,14 @@ export function AsistenteChat({
           className="border-t border-border p-3"
         >
           <div className="flex items-end gap-2 rounded-xl border border-border bg-background p-2 focus-within:border-primary/40">
+            <button
+              type="button"
+              onClick={() => setGenOpen(true)}
+              title="Generar con Studio IA"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-primary transition-colors hover:bg-primary/10"
+            >
+              <ImagePlus className="h-4 w-4" />
+            </button>
             <textarea
               ref={inputRef}
               value={input}
@@ -408,7 +493,56 @@ export function AsistenteChat({
           )}
         </form>
       </div>
+
+      {/* Studio IA inline (P-006) */}
+      <GeneratePanel
+        open={genOpen}
+        onClose={() => setGenOpen(false)}
+        onResult={handleGenResult}
+      />
+      <DownloadModal
+        open={!!downloadFor}
+        onClose={() => setDownloadFor(null)}
+        outputUrl={downloadFor?.url ?? ""}
+        filename={`estaila-${Date.now().toString(36)}.png`}
+      />
+      {saveFor && (
+        <SaveToPropertyDialog
+          open={!!saveFor}
+          onClose={() => setSaveFor(null)}
+          generationId={saveFor.id}
+        />
+      )}
+      {shareFor && (
+        <SendToContactDialog
+          open={!!shareFor}
+          onClose={() => setShareFor(null)}
+          generationId={shareFor.id}
+          outputUrl={shareFor.url}
+        />
+      )}
     </div>
+  );
+}
+
+function ImgChip({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+    >
+      <Icon className="h-3 w-3" />
+      {label}
+    </button>
   );
 }
 
