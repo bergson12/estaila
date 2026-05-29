@@ -106,7 +106,7 @@ export default async function DashboardLayout({
             branding={orgBranding}
             layoutMode={layoutMode}
           />
-          <div className="relative flex flex-1 flex-col md:pl-[var(--sidebar-w,240px)] [transition:padding-left_0.3s_cubic-bezier(0.22,1,0.36,1)]">
+          <div className="relative flex min-w-0 flex-1 flex-col md:pl-[var(--sidebar-w,240px)] [transition:padding-left_0.3s_cubic-bezier(0.22,1,0.36,1)]">
             <AnnouncementBanner />
             <Topbar user={sidebarUser} branding={orgBranding} />
             <main className="relative flex-1">
