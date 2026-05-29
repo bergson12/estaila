@@ -56,8 +56,19 @@ const SEGMENTS: Record<string, string> = {
   lawn: "Césped",
 };
 
+/** Detecta segmentos que son IDs (cuid/uuid/hash) para no mostrarlos crudos. */
+function isIdLike(slug: string): boolean {
+  return (
+    /^c[a-z0-9]{20,}$/i.test(slug) || // cuid
+    /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(slug) || // uuid
+    (slug.length >= 16 && /^[a-z0-9]+$/i.test(slug) && /\d/.test(slug)) // hash genérico
+  );
+}
+
 function humanize(slug: string) {
-  return SEGMENTS[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
+  if (SEGMENTS[slug] !== undefined) return SEGMENTS[slug];
+  if (isIdLike(slug)) return "Detalle";
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
 export function Topbar({
@@ -82,6 +93,10 @@ export function Topbar({
   }, []);
 
   const parts = pathname.split("/").filter(Boolean);
+  // Para el título móvil: usa el último segmento con significado (salta IDs),
+  // para que /contactos/<id> muestre "Contactos" y no el cuid crudo.
+  const mobileTitleSlug =
+    [...parts].reverse().find((p) => !isIdLike(p)) ?? parts[parts.length - 1];
 
   return (
     <>
@@ -119,11 +134,11 @@ export function Topbar({
               );
             })}
           </div>
-          {/* On mobile show only the last segment as the page title */}
+          {/* On mobile show only the page title (skips raw IDs) */}
           {parts.length > 0 && (
-            <span className="ml-1 truncate text-sm font-medium sm:hidden">
-              <ChevronRight className="mr-1 inline h-3 w-3 text-muted-foreground/60" />
-              {humanize(parts[parts.length - 1])}
+            <span className="ml-1 flex min-w-0 items-center gap-1 text-sm font-medium sm:hidden">
+              <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+              <span className="truncate">{humanize(mobileTitleSlug)}</span>
             </span>
           )}
         </nav>
