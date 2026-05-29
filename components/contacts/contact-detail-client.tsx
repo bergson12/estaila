@@ -797,7 +797,7 @@ function PropertyObjectCard({
           </div>
 
           {/* Specs row */}
-          <div className="mt-4 flex items-center gap-1.5">
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
             {p.bedrooms != null && (
               <SpecPill icon={Bed} value={`${p.bedrooms} hab`} />
             )}
