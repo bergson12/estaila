@@ -29,7 +29,7 @@ import {
   Sparkles,
   TrendingDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -47,6 +47,7 @@ import {
   sendTemplatedEmail,
   sendTestEmail,
 } from "@/lib/actions/email";
+import { defaultTemplateContent } from "@/lib/email/template-defaults";
 
 type Kind =
   | "NEW_LISTING"
@@ -141,10 +142,47 @@ export function SendEmailDialog({
   const [customDateTime, setCustomDateTime] = useState("");
   const [sending, setSending] = useState(false);
   const [testing, setTesting] = useState(false);
+  // Remembers the auto-filled default so we only send overrides when edited.
+  const defaultsRef = useRef<{ subject: string; message: string }>({
+    subject: "",
+    message: "",
+  });
 
   const selectedTemplate = TEMPLATES.find((t) => t.kind === kind)!;
   const propertyMissing = selectedTemplate.needsProperty && !propertyId;
   const count = contactCount ?? contactIds.length;
+
+  // Prefill the editable subject + message with the template's default text
+  // whenever the template, property, or date/time changes. The user can then
+  // tweak it; unchanged fields fall back to the (richer) server default.
+  useEffect(() => {
+    const d = defaultTemplateContent({
+      kind,
+      property: propertyTitle ? { title: propertyTitle, location: null } : null,
+      dateTime: customDateTime || undefined,
+    });
+    defaultsRef.current = d;
+    setCustomSubject(d.subject);
+    setCustomBody(d.message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, propertyTitle, customDateTime]);
+
+  /** Send the field only if the user edited it away from the default. */
+  function overrides() {
+    const d = defaultsRef.current;
+    const subj = customSubject.trim();
+    const body = customBody.trim();
+    if (kind === "CUSTOM") {
+      return {
+        customSubject: subj || undefined,
+        customBody: body || undefined,
+      };
+    }
+    return {
+      customSubject: subj && subj !== d.subject ? subj : undefined,
+      customBody: body && body !== d.message ? body : undefined,
+    };
+  }
 
   async function send() {
     if (count === 0) {
@@ -165,8 +203,7 @@ export function SendEmailDialog({
         kind,
         contactIds,
         propertyId: propertyId ?? undefined,
-        customSubject: customSubject.trim() || undefined,
-        customBody: customBody.trim() || undefined,
+        ...overrides(),
         customDateTime: customDateTime.trim() || undefined,
       });
       if (!res.ok) {
@@ -213,8 +250,7 @@ export function SendEmailDialog({
       const res = await sendTestEmail({
         kind,
         propertyId: propertyId ?? undefined,
-        customSubject: customSubject.trim() || undefined,
-        customBody: customBody.trim() || undefined,
+        ...overrides(),
         customDateTime: customDateTime.trim() || undefined,
       });
       if (!res.ok) {
@@ -316,42 +352,8 @@ export function SendEmailDialog({
             </div>
           </div>
 
-          {/* Custom subject (only for CUSTOM) */}
-          {kind === "CUSTOM" && (
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Asunto
-              </label>
-              <Input
-                value={customSubject}
-                onChange={(e) => setCustomSubject(e.target.value)}
-                placeholder="Asunto del email..."
-                className="h-9"
-              />
-            </div>
-          )}
-
-          {/* Custom body (only for CUSTOM) */}
-          {kind === "CUSTOM" && (
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Mensaje
-              </label>
-              <Textarea
-                value={customBody}
-                onChange={(e) => setCustomBody(e.target.value)}
-                rows={6}
-                placeholder="Escribe el contenido del email..."
-                className="resize-none"
-              />
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                Tu firma, datos de contacto y branding se agregan
-                automáticamente.
-              </p>
-            </div>
-          )}
-
-          {/* DateTime field (for OPEN_HOUSE, APPOINTMENT_CONFIRM) */}
+          {/* DateTime field (for OPEN_HOUSE, APPOINTMENT_CONFIRM) — feeds the
+              default subject/message below */}
           {selectedTemplate.needsDateTime && (
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -365,6 +367,38 @@ export function SendEmailDialog({
               />
             </div>
           )}
+
+          {/* Asunto — editable en todas las plantillas */}
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Asunto
+            </label>
+            <Input
+              value={customSubject}
+              onChange={(e) => setCustomSubject(e.target.value)}
+              placeholder="Asunto del email..."
+              className="h-9"
+            />
+          </div>
+
+          {/* Mensaje — prellenado con el texto de la plantilla y editable */}
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Mensaje
+            </label>
+            <Textarea
+              value={customBody}
+              onChange={(e) => setCustomBody(e.target.value)}
+              rows={6}
+              placeholder="Escribe el contenido del email..."
+              className="resize-none"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Texto sugerido de la plantilla — edítalo a tu gusto. El saludo, tu
+              firma{propertyTitle ? ", la tarjeta de la propiedad" : ""} y el
+              branding se agregan automáticamente.
+            </p>
+          </div>
 
           {/* Info banner */}
           <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">

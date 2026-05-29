@@ -173,14 +173,13 @@ function escapeHtml(s: string): string {
 // TEMPLATES
 // ============================================================
 
-export type TemplateKind =
-  | "NEW_LISTING"
-  | "PRICE_REDUCTION"
-  | "OPEN_HOUSE"
-  | "LEAD_REPLY"
-  | "APPOINTMENT_CONFIRM"
-  | "FOLLOWUP"
-  | "CUSTOM";
+import {
+  defaultTemplateContent,
+  PROPERTY_REQUIRED,
+  type TemplateKind,
+} from "./template-defaults";
+
+export type { TemplateKind };
 
 export type RenderedEmail = {
   subject: string;
@@ -201,161 +200,46 @@ export function renderTemplate(args: {
   const { kind, agent, contact, property } = args;
   const greeting = `Hola ${escapeHtml(contact.name.split(" ")[0] ?? "")},`;
 
-  switch (kind) {
-    case "NEW_LISTING": {
-      if (!property) throw new Error("property requerida para NEW_LISTING");
-      const preview = `Nueva propiedad: ${property.title} · ${formatPrice(property.priceUSD)}`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          Tengo una propiedad nueva que coincide con lo que estás buscando. Échale un vistazo cuando puedas:
-        </p>
-        ${propertyCard(property)}
-        ${
-          property.description
-            ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.6;color:${MUTED};">${escapeHtml(property.description.slice(0, 200))}${property.description.length > 200 ? "…" : ""}</p>`
-            : ""
-        }
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          ¿Te interesa? Coordinemos una visita esta semana. Respondé a este email o escríbeme.
-        </p>
-      `;
-      return {
-        subject: `Nueva propiedad en ${property.location ?? "tu zona"}: ${property.title}`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name},\n\nTengo una propiedad nueva: ${property.title} (${formatPrice(property.priceUSD)}).\nVer: ${APP_URL}/propiedad/${property.slug ?? property.id}\n\n— ${agent.name}`,
-      };
-    }
-
-    case "PRICE_REDUCTION": {
-      if (!property) throw new Error("property requerida");
-      const preview = `Bajó el precio: ${property.title}`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          La propiedad que viste <strong>bajó de precio</strong>. Ahora está a:
-        </p>
-        ${propertyCard(property)}
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          Si todavía te interesa, este es buen momento para verla. ¿Coordinamos visita?
-        </p>
-      `;
-      return {
-        subject: `🔻 Bajó de precio: ${property.title}`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name}, la propiedad ${property.title} bajó a ${formatPrice(property.priceUSD)}. Ver: ${APP_URL}/propiedad/${property.slug ?? property.id}\n\n— ${agent.name}`,
-      };
-    }
-
-    case "OPEN_HOUSE": {
-      if (!property) throw new Error("property requerida");
-      const dt = args.customDateTime ?? "este fin de semana";
-      const preview = `Open house ${dt}: ${property.title}`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          Estás invitado al open house <strong>${escapeHtml(dt)}</strong>. Sin cita previa, solo pasate:
-        </p>
-        ${propertyCard(property)}
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          Habrá refrescos y podrás ver toda la propiedad con calma. Confirma tu asistencia respondiendo a este email.
-        </p>
-      `;
-      return {
-        subject: `Open house ${dt} · ${property.title}`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name}, open house ${dt}: ${property.title}. ${APP_URL}/propiedad/${property.slug ?? property.id}\n\n— ${agent.name}`,
-      };
-    }
-
-    case "LEAD_REPLY": {
-      const preview = `Sobre tu interés en ${property?.title ?? "la propiedad"}`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          Gracias por escribirme. Vi tu interés ${property ? `en <strong>${escapeHtml(property.title)}</strong>` : ""} y quiero ayudarte personalmente.
-        </p>
-        ${property ? propertyCard(property) : ""}
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          ¿Cuál es el mejor horario para llamarte? Respondé a este email o me podés escribir directo al WhatsApp${agent.phone ? ` (${escapeHtml(agent.phone)})` : ""}.
-        </p>
-      `;
-      return {
-        subject: property
-          ? `Sobre tu interés en ${property.title}`
-          : `Hola ${contact.name.split(" ")[0]}, te respondo`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name}, gracias por escribirme${property ? ` sobre ${property.title}` : ""}. ¿Cuándo te llamo?\n\n— ${agent.name}`,
-      };
-    }
-
-    case "APPOINTMENT_CONFIRM": {
-      const when = args.customDateTime ?? "la fecha confirmada";
-      const preview = `Visita confirmada: ${when}`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          Tu visita está <strong>confirmada para ${escapeHtml(when)}</strong>${property ? ` — ${escapeHtml(property.title)}` : ""}.
-        </p>
-        ${property ? propertyCard(property) : ""}
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          Te espero en la dirección${property?.location ? ` (${escapeHtml(property.location)})` : ""}. Si necesitas cambiar la hora, avísame con tiempo.
-        </p>
-      `;
-      return {
-        subject: `Visita confirmada · ${when}`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name}, tu visita está confirmada para ${when}. — ${agent.name}`,
-      };
-    }
-
-    case "FOLLOWUP": {
-      const preview = `¿Sigue activa tu búsqueda?`;
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-          Quería retomar contacto: ¿sigue activa tu búsqueda? Tengo varias opciones nuevas que pueden interesarte.
-        </p>
-        ${property ? propertyCard(property) : ""}
-        <p style="margin:18px 0 0;font-size:14px;line-height:1.6;">
-          Si las prioridades cambiaron, no hay problema — solo respondé brevemente y ajusto la búsqueda.
-        </p>
-      `;
-      return {
-        subject: `¿Sigue activa tu búsqueda, ${contact.name.split(" ")[0]}?`,
-        preview,
-        html: shell({ preview, body, agent }),
-        text: `${contact.name}, ¿sigue activa tu búsqueda? — ${agent.name}`,
-      };
-    }
-
-    case "CUSTOM":
-    default: {
-      const subject = args.customSubject ?? "Mensaje de tu agente";
-      const bodyText = args.customBody ?? "";
-      const html = bodyText
-        .split(/\n{2,}/)
-        .map(
-          (p) =>
-            `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`
-        )
-        .join("");
-      const body = `
-        <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
-        ${html}
-        ${property ? `<div style="margin-top:18px;">${propertyCard(property)}</div>` : ""}
-      `;
-      return {
-        subject,
-        preview: subject,
-        html: shell({ preview: subject, body, agent }),
-        text: `${contact.name},\n\n${bodyText}\n\n— ${agent.name}`,
-      };
-    }
+  if (PROPERTY_REQUIRED.includes(kind) && !property) {
+    throw new Error(`property requerida para ${kind}`);
   }
+
+  // Default subject + message for this kind; the caller can override either
+  // (customSubject / customBody) — that's how the user edits the template.
+  const def = defaultTemplateContent({
+    kind,
+    property: property ? { title: property.title, location: property.location } : null,
+    dateTime: args.customDateTime,
+  });
+  const subject = args.customSubject?.trim() || def.subject;
+  const message = args.customBody?.trim() || def.message;
+
+  // Message prose → paragraphs (blank line splits)
+  const msgHtml = message
+    .split(/\n{2,}/)
+    .filter((p) => p.trim().length > 0)
+    .map(
+      (p) =>
+        `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;">${escapeHtml(
+          p
+        ).replace(/\n/g, "<br>")}</p>`
+    )
+    .join("");
+
+  const body = `
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
+    ${msgHtml}
+    ${property ? `<div style="margin-top:8px;">${propertyCard(property)}</div>` : ""}
+  `;
+
+  const propLink = property
+    ? `\n\nVer: ${APP_URL}/propiedad/${property.slug ?? property.id}`
+    : "";
+
+  return {
+    subject,
+    preview: subject,
+    html: shell({ preview: subject, body, agent }),
+    text: `${contact.name},\n\n${message}${propLink}\n\n— ${agent.name}`,
+  };
 }
