@@ -12,18 +12,30 @@
  * Non-blob URLs (relative, external) are returned unchanged.
  */
 
-const APP_URL = (
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://estaila.com"
-).replace(/\/$/, "");
+const ENV_APP_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
 
 const BLOB_HOST_RE = /\.public\.blob\.vercel-storage\.com$/i;
+
+/**
+ * Base host for branded links. Priority:
+ *   1. NEXT_PUBLIC_APP_URL (explicit, e.g. https://estaila.com)
+ *   2. The current origin in the browser (works on preview *.vercel.app AND
+ *      the live domain without any env config — the /cdn rewrite is
+ *      host-agnostic, so the link resolves on whatever domain you're on)
+ *   3. https://estaila.com as a server-side fallback
+ */
+function brandBase(): string {
+  if (ENV_APP_URL) return ENV_APP_URL;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "https://estaila.com";
+}
 
 export function brandedImageUrl(url: string | null | undefined): string {
   if (!url) return "";
   try {
     const u = new URL(url);
     if (BLOB_HOST_RE.test(u.hostname)) {
-      return `${APP_URL}/cdn${u.pathname}`;
+      return `${brandBase()}/cdn${u.pathname}`;
     }
     return url;
   } catch {
