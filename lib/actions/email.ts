@@ -13,6 +13,32 @@ import { sendEmail, agentSender } from "@/lib/email/resend";
 import { renderTemplate, type TemplateKind } from "@/lib/email/templates";
 import { revalidatePath } from "next/cache";
 
+export type EmailAudienceContact = {
+  id: string;
+  name: string;
+  email: string;
+  type: string;
+};
+
+/** Contacts that have an email — the addressable audience for campaigns. */
+export async function listEmailAudience(): Promise<EmailAudienceContact[]> {
+  const user = await requireUser();
+  const rows = await prisma.contact.findMany({
+    where: { userId: user.id, email: { not: null } },
+    orderBy: { updatedAt: "desc" },
+    take: 2000,
+    select: { id: true, name: true, email: true, type: true },
+  });
+  return rows
+    .filter((r) => r.email)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email as string,
+      type: r.type,
+    }));
+}
+
 export type SendTemplatedEmailInput = {
   kind: TemplateKind;
   contactIds: string[];
