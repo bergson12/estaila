@@ -9,6 +9,7 @@ import {
   Car,
   Check,
   CheckCircle2,
+  Globe,
   Layers,
   Loader2,
   Mail,
@@ -72,6 +73,7 @@ export type PublicPropertyData = {
   featuredPhoto: string | null;
   photos: string[];
   pois: POI[];
+  premiumLanding: boolean;
 };
 
 export type PublicAgent = {
@@ -123,7 +125,30 @@ function waLink(phone: string, text: string) {
   return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
 }
 
-export function PublicPropertyView({
+function poiDistance(p: POI) {
+  if (p.distanceM == null) return null;
+  return p.distanceM < 1000
+    ? `${p.distanceM}m`
+    : `${(p.distanceM / 1000).toFixed(1)}km`;
+}
+
+export function PublicPropertyView(props: {
+  property: PublicPropertyData;
+  agent: PublicAgent;
+  trackingRef: string | null;
+}) {
+  return props.property.premiumLanding ? (
+    <ExclusiveView {...props} />
+  ) : (
+    <BasicView {...props} />
+  );
+}
+
+// ============================================================
+// BÁSICA — white-label single listing (light, contained)
+// ============================================================
+
+function BasicView({
   property,
   agent,
   trackingRef,
@@ -169,7 +194,7 @@ export function PublicPropertyView({
       style={BRAND_VARS}
       className="min-h-screen bg-white font-sans text-zinc-900"
     >
-      {/* ======================== TOP BAR (agent brand) ======================== */}
+      {/* ===================== TOP BAR (agent brand) ===================== */}
       <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-3 px-[clamp(18px,4vw,32px)] py-3.5">
           <div className="flex min-w-0 items-center gap-3">
@@ -209,7 +234,7 @@ export function PublicPropertyView({
       </header>
 
       <div className="mx-auto max-w-[1120px] px-[clamp(18px,4vw,32px)] pb-20 pt-[clamp(20px,3vw,32px)]">
-        {/* ======================== HEADER (breadcrumb + title + price) ======================== */}
+        {/* ===================== HEADER (breadcrumb + title + price) ===================== */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -241,7 +266,7 @@ export function PublicPropertyView({
           </div>
         </motion.div>
 
-        {/* ======================== GALLERY (main + thumbs) ======================== */}
+        {/* ===================== GALLERY (main + thumbs) ===================== */}
         <div
           className={cn(
             "grid gap-3",
@@ -278,7 +303,8 @@ export function PublicPropertyView({
                     onClick={() => setMainIdx(idx)}
                     className={cn(
                       "relative h-full min-h-[100px] overflow-hidden rounded-[14px] bg-zinc-100 outline-offset-2 transition-all",
-                      mainIdx === idx && "outline outline-[3px] outline-[var(--brand)]"
+                      mainIdx === idx &&
+                        "outline outline-[3px] outline-[var(--brand)]"
                     )}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,36 +332,57 @@ export function PublicPropertyView({
           )}
         </div>
 
-        {/* ======================== SPECS ROW ======================== */}
+        {/* ===================== SPECS ROW ===================== */}
         <div className="mt-6 flex flex-wrap gap-3">
           {property.bedrooms != null && (
-            <SpecPill icon={<Bed className="h-5 w-5" strokeWidth={1.75} />} value={String(property.bedrooms)} label="Habitaciones" />
+            <SpecPill
+              icon={<Bed className="h-5 w-5" strokeWidth={1.75} />}
+              value={String(property.bedrooms)}
+              label="Habitaciones"
+            />
           )}
           {property.bathrooms != null && (
-            <SpecPill icon={<Bath className="h-5 w-5" strokeWidth={1.75} />} value={String(property.bathrooms)} label="Baños" />
+            <SpecPill
+              icon={<Bath className="h-5 w-5" strokeWidth={1.75} />}
+              value={String(property.bathrooms)}
+              label="Baños"
+            />
           )}
           {property.metersSquared != null && (
-            <SpecPill icon={<Ruler className="h-5 w-5" strokeWidth={1.75} />} value={`${property.metersSquared} m²`} label="Área" />
+            <SpecPill
+              icon={<Ruler className="h-5 w-5" strokeWidth={1.75} />}
+              value={`${property.metersSquared} m²`}
+              label="Área"
+            />
           )}
           {property.parking != null && (
-            <SpecPill icon={<Car className="h-5 w-5" strokeWidth={1.75} />} value={String(property.parking)} label="Parqueos" />
+            <SpecPill
+              icon={<Car className="h-5 w-5" strokeWidth={1.75} />}
+              value={String(property.parking)}
+              label="Parqueos"
+            />
           )}
-          <SpecPill icon={<Layers className="h-5 w-5" strokeWidth={1.75} />} value={catLabel} label="Tipo" />
+          <SpecPill
+            icon={<Layers className="h-5 w-5" strokeWidth={1.75} />}
+            value={catLabel}
+            label="Tipo"
+          />
         </div>
 
-        {/* ======================== BODY (content + sticky contact) ======================== */}
+        {/* ===================== BODY (content + sticky contact) ===================== */}
         <div className="mt-11 grid grid-cols-1 gap-9 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0">
             {property.description && (
               <section>
-                <h2 className="text-2xl font-bold tracking-tight">Descripción</h2>
+                <h2 className="text-2xl font-bold tracking-tight">
+                  Descripción
+                </h2>
                 <p className="mt-3.5 whitespace-pre-line text-base leading-[1.7] text-zinc-600">
                   {property.description}
                 </p>
               </section>
             )}
 
-            {/* Full gallery */}
             {photos.length > 1 && (
               <section id="galeria" className="mt-11 scroll-mt-24">
                 <h2 className="text-2xl font-bold tracking-tight">
@@ -365,7 +412,6 @@ export function PublicPropertyView({
               </section>
             )}
 
-            {/* Map + POIs */}
             {property.lat != null && property.lng != null && (
               <section className="mt-11">
                 <h2 className="text-2xl font-bold tracking-tight">Ubicación</h2>
@@ -383,12 +429,9 @@ export function PublicPropertyView({
                             style={{ backgroundColor: p.color ?? "var(--brand)" }}
                           />
                           {p.name}
-                          {p.distanceM != null && (
+                          {poiDistance(p) && (
                             <span className="text-[10px] text-zinc-400 tabular-nums">
-                              ·{" "}
-                              {p.distanceM < 1000
-                                ? `${p.distanceM}m`
-                                : `${(p.distanceM / 1000).toFixed(1)}km`}
+                              · {poiDistance(p)}
                             </span>
                           )}
                         </span>
@@ -499,8 +542,11 @@ export function PublicPropertyView({
         </div>
       </div>
 
-      {/* ======================== LEAD FORM ======================== */}
-      <section id="contact-form" className="scroll-mt-20 border-y border-zinc-200 bg-zinc-50 py-16">
+      {/* ===================== LEAD FORM ===================== */}
+      <section
+        id="contact-form"
+        className="scroll-mt-20 border-y border-zinc-200 bg-zinc-50 py-16"
+      >
         <div className="mx-auto max-w-3xl px-[clamp(18px,4vw,32px)]">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--brand-700)]">
@@ -518,7 +564,7 @@ export function PublicPropertyView({
         </div>
       </section>
 
-      {/* ======================== FOOTER ======================== */}
+      {/* ===================== FOOTER ===================== */}
       <footer className="bg-white py-8">
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-3 px-[clamp(18px,4vw,32px)]">
           <span className="text-[13px] text-zinc-400">
@@ -537,7 +583,445 @@ export function PublicPropertyView({
 }
 
 // ============================================================
-// SPEC PILL
+// EXCLUSIVA — premium / dark / immersive
+// ============================================================
+
+function ExclusiveView({
+  property,
+  agent,
+  trackingRef,
+}: {
+  property: PublicPropertyData;
+  agent: PublicAgent;
+  trackingRef: string | null;
+}) {
+  const photos = property.photos;
+  const hero = photos[0] ?? null;
+  const featureImg = photos[1] ?? photos[0] ?? null;
+  const mosaic = photos.slice(0, 7);
+
+  const opLabel = OP_LABEL[property.operation] ?? property.operation;
+  const catLabel = CAT_LABEL[property.category] ?? property.category;
+  const place = property.location ?? property.address ?? "Rep. Dominicana";
+  const priceLabel =
+    property.operation === "EN_ALQUILER" || property.operation === "ALQUILADA"
+      ? "Precio de alquiler"
+      : "Precio bajo solicitud";
+  const price =
+    property.priceUSD != null
+      ? formatPrice(property.priceUSD, "USD")
+      : property.priceDOP != null
+        ? formatPrice(property.priceDOP, "DOP")
+        : "Bajo solicitud";
+
+  const firstName = agent.name.split(" ")[0];
+  const waMsg = `Hola ${firstName}, me interesa la propiedad "${property.title}". Quisiera coordinar una visita privada.`;
+  const hasMap = property.lat != null && property.lng != null;
+  const pinned = property.pois.filter((p) => p.pinned).slice(0, 3);
+
+  const specs: [React.ReactNode, string, string][] = [];
+  if (property.bedrooms != null)
+    specs.push([
+      <Bed key="bed" className="h-5 w-5" strokeWidth={1.75} />,
+      String(property.bedrooms),
+      property.bedrooms === 1 ? "Habitación" : "Habitaciones",
+    ]);
+  if (property.bathrooms != null)
+    specs.push([
+      <Bath key="bath" className="h-5 w-5" strokeWidth={1.75} />,
+      String(property.bathrooms),
+      "Baños",
+    ]);
+  if (property.metersSquared != null)
+    specs.push([
+      <Ruler key="ruler" className="h-5 w-5" strokeWidth={1.75} />,
+      `${property.metersSquared} m²`,
+      "Construcción",
+    ]);
+  if (property.parking != null)
+    specs.push([
+      <Car key="car" className="h-5 w-5" strokeWidth={1.75} />,
+      String(property.parking),
+      property.parking === 1 ? "Parqueo" : "Parqueos",
+    ]);
+  specs.push([
+    <Layers key="type" className="h-5 w-5" strokeWidth={1.75} />,
+    catLabel,
+    "Tipo",
+  ]);
+
+  function scrollToLead() {
+    document
+      .getElementById("contact-form")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  return (
+    <div style={BRAND_VARS} className="bg-[#0E0F11] font-sans text-white">
+      {/* ===================== NAV (over hero) ===================== */}
+      <header className="absolute inset-x-0 top-0 z-50">
+        <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-[clamp(20px,4vw,40px)] py-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] border-[1.5px] border-[var(--brand)] font-display font-bold text-[var(--brand)]">
+              {initials(agent.name).charAt(0)}
+            </span>
+            <span className="truncate font-display text-[15px] font-semibold uppercase tracking-[0.14em] sm:text-[17px]">
+              {agent.name}
+            </span>
+          </div>
+          <nav className="hidden items-center gap-7 text-sm font-medium text-white/75 md:flex">
+            {mosaic.length > 0 && (
+              <a href="#ex-galeria" className="transition-colors hover:text-white">
+                Galería
+              </a>
+            )}
+            {hasMap && (
+              <a
+                href="#ex-ubicacion"
+                className="transition-colors hover:text-white"
+              >
+                Ubicación
+              </a>
+            )}
+            <a href="#contact-form" className="transition-colors hover:text-white">
+              Contacto
+            </a>
+          </nav>
+          <button
+            type="button"
+            onClick={scrollToLead}
+            className="shrink-0 rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            Visita privada
+          </button>
+        </div>
+      </header>
+
+      {/* ===================== HERO (full-bleed) ===================== */}
+      <section className="relative h-[100svh] min-h-[600px] w-full overflow-hidden">
+        {hero ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={hero}
+            alt={property.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center bg-[#16181b] text-white/15">
+            <Building2 className="h-24 w-24" strokeWidth={1} />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(14,15,17,.55)_0%,rgba(14,15,17,.1)_35%,rgba(14,15,17,.92)_100%)]" />
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="absolute inset-x-0 bottom-0 mx-auto max-w-[1240px] px-[clamp(20px,4vw,40px)] pb-[clamp(40px,6vw,72px)]"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 px-3.5 py-1.5 font-display text-[12.5px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+            {catLabel} exclusiva · {opLabel}
+          </span>
+          <h1 className="mt-5 max-w-[16ch] text-[clamp(40px,6.5vw,86px)] font-bold leading-[0.98] tracking-[-0.04em]">
+            {property.title}
+          </h1>
+          <div className="mt-6 flex flex-wrap items-end gap-x-8 gap-y-4">
+            <div className="flex items-center gap-2 text-[17px] text-white/80">
+              <MapPin className="h-[18px] w-[18px] text-[var(--brand)]" strokeWidth={2} />
+              {place}
+            </div>
+            <div className="sm:ml-auto sm:text-right">
+              <div className="text-[12.5px] uppercase tracking-[0.1em] text-white/50">
+                {priceLabel}
+              </div>
+              <div className="font-display text-[clamp(28px,3.4vw,42px)] font-bold tracking-[-0.03em] tabular-nums">
+                {price}
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-3.5">
+            <button
+              type="button"
+              onClick={scrollToLead}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[var(--brand-700)]"
+            >
+              <Calendar className="h-[18px] w-[18px]" strokeWidth={2} />
+              Solicitar visita privada
+            </button>
+            {agent.phone && (
+              <a
+                href={waLink(agent.phone, waMsg)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3.5 text-[15px] font-semibold text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              >
+                <MessageCircle className="h-[18px] w-[18px]" strokeWidth={2} />
+                WhatsApp
+              </a>
+            )}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ===================== SPECS BAND ===================== */}
+      <section className="border-b border-white/10">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-6 px-[clamp(20px,4vw,40px)] py-[clamp(40px,5vw,64px)] sm:grid-cols-3 md:grid-cols-5">
+          {specs.map(([icon, value, label]) => (
+            <div key={label}>
+              <span className="text-[var(--brand)]">{icon}</span>
+              <div className="mt-2.5 font-display text-[clamp(20px,2vw,28px)] font-bold tracking-tight">
+                {value}
+              </div>
+              <div className="text-[13px] text-white/50">{label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===================== FEATURE SPLIT ===================== */}
+      {property.description && (
+        <section className="mx-auto grid max-w-[1240px] items-center gap-[clamp(32px,5vw,72px)] px-[clamp(20px,4vw,40px)] py-[clamp(56px,8vw,110px)] md:grid-cols-2">
+          <div>
+            <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+              La propiedad
+            </span>
+            <h2 className="mt-4 text-[clamp(30px,4vw,52px)] font-bold leading-[1.05] tracking-[-0.03em]">
+              Diseñada para vivir distinto.
+            </h2>
+            <p className="mt-5 whitespace-pre-line text-[clamp(16px,1.3vw,18px)] leading-[1.7] text-white/65">
+              {property.description}
+            </p>
+            {pinned.length > 0 && (
+              <div className="mt-7 flex flex-col gap-3.5">
+                {pinned.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 text-base">
+                    <span className="grid h-[26px] w-[26px] flex-none place-items-center rounded-full bg-white/[0.06] text-[var(--brand)]">
+                      <Check className="h-[15px] w-[15px]" strokeWidth={2.5} />
+                    </span>
+                    <span>
+                      {p.name}
+                      {poiDistance(p) && (
+                        <span className="text-white/45"> · {poiDistance(p)}</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {featureImg ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={featureImg}
+              alt={property.title}
+              className="h-[clamp(360px,40vw,520px)] w-full rounded-[22px] object-cover"
+            />
+          ) : (
+            <div className="grid h-[clamp(360px,40vw,520px)] w-full place-items-center rounded-[22px] bg-white/[0.04] text-white/15">
+              <Building2 className="h-20 w-20" strokeWidth={1} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ===================== GALLERY MOSAIC ===================== */}
+      {mosaic.length > 0 && (
+        <section
+          id="ex-galeria"
+          className="scroll-mt-20 border-y border-white/10 bg-[#121316]"
+        >
+          <div className="mx-auto max-w-[1240px] px-[clamp(20px,4vw,40px)] py-[clamp(56px,8vw,110px)]">
+            <div className="mb-12 text-center">
+              <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+                Galería
+              </span>
+              <h2 className="mt-3 text-[clamp(28px,3.6vw,46px)] font-bold tracking-[-0.03em]">
+                Cada rincón, una postal.
+              </h2>
+            </div>
+            <div className="grid auto-rows-[150px] grid-cols-2 gap-3 md:auto-rows-[200px] md:grid-cols-4">
+              {mosaic.map((url, i) => (
+                <div
+                  key={url + i}
+                  className={cn(
+                    "overflow-hidden rounded-[16px] bg-white/[0.04]",
+                    i === 0 && "col-span-2 row-span-2"
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Foto ${i + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===================== UBICACIÓN ===================== */}
+      {hasMap && (
+        <section
+          id="ex-ubicacion"
+          className="mx-auto max-w-[1240px] scroll-mt-20 px-[clamp(20px,4vw,40px)] py-[clamp(56px,8vw,110px)]"
+        >
+          <span className="font-display text-[12.5px] font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+            Ubicación
+          </span>
+          <h2 className="mt-3 text-[clamp(28px,3.6vw,46px)] font-bold tracking-[-0.03em]">
+            {place}
+          </h2>
+          {property.pois.filter((p) => p.pinned).length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-2">
+              {property.pois
+                .filter((p) => p.pinned)
+                .map((p) => (
+                  <span
+                    key={p.id}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80"
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: p.color ?? "var(--brand)" }}
+                    />
+                    {p.name}
+                    {poiDistance(p) && (
+                      <span className="text-[10px] text-white/45 tabular-nums">
+                        · {poiDistance(p)}
+                      </span>
+                    )}
+                  </span>
+                ))}
+            </div>
+          )}
+          <div className="mt-6 overflow-hidden rounded-[20px] border border-white/10">
+            <PropertyMap
+              property={{
+                id: property.id,
+                title: property.title,
+                location: property.location,
+                lat: property.lat,
+                lng: property.lng,
+              }}
+              pois={property.pois}
+              variant="full"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ===================== PRIVATE VIEWING + LEAD FORM ===================== */}
+      <section
+        id="contact-form"
+        className="scroll-mt-20 border-t border-white/10 bg-[#0E0F11]"
+      >
+        <div className="mx-auto grid max-w-[1240px] gap-[clamp(32px,5vw,64px)] px-[clamp(20px,4vw,40px)] py-[clamp(56px,8vw,110px)] lg:grid-cols-[1fr_minmax(0,520px)] lg:items-start">
+          <div>
+            <h2 className="text-[clamp(28px,3.4vw,46px)] font-bold leading-[1.05] tracking-[-0.03em]">
+              Agenda una visita privada
+            </h2>
+            <p className="mt-4 max-w-[460px] text-[16.5px] leading-[1.6] text-white/60">
+              Coordinamos una experiencia personalizada, presencial o virtual,
+              con total discreción.
+            </p>
+
+            <div className="mt-8 flex items-center gap-4">
+              {agent.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={agent.avatar}
+                  alt={agent.name}
+                  className="h-14 w-14 rounded-full object-cover ring-2 ring-white/10"
+                />
+              ) : (
+                <span className="grid h-14 w-14 place-items-center rounded-full bg-white/[0.06] font-display text-lg font-bold text-[var(--brand)]">
+                  {initials(agent.name)}
+                </span>
+              )}
+              <div className="min-w-0">
+                <div className="truncate font-display text-base font-semibold">
+                  {agent.name}
+                </div>
+                <div className="truncate text-[13px] text-white/50">
+                  {agent.role ?? "Asesor inmobiliario"}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {agent.phone && (
+                <a
+                  href={waLink(agent.phone, waMsg)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-700)]"
+                >
+                  <MessageCircle className="h-4 w-4" strokeWidth={2} />
+                  WhatsApp
+                </a>
+              )}
+              {agent.phone && (
+                <a
+                  href={`tel:${agent.phone.replace(/[^\d+]/g, "")}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                >
+                  <Phone className="h-4 w-4" strokeWidth={2} />
+                  Llamar
+                </a>
+              )}
+              {agent.email && (
+                <a
+                  href={`mailto:${agent.email}?subject=${encodeURIComponent(`Interés en ${property.title}`)}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                >
+                  <Mail className="h-4 w-4" strokeWidth={2} />
+                  Email
+                </a>
+              )}
+            </div>
+
+            <div className="mt-8 flex flex-col gap-2.5 text-[14px] text-white/60">
+              <span className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-[var(--brand)]" strokeWidth={2} />
+                Atención presencial y virtual
+              </span>
+              <span className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-[var(--brand)]" strokeWidth={2.5} />
+                Total discreción y confidencialidad
+              </span>
+            </div>
+          </div>
+
+          <LeadForm
+            slug={property.slug}
+            trackingRef={trackingRef}
+            tone="dark"
+          />
+        </div>
+      </section>
+
+      {/* ===================== FOOTER ===================== */}
+      <footer className="border-t border-white/10">
+        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-3 px-[clamp(20px,4vw,40px)] py-7">
+          <span className="text-[13px] text-white/40">
+            Propiedad publicada por {agent.name}
+          </span>
+          <span className="flex items-center gap-1.5 text-[13px] text-white/40">
+            Hecho con
+            <span className="font-display font-bold text-white">
+              estaila<span className="text-[var(--brand)]">.</span>
+            </span>
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// ============================================================
+// SPEC PILL (Básica)
 // ============================================================
 
 function SpecPill({
@@ -565,15 +1049,17 @@ function SpecPill({
 }
 
 // ============================================================
-// LEAD FORM
+// LEAD FORM (tone-aware: light | dark)
 // ============================================================
 
 function LeadForm({
   slug,
   trackingRef,
+  tone = "light",
 }: {
   slug: string;
   trackingRef: string | null;
+  tone?: "light" | "dark";
 }) {
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -582,6 +1068,11 @@ function LeadForm({
   const [message, setMessage] = useState("");
   const [honeypot, setHoneypot] = useState(""); // bot trap
   const [done, setDone] = useState(false);
+
+  const dark = tone === "dark";
+  const inputCls = dark
+    ? "border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-white/25"
+    : undefined;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -617,7 +1108,12 @@ function LeadForm({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="mt-10 flex flex-col items-center gap-3 rounded-2xl border border-[var(--brand)]/30 bg-[var(--brand)]/10 p-10 text-center"
+        className={cn(
+          "flex flex-col items-center gap-3 rounded-2xl border p-10 text-center",
+          dark
+            ? "border-[var(--brand)]/30 bg-[var(--brand)]/10 text-white"
+            : "mt-10 border-[var(--brand)]/30 bg-[var(--brand)]/10"
+        )}
       >
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand)] text-white">
           <CheckCircle2 className="h-7 w-7" strokeWidth={2} />
@@ -625,7 +1121,12 @@ function LeadForm({
         <h3 className="text-2xl font-bold tracking-tight">
           ¡Gracias por tu interés!
         </h3>
-        <p className="max-w-prose text-sm text-zinc-500">
+        <p
+          className={cn(
+            "max-w-prose text-sm",
+            dark ? "text-white/60" : "text-zinc-500"
+          )}
+        >
           Recibimos tu mensaje. Te contactaremos en breve por el canal que
           dejaste.
         </p>
@@ -636,7 +1137,12 @@ function LeadForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-8 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_4px_14px_rgba(16,24,32,.07)] sm:p-8"
+      className={cn(
+        "rounded-2xl border p-6 sm:p-8",
+        dark
+          ? "border-white/10 bg-white/[0.03]"
+          : "mt-8 border-zinc-200 bg-white shadow-[0_4px_14px_rgba(16,24,32,.07)]"
+      )}
     >
       {/* Honeypot — invisible to humans, bots fill it */}
       <input
@@ -651,42 +1157,46 @@ function LeadForm({
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Tu nombre *" className="sm:col-span-2">
+        <Field label="Tu nombre *" tone={tone} className="sm:col-span-2">
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="María Rodríguez"
             required
             maxLength={120}
+            className={inputCls}
           />
         </Field>
-        <Field label="WhatsApp / Teléfono">
+        <Field label="WhatsApp / Teléfono" tone={tone}>
           <Input
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             placeholder="+1 555 0100"
             type="tel"
+            className={inputCls}
           />
         </Field>
-        <Field label="Email">
+        <Field label="Email" tone={tone}>
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@email.com"
             type="email"
+            className={inputCls}
           />
         </Field>
-        <Field label="Mensaje (opcional)" className="sm:col-span-2">
+        <Field label="Mensaje (opcional)" tone={tone} className="sm:col-span-2">
           <Textarea
             rows={4}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Cuándo te gustaría visitar, qué necesitas saber..."
+            className={inputCls}
           />
         </Field>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] text-zinc-400">
+        <p className={cn("text-[11px]", dark ? "text-white/40" : "text-zinc-400")}>
           No compartimos tu información. Solo para contactarte sobre esta
           propiedad.
         </p>
@@ -712,14 +1222,21 @@ function Field({
   label,
   children,
   className,
+  tone = "light",
 }: {
   label: string;
   children: React.ReactNode;
   className?: string;
+  tone?: "light" | "dark";
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <Label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+      <Label
+        className={cn(
+          "text-[10px] font-semibold uppercase tracking-wider",
+          tone === "dark" ? "text-white/55" : "text-zinc-500"
+        )}
+      >
         {label}
       </Label>
       {children}

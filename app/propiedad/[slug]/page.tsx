@@ -181,6 +181,7 @@ export default async function PublicPropertyPage({
           lng: property.lng ? Number(property.lng) : null,
           featuredPhoto: property.featuredPhoto,
           photos,
+          premiumLanding: property.premiumLanding ?? false,
           pois: property.pois.map((p) => ({
             id: p.id,
             name: p.name,
