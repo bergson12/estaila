@@ -6,10 +6,10 @@
  * Visual cues shared with the panel:
  *   • bg-background warm cream / midnight soft
  *   • text-foreground / text-muted-foreground hierarchy
- *   • primary blue #3B82F6 accents
+ *   • primary green #00BF63 accents
  *   • bg-card with border for cards
  *   • bg-dots dotted texture + ambient-glow radial gradients
- *   • Inter sans · Cormorant serif italic for editorial moments
+ *   • Space Grotesk display · green accent for emphasis
  *   • shadcn Button consistency
  *   • Lucide icons consistent with CRM
  */
@@ -581,8 +581,8 @@ function Hero({ t }: { t: Copy }) {
         >
           {t.hero.titlePre}{" "}
           <span
-            className="italic text-primary"
-            style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontWeight: 500 }}
+            className="text-primary"
+            style={{ fontWeight: 600 }}
           >
             {t.hero.titleEm}
           </span>{" "}
@@ -1097,8 +1097,8 @@ function FinalCta({ t }: { t: Copy }) {
         <h2 className="text-[clamp(36px,7vw,76px)] font-semibold leading-[1.05] tracking-[-0.03em]">
           {t.cta.title}{" "}
           <span
-            className="italic text-primary"
-            style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontWeight: 500 }}
+            className="text-primary"
+            style={{ fontWeight: 600 }}
           >
             {t.cta.titleEm}
           </span>
@@ -1221,8 +1221,8 @@ function Replaces({ t }: { t: Copy }) {
           <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-5xl">
             {r.title}{" "}
             <span
-              className="italic text-primary"
-              style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontWeight: 500 }}
+              className="text-primary"
+              style={{ fontWeight: 600 }}
             >
               {r.titleEm}
             </span>
@@ -1533,8 +1533,8 @@ function DemoSlider({ t }: { t: Copy }) {
           <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] md:text-5xl">
             {d.title}{" "}
             <span
-              className="italic text-primary"
-              style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontWeight: 500 }}
+              className="text-primary"
+              style={{ fontWeight: 600 }}
             >
               {d.titleEm}
             </span>
