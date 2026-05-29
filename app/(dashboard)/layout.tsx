@@ -10,6 +10,7 @@ import { MaintenanceScreen } from "@/components/layout/maintenance-screen";
 import { getActiveOrgBranding } from "@/lib/org-branding";
 import { getLayoutMode } from "@/lib/layout-prefs";
 import { EstailaChatbot } from "@/components/layout/estaila-chatbot";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 
 // Server actions invoked from this segment inherit this cap.
@@ -92,7 +93,7 @@ export default async function DashboardLayout({
               className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent"
               aria-hidden
             />
-            <div className="relative mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
+            <div className="relative mx-auto max-w-[1400px] px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-8 md:pb-8">
               <PageTransition>{children}</PageTransition>
             </div>
           </main>
@@ -118,7 +119,7 @@ export default async function DashboardLayout({
                 className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent"
                 aria-hidden
               />
-              <div className="relative px-4 py-6 sm:px-6 sm:py-8">
+              <div className="relative px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-8 md:pb-8">
                 <PageTransition>{children}</PageTransition>
               </div>
             </main>
@@ -128,6 +129,7 @@ export default async function DashboardLayout({
       {isDeepSeekConfigured() && (
         <EstailaChatbot plan={sidebarUser.plan ?? "FREE"} />
       )}
+      <MobileTabBar role={sidebarUser.role} />
     </div>
   );
 }

@@ -428,7 +428,7 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
             onClick={() => setOpen(true)}
             aria-label="Asistente IA · Ahorra tiempo"
             className={cn(
-              "group fixed bottom-5 right-5 z-40 flex items-center overflow-hidden rounded-full shadow-lg transition-all",
+              "group fixed bottom-20 right-5 z-40 flex items-center overflow-hidden rounded-full shadow-lg transition-all md:bottom-5",
               "bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground",
               "shadow-primary/30 hover:shadow-xl hover:shadow-primary/50",
               fabCollapsed
