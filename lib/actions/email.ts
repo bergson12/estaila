@@ -222,6 +222,88 @@ export async function sendTemplatedEmail(
   }
 }
 
+/** Render the email HTML for a live preview (does NOT send). */
+export async function previewEmail(args: {
+  kind: TemplateKind;
+  propertyId?: string;
+  customSubject?: string;
+  customBody?: string;
+  customDateTime?: string;
+  contactName?: string;
+}): Promise<{ ok: true; html: string; subject: string } | { ok: false; error: string }> {
+  try {
+    const user = await requireUser();
+    const agent = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        agentRole: true,
+        agentLocation: true,
+        agentPhone: true,
+      },
+    });
+    if (!agent) return { ok: false, error: "Perfil no encontrado." };
+
+    let property = null;
+    if (args.propertyId) {
+      const prop = await prisma.property.findFirst({
+        where: { id: args.propertyId, userId: user.id },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          priceUSD: true,
+          operation: true,
+          bedrooms: true,
+          bathrooms: true,
+          metersSquared: true,
+          location: true,
+          description: true,
+          photos: { take: 1, orderBy: { order: "asc" }, select: { url: true } },
+        },
+      });
+      if (prop) {
+        property = {
+          id: prop.id,
+          slug: prop.slug,
+          title: prop.title,
+          priceUSD: prop.priceUSD ? Number(prop.priceUSD) : null,
+          operation: prop.operation,
+          bedrooms: prop.bedrooms,
+          bathrooms: prop.bathrooms != null ? Number(prop.bathrooms) : null,
+          metersSquared:
+            prop.metersSquared != null ? Number(prop.metersSquared) : null,
+          location: prop.location,
+          description: prop.description,
+          heroPhoto: prop.photos[0]?.url ?? null,
+        };
+      }
+    }
+
+    const rendered = renderTemplate({
+      kind: args.kind,
+      agent: {
+        name: agent.name,
+        email: agent.email,
+        phone: agent.agentPhone,
+        role: agent.agentRole,
+        location: agent.agentLocation,
+        image: agent.image,
+      },
+      contact: { name: args.contactName?.trim() || "Cliente" },
+      property: property ?? undefined,
+      customSubject: args.customSubject,
+      customBody: args.customBody,
+      customDateTime: args.customDateTime,
+    });
+    return { ok: true, html: rendered.html, subject: rendered.subject };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 /** Test send — sends to the agent's own email so they can preview templates. */
 export async function sendTestEmail(args: {
   kind: TemplateKind;

@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import {
   sendTemplatedEmail,
   sendTestEmail,
+  previewEmail,
 } from "@/lib/actions/email";
 import { defaultTemplateContent } from "@/lib/email/template-defaults";
 
@@ -167,6 +168,45 @@ export function SendEmailDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, propertyTitle, customDateTime]);
 
+  // ----- Live preview -----
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    if (selectedTemplate.needsProperty && !propertyId) {
+      setPreviewHtml(null);
+      setPreviewError("Selecciona una propiedad para ver la vista previa.");
+      return;
+    }
+    if (kind === "CUSTOM" && !customBody.trim()) {
+      setPreviewHtml(null);
+      setPreviewError("Escribe el mensaje para ver la vista previa.");
+      return;
+    }
+    setPreviewLoading(true);
+    const handle = setTimeout(async () => {
+      const res = await previewEmail({
+        kind,
+        propertyId: propertyId ?? undefined,
+        customSubject: customSubject.trim() || undefined,
+        customBody: customBody.trim() || undefined,
+        customDateTime: customDateTime.trim() || undefined,
+      });
+      if (res.ok) {
+        setPreviewHtml(res.html);
+        setPreviewError(null);
+      } else {
+        setPreviewHtml(null);
+        setPreviewError(res.error);
+      }
+      setPreviewLoading(false);
+    }, 500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, kind, propertyId, customSubject, customBody, customDateTime]);
+
   /** Send the field only if the user edited it away from the default. */
   function overrides() {
     const d = defaultsRef.current;
@@ -267,7 +307,7 @@ export function SendEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && !sending && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-4xl">
         <DialogHeader className="border-b border-border px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Mail className="h-4 w-4 text-primary" />
@@ -284,7 +324,8 @@ export function SendEmailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto p-5">
+        <div className="grid max-h-[74vh] grid-cols-1 overflow-y-auto lg:grid-cols-2 lg:overflow-hidden">
+          <div className="space-y-4 p-5 lg:overflow-y-auto">
           {/* Property context */}
           {propertyTitle && (
             <div className="flex items-center gap-2 rounded-md border border-border bg-card/50 px-3 py-2 text-xs">
@@ -409,6 +450,16 @@ export function SendEmailDialog({
               <strong>Empresa → Email</strong> (próximamente).
             </span>
           </div>
+          </div>
+
+          {/* Live preview */}
+          <div className="border-t border-border bg-muted/20 p-4 lg:border-l lg:border-t-0 lg:overflow-y-auto">
+            <PreviewPane
+              html={previewHtml}
+              loading={previewLoading}
+              error={previewError}
+            />
+          </div>
         </div>
 
         <DialogFooter className="flex items-center gap-2 border-t border-border px-5 py-3">
@@ -440,5 +491,40 @@ export function SendEmailDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewPane({
+  html,
+  loading,
+  error,
+}: {
+  html: string | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Vista previa
+        </p>
+        {loading && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+      </div>
+      <div className="relative flex-1 overflow-hidden rounded-lg border border-border bg-white">
+        {html ? (
+          <iframe
+            srcDoc={html}
+            title="Vista previa del email"
+            sandbox=""
+            className="h-[460px] w-full lg:h-full lg:min-h-[460px]"
+          />
+        ) : (
+          <div className="flex h-[460px] items-center justify-center p-6 text-center text-xs text-muted-foreground">
+            {error ?? "Generando vista previa..."}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

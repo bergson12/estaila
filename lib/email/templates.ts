@@ -71,11 +71,11 @@ function shell(args: {
     <td align="center">
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;width:100%;background:#fff;border-radius:12px;border:1px solid ${BORDER};overflow:hidden;">
         <tr>
-          <td style="padding:20px 28px 14px;border-bottom:1px solid ${BORDER};">
+          <td style="padding:18px 28px 14px;border-bottom:1px solid ${BORDER};">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
               <tr>
                 <td>
-                  <span style="font-size:11px;letter-spacing:1.5px;font-weight:600;color:${PRIMARY};text-transform:uppercase;">estaila</span>
+                  <img src="${APP_URL}/logos/web-black-estaila.png" alt="estaila" height="26" style="height:26px;width:auto;display:block;" />
                 </td>
                 <td align="right">
                   <span style="font-size:11px;color:${MUTED};">${new Date().toLocaleDateString("es-DO", { day: "numeric", month: "long", year: "numeric" })}</span>
