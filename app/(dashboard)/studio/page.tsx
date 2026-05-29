@@ -113,29 +113,31 @@ export default async function StudioPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
         {TOOLS.map((t) => (
           <Link key={t.href} href={t.href} className="group">
             <Card
-              className={`relative h-full overflow-hidden p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 ${
+              className={`relative flex h-full flex-col overflow-hidden p-3 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 sm:p-5 ${
                 t.featured ? "ring-1 ring-primary/30" : ""
               }`}
             >
               {t.featured && (
-                <Badge className="absolute right-3 top-3 bg-primary/15 text-primary hover:bg-primary/15">
+                <Badge className="absolute right-2 top-2 bg-primary/15 px-1.5 py-0 text-[9px] text-primary hover:bg-primary/15 sm:right-3 sm:top-3 sm:text-xs">
                   Popular
                 </Badge>
               )}
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                <t.icon className="h-5 w-5" strokeWidth={1.75} />
+              <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110 sm:mb-4 sm:h-10 sm:w-10">
+                <t.icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
               </div>
-              <h3 className="text-sm font-semibold">{t.title}</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              <h3 className="text-[13px] font-semibold leading-tight sm:text-sm">
+                {t.title}
+              </h3>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground sm:text-xs sm:leading-relaxed">
                 {t.desc}
               </p>
-              <div className="mt-4 flex items-center justify-between text-xs">
+              <div className="mt-2.5 flex items-center justify-between text-[10px] sm:mt-4 sm:text-xs">
                 <span className="text-muted-foreground">
-                  {t.cost} crédito{t.cost > 1 ? "s" : ""}
+                  {t.cost} créd{t.cost > 1 ? "s" : ""}
                 </span>
                 <span className="font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
                   Abrir →
@@ -147,18 +149,19 @@ export default async function StudioPage() {
 
         {/* Galería — destino de las fotos generadas */}
         <Link href="/studio/galeria" className="group">
-          <Card className="relative flex h-full flex-col justify-between overflow-hidden border-dashed p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+          <Card className="relative flex h-full flex-col justify-between overflow-hidden border-dashed p-3 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 sm:p-5">
             <div>
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                <Images className="h-5 w-5" strokeWidth={1.75} />
+              <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110 sm:mb-4 sm:h-10 sm:w-10">
+                <Images className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
               </div>
-              <h3 className="text-sm font-semibold">Galería</h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Todas tus fotos generadas. Muévelas a una propiedad, compártelas
-                o descárgalas.
+              <h3 className="text-[13px] font-semibold leading-tight sm:text-sm">
+                Galería
+              </h3>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground sm:text-xs sm:leading-relaxed">
+                Tus fotos generadas: mover a propiedad, compartir o descargar.
               </p>
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs">
+            <div className="mt-2.5 flex items-center justify-between text-[10px] sm:mt-4 sm:text-xs">
               <span className="text-muted-foreground">Sin costo</span>
               <span className="font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
                 Abrir →
