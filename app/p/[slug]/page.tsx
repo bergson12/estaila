@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { AgentPortalCrm } from "@/components/portal/templates/agent-portal-crm";
+import { CompanyPortalCrm } from "@/components/portal/templates/company-portal-crm";
 import { PortalMobileHome } from "@/components/portal/mobile/portal-mobile-home";
 import { getActiveOrgBranding } from "@/lib/org-branding";
 import type { PortalData } from "@/components/portal/types";
@@ -26,6 +27,35 @@ async function fetchData(slug: string): Promise<PortalData | null> {
 
   // Override site branding with active org branding when agent is in a team
   const orgBranding = await getActiveOrgBranding(site.userId);
+
+  // White-label org → company (brokerage) portal with team section
+  let isCompany = false;
+  let team: PortalData["team"];
+  if (orgBranding?.whiteLabel) {
+    isCompany = true;
+    const members = await prisma.organizationMember.findMany({
+      where: {
+        organizationId: orgBranding.orgId,
+        acceptedAt: { not: null },
+        userId: { not: null },
+      },
+      select: {
+        role: true,
+        user: { select: { name: true, image: true, agentRole: true } },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 8,
+    });
+    const roleLabel = (r: string) =>
+      r === "OWNER" ? "Director" : r === "ADMIN" ? "Gerente" : "Asesor";
+    team = members
+      .filter((m) => m.user)
+      .map((m) => ({
+        name: m.user!.name,
+        image: m.user!.image,
+        role: m.user!.agentRole ?? roleLabel(m.role),
+      }));
+  }
 
   const properties = await prisma.property.findMany({
     where: {
@@ -87,6 +117,8 @@ async function fetchData(slug: string): Promise<PortalData | null> {
       metersSquared: p.metersSquared,
       location: p.location,
     })),
+    isCompany,
+    team,
   };
 }
 
@@ -133,9 +165,13 @@ export default async function PortalPage({
       <div className="md:hidden">
         <PortalMobileHome {...data} />
       </div>
-      {/* Desktop: full CRM-aligned portal */}
+      {/* Desktop: company (white-label org) or agent portal */}
       <div className="hidden md:block">
-        <AgentPortalCrm {...data} />
+        {data.isCompany ? (
+          <CompanyPortalCrm {...data} />
+        ) : (
+          <AgentPortalCrm {...data} />
+        )}
       </div>
     </>
   );

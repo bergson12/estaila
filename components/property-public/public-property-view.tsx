@@ -104,12 +104,15 @@ const CAT_LABEL: Record<string, string> = {
   SOLAR: "Solar",
 };
 
-// White-label brand palette — exposed as CSS vars so a future agent.brandColor
-// can override #00BF63 without touching the markup.
-const BRAND_VARS = {
-  "--brand": "#00BF63",
-  "--brand-700": "#00904a",
-} as React.CSSProperties;
+// White-label brand palette — exposed as CSS vars driven by the agent's brand
+// color (Organization branding or Site.primaryColor), falling back to estaila green.
+function brandVars(brandColor?: string | null): React.CSSProperties {
+  const b = brandColor || "#00BF63";
+  return {
+    "--brand": b,
+    "--brand-700": `color-mix(in srgb, ${b} 80%, black)`,
+  } as React.CSSProperties;
+}
 
 function formatPrice(amount: number | null, currency: "USD" | "DOP") {
   if (amount == null) return "Consultar precio";
@@ -135,6 +138,7 @@ export function PublicPropertyView(props: {
   property: PublicPropertyData;
   agent: PublicAgent;
   trackingRef: string | null;
+  brandColor?: string | null;
 }) {
   return props.property.premiumLanding ? (
     <ExclusiveView {...props} />
@@ -151,10 +155,12 @@ function BasicView({
   property,
   agent,
   trackingRef,
+  brandColor,
 }: {
   property: PublicPropertyData;
   agent: PublicAgent;
   trackingRef: string | null;
+  brandColor?: string | null;
 }) {
   const [mainIdx, setMainIdx] = useState(0);
   const photos = property.photos;
@@ -190,7 +196,7 @@ function BasicView({
 
   return (
     <div
-      style={BRAND_VARS}
+      style={brandVars(brandColor)}
       className="min-h-screen bg-white font-sans text-zinc-900"
     >
       {/* ===================== TOP BAR (agent brand) ===================== */}
@@ -589,10 +595,12 @@ function ExclusiveView({
   property,
   agent,
   trackingRef,
+  brandColor,
 }: {
   property: PublicPropertyData;
   agent: PublicAgent;
   trackingRef: string | null;
+  brandColor?: string | null;
 }) {
   const photos = property.photos;
   const hero = photos[0] ?? null;
@@ -656,7 +664,7 @@ function ExclusiveView({
   }
 
   return (
-    <div style={BRAND_VARS} className="bg-[#0E0F11] font-sans text-white">
+    <div style={brandVars(brandColor)} className="bg-[#0E0F11] font-sans text-white">
       {/* ===================== NAV (over hero) ===================== */}
       <header className="absolute inset-x-0 top-0 z-50">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-[clamp(20px,4vw,40px)] py-6">

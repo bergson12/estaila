@@ -37,10 +37,20 @@ export type PortalProperty = {
   location: string | null;
 };
 
+export type PortalTeamMember = {
+  name: string;
+  image: string | null;
+  role: string | null;
+};
+
 export type PortalData = {
   site: PortalSite;
   agent: PortalAgent;
   properties: PortalProperty[];
+  /** When true the agent's org has white-label on → render the company portal. */
+  isCompany?: boolean;
+  /** Org members shown in the company portal's team section. */
+  team?: PortalTeamMember[];
 };
 
 // Single unified template. Branding (logo + colores) viene de Site / Organization.

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { getActiveOrgBranding } from "@/lib/org-branding";
 import { PublicPropertyView } from "@/components/property-public/public-property-view";
 
 export const dynamic = "force-dynamic";
@@ -90,6 +91,16 @@ export default async function PublicPropertyPage({
   const property = await loadProperty(slug);
   if (!property || !property.publicEnabled) notFound();
 
+  // White-label accent: org branding → agent's site color → estaila green
+  const [orgBranding, userSite] = await Promise.all([
+    getActiveOrgBranding(property.userId),
+    prisma.site.findUnique({
+      where: { userId: property.userId },
+      select: { primaryColor: true },
+    }),
+  ]);
+  const brandColor = orgBranding?.primaryColor ?? userSite?.primaryColor ?? null;
+
   // Increment publicViews (best-effort, async)
   prisma.property
     .update({
@@ -116,7 +127,6 @@ export default async function PublicPropertyPage({
       {/* Schema.org JSON-LD for SEO */}
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
@@ -207,6 +217,7 @@ export default async function PublicPropertyPage({
           avatar: property.user.image,
         }}
         trackingRef={ref ?? null}
+        brandColor={brandColor}
       />
     </>
   );
