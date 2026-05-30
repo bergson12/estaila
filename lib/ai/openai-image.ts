@@ -59,7 +59,10 @@ export async function editAgentPhoto(params: EditParams): Promise<OpenAIImageRes
   }
 
   const form = new FormData();
-  form.append("model", "gpt-image-1");
+  // gpt-image-2 (abr 2026): mejor fidelidad de identidad + fotorealismo que gpt-image-1.
+  // Override por env para bajar costo si se requiere: OPENAI_IMAGE_MODEL=gpt-image-1
+  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
+  form.append("model", model);
   form.append("prompt", params.prompt);
   form.append("n", "1");
   form.append("size", params.size ?? "1024x1024");

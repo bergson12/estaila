@@ -142,7 +142,7 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
       images: [{ data: bytes, name: `agente.${ext}`, type }],
       prompt,
       size: SIZE_MAP[data.size],
-      quality: "medium",
+      quality: "high",
     });
 
     if (!result.ok) {
