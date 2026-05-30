@@ -56,6 +56,43 @@ const FORMATOS = [
   { v: "horizontal", l: "Horizontal" },
 ] as const;
 
+/**
+ * Convierte cualquier imagen a un PNG limpio vía canvas (cap 2048px lado mayor).
+ * Garantiza que OpenAI reciba un formato válido (evita "Invalid image file or mode").
+ */
+async function fileToPng(file: File): Promise<Blob> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error("No se pudo leer la imagen."));
+      im.src = url;
+    });
+    const MAX = 2048;
+    let w = img.naturalWidth;
+    let h = img.naturalHeight;
+    if (Math.max(w, h) > MAX) {
+      const s = MAX / Math.max(w, h);
+      w = Math.round(w * s);
+      h = Math.round(h * s);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No se pudo procesar la imagen.");
+    ctx.drawImage(img, 0, 0, w, h);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
+    if (!blob) throw new Error("No se pudo convertir la imagen a PNG.");
+    return blob;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 function Chips<T extends string>({
   options,
   value,
@@ -127,8 +164,9 @@ export function AgentPhotoClient({
     setUploading(true);
     setResult(null);
     try {
+      const png = await fileToPng(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", png, "foto.png");
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
