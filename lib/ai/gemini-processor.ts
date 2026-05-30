@@ -8,6 +8,7 @@ import type {
   ProcessResult,
 } from "./types";
 import { uploadFile } from "@/lib/storage";
+import { prisma } from "@/lib/db";
 
 /**
  * GeminiProcessor — real image generation via Google Gemini 2.5 Flash Image
@@ -320,6 +321,21 @@ export class GeminiProcessor implements ImageProcessor {
       ? await fetchImageAsBase64(originalUrl)
       : null;
 
+    // Reference style image (optional). Resolve the id from DB so only known
+    // StylePreset URLs are fetched (no SSRF from arbitrary client URLs).
+    let refImg: { mime: string; data: string } | null = null;
+    if (input.options?.referenceId) {
+      const preset = await prisma.stylePreset
+        .findUnique({
+          where: { id: input.options.referenceId },
+          select: { imageUrl: true },
+        })
+        .catch(() => null);
+      if (preset?.imageUrl) {
+        refImg = await fetchImageAsBase64(preset.imageUrl).catch(() => null);
+      }
+    }
+
     // 4) Mask (only present when the user painted with the magic brush)
     const maskParsed = parseDataUrl(input.options?.maskDataUrl);
 
@@ -338,7 +354,10 @@ export class GeminiProcessor implements ImageProcessor {
         ].join("\n")
       : "";
 
-    const fullPrompt = `${continuity}\n${maskPreamble}\n${taskPrompt}`;
+    const refPreamble = refImg
+      ? `\nSTYLE REFERENCE: an additional image is attached as a STYLE / DECOR / LIGHTING reference. Match its aesthetic (furniture style, color palette, mood, lighting), but KEEP the exact architecture, layout, walls, windows and camera perspective of the working photo. Do NOT copy the reference's room layout or geometry.\n`
+      : "";
+    const fullPrompt = `${continuity}\n${maskPreamble}${refPreamble}\n${taskPrompt}`;
 
     // 6) Build multimodal parts list. Order matters — Gemini reads them
     //    in sequence, so the prompt comes first, then images in the
@@ -360,6 +379,13 @@ export class GeminiProcessor implements ImageProcessor {
       // Single source image — first iteration of the pipeline
       reqParts.push({
         inlineData: { mimeType: currentImg.mime, data: currentImg.data },
+      });
+    }
+
+    if (refImg) {
+      // Style reference goes before the mask (mask must remain the LAST image).
+      reqParts.push({
+        inlineData: { mimeType: refImg.mime, data: refImg.data },
       });
     }
 

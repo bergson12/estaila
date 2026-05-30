@@ -48,6 +48,9 @@ type StudioContextValue = {
   /** Optional brush-painted mask (data URL, white-on-black PNG) restricting the AI's effect zone. */
   maskDataUrl: string | null;
   setMaskDataUrl: (m: string | null) => void;
+  /** Reference StylePreset id (admin library) to guide style. */
+  referenceId: string | null;
+  setReferenceId: (id: string | null) => void;
   /** Latest IA analysis suggestion. PhotoAnalysis writes here; sidebar reads. */
   suggestion: StudioSuggestion | null;
   setSuggestion: (s: StudioSuggestion | null) => void;
@@ -80,6 +83,7 @@ export function StudioProvider({
   const [isGenerating, setIsGenerating] = useState(false);
   const [credits, setCredits] = useState(initialCredits);
   const [maskDataUrl, setMaskDataUrl] = useState<string | null>(null);
+  const [referenceId, setReferenceId] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<StudioSuggestion | null>(null);
 
   // After mount, hydrate from pipeline store
@@ -151,6 +155,7 @@ export function StudioProvider({
             ...(options ?? {}),
             ...(maskDataUrl ? { maskDataUrl } : {}),
             ...(originalUrl ? { originalUrl } : {}),
+            ...(referenceId ? { referenceId } : {}),
           } as ProcessOptions,
         });
 
@@ -195,7 +200,7 @@ export function StudioProvider({
         setIsGenerating(false);
       }
     },
-    [image, credits, cost, tool, toolLabel, pipeline, router, maskDataUrl]
+    [image, credits, cost, tool, toolLabel, pipeline, router, maskDataUrl, referenceId]
   );
 
   const reset = useCallback(() => {
@@ -221,6 +226,8 @@ export function StudioProvider({
         fromPipeline,
         maskDataUrl,
         setMaskDataUrl,
+        referenceId,
+        setReferenceId,
         suggestion,
         setSuggestion,
       }}

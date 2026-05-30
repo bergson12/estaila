@@ -5,6 +5,7 @@ import { CanvasView } from "./canvas-view";
 import { CreditsMeter } from "./credits-meter";
 import { PipelineBreadcrumb } from "./pipeline-breadcrumb";
 import { useStudio } from "./studio-context";
+import { StudioReferencePicker } from "./studio-reference-picker";
 
 export function StudioShell({
   title,
@@ -49,6 +50,7 @@ export function StudioShell({
         <div className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
           <div className="space-y-2">
             <CreditsMeter plan={plan} />
+            <StudioReferencePicker />
             {optionsPanel}
           </div>
         </div>

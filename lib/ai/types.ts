@@ -42,6 +42,9 @@ export type ProcessOptions = {
   extraPrompt?: string;
   // Brush mask data URL (white-on-black) restricting AI to that area
   maskDataUrl?: string;
+  // Style reference: id of a StylePreset (admin library). Resolved server-side
+  // to its image URL and sent as an extra reference image to the model.
+  referenceId?: string;
   // URL of the very first upload (step 0 of the pipeline). When present and
   // different from the input, the processor sends BOTH images so the model
   // anchors continuity to the original architectural reference.
