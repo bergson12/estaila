@@ -173,15 +173,18 @@ const COPY = {
     roi: {
       eyebrow: "CALCULADORA",
       title: "Calcula tu ahorro real.",
-      sub: "Mueve el slider según las propiedades que cierras al mes. Vemos cuánto te dejarías en la mesa sin estaila.",
-      sliderLabel: "Propiedades activas al mes",
+      sub: "Mueve el slider según las propiedades que publicas al mes. Comparamos lo que pagarías en herramientas + fotógrafo por separado contra estaila Pro.",
+      sliderLabel: "Propiedades que publicas al mes",
+      breakdownToday: "Hoy: herramientas + fotógrafo",
+      breakdownEstaila: "estaila Pro (todo incluido)",
+      breakdownSave: "Te ahorras",
       pieces: [
         { label: "Ahorro mensual", suffix: "/mes" },
         { label: "Ahorro anual", suffix: "/año" },
         { label: "Horas recuperadas", suffix: "h / sem" },
       ],
       cta: "Empezar a ahorrar hoy",
-      note: "Estimaciones basadas en promedios del sector inmobiliario. Resultados reales pueden variar.",
+      note: "Hoy = CRM $45 + Canva $15 + Photoshop $23 + staging IA $89 + fotógrafo ~$60 por propiedad. Estimaciones del sector; resultados reales pueden variar.",
     },
     demo: {
       eyebrow: "DEMO EN VIVO",
@@ -362,15 +365,18 @@ const COPY = {
     roi: {
       eyebrow: "CALCULATOR",
       title: "Calculate your real savings.",
-      sub: "Move the slider to your monthly closings. See exactly what you'd be leaving on the table without estaila.",
-      sliderLabel: "Active properties per month",
+      sub: "Move the slider to the properties you list per month. We compare what you'd pay for separate tools + a photographer against estaila Pro.",
+      sliderLabel: "Properties you list per month",
+      breakdownToday: "Today: tools + photographer",
+      breakdownEstaila: "estaila Pro (all included)",
+      breakdownSave: "You save",
       pieces: [
         { label: "Monthly savings", suffix: "/mo" },
         { label: "Annual savings", suffix: "/yr" },
         { label: "Hours recovered", suffix: "h / wk" },
       ],
       cta: "Start saving today",
-      note: "Estimates based on industry averages. Real results may vary.",
+      note: "Today = CRM $45 + Canva $15 + Photoshop $23 + AI staging $89 + photographer ~$60 per property. Industry estimates; real results may vary.",
     },
     demo: {
       eyebrow: "LIVE DEMO",
@@ -1400,10 +1406,35 @@ function RoiCalculator({ t }: { t: Copy }) {
                     appearance: "none",
                   }}
                 />
-                <div className="mt-2 flex justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground tabular-nums">
                   <span>1</span>
                   <span>10</span>
                   <span>20+</span>
+                </div>
+              </div>
+
+              {/* Desglose transparente — de dónde sale el ahorro */}
+              <div className="mt-7 space-y-2.5 rounded-xl border border-border bg-secondary/40 p-4">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">{r.breakdownToday}</span>
+                  <span className="font-semibold tabular-nums">
+                    ${monthlyExternal.toLocaleString("en-US")}
+                    {r.pieces[0].suffix}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">{r.breakdownEstaila}</span>
+                  <span className="font-semibold tabular-nums">
+                    −${proPrice}
+                    {r.pieces[0].suffix}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-t border-border pt-2.5">
+                  <span className="text-sm font-semibold">{r.breakdownSave}</span>
+                  <span className="font-display text-xl font-bold tabular-nums text-primary">
+                    ${monthlySavings.toLocaleString("en-US")}
+                    {r.pieces[0].suffix}
+                  </span>
                 </div>
               </div>
             </div>
