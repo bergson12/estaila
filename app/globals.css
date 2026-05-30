@@ -8,56 +8,56 @@
 /* Accent: amber for warmth, ink black for buttons */
 
 :root {
-  /* === LIGHT MODE — neutral with estaila green accent === */
-  --background: oklch(0.985 0.002 150); /* near-white with whisper of green */
-  --foreground: oklch(0.18 0.005 150);  /* deep ink */
-  --card: oklch(1 0 0);                 /* pure white card */
-  --card-foreground: oklch(0.16 0.005 150);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.005 150);
-  --primary: oklch(0.69 0.18 152);      /* estaila green #00bf63 */
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.005 150);   /* cool neutral */
-  --secondary-foreground: oklch(0.20 0.005 150);
-  --muted: oklch(0.96 0.005 150);
-  --muted-foreground: oklch(0.48 0.008 150);
-  --accent: oklch(0.95 0.05 152);       /* mint hint */
-  --accent-foreground: oklch(0.20 0.005 150);
-  --destructive: oklch(0.58 0.20 25);   /* warm red */
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.69 0.18 152);      /* matches primary — estaila green is the success color */
+  /* === LIGHT — Estaila brand manual (exact hex) === */
+  --background: #FFFFFF;                 /* neutro base (60%) */
+  --foreground: #16181B;                /* Estaila Ink */
+  --card: #FFFFFF;
+  --card-foreground: #16181B;
+  --popover: #FFFFFF;
+  --popover-foreground: #16181B;
+  --primary: #00BF63;                   /* Estaila Green */
+  --primary-foreground: #FFFFFF;        /* texto sobre verde SIEMPRE blanco */
+  --secondary: #F7F8F8;                 /* bg-soft */
+  --secondary-foreground: #282828;      /* ink-soft */
+  --muted: #F7F8F8;
+  --muted-foreground: #565C63;          /* text-2 */
+  --accent: #ECFBF3;                    /* Green Mist */
+  --accent-foreground: #00904A;         /* Green Deep */
+  --destructive: #E5484D;
+  --destructive-foreground: #FFFFFF;
+  --success: #00BF63;                   /* el verde es el color de éxito */
   --warning: oklch(0.78 0.15 65);       /* amber */
-  --border: oklch(0.91 0.005 150);
-  --input: oklch(0.91 0.005 150);
-  --ring: oklch(0.69 0.18 152);
+  --border: #E5E8EA;
+  --input: #E5E8EA;
+  --ring: #00BF63;
   --radius: 1rem;
-  --dot-color: oklch(0.88 0.008 150);
+  --dot-color: #E5E8EA;
 
   /* Ink button color — for Arto+ style black pills */
-  --ink: oklch(0.18 0.005 150);
-  --ink-foreground: oklch(0.99 0 0);
+  --ink: #16181B;                       /* Estaila Ink */
+  --ink-foreground: #FFFFFF;
 
-  /* Real-estate status — keeps green for sale (matches brand), amber rent, etc */
-  --status-venta: oklch(0.69 0.18 152);    /* estaila green */
+  /* Real-estate status — verde venta (marca), amber alquiler, etc */
+  --status-venta: #00BF63;              /* Estaila Green */
   --status-alquiler: oklch(0.78 0.15 65);  /* amber */
-  --status-vendida: oklch(0.50 0.01 150);  /* gray */
-  --status-alquilada: oklch(0.58 0.20 25); /* red */
+  --status-vendida: #878E96;            /* text-3 gris */
+  --status-alquilada: #E5484D;          /* red */
 
   /* Chart palette — green primary + complementary editorial tones */
-  --chart-1: oklch(0.69 0.18 152);  /* estaila green */
+  --chart-1: #00BF63;                   /* Estaila Green */
   --chart-2: oklch(0.55 0.15 245);  /* blue */
   --chart-3: oklch(0.78 0.15 65);   /* amber */
-  --chart-4: oklch(0.58 0.20 25);   /* red */
+  --chart-4: #E5484D;               /* red */
   --chart-5: oklch(0.55 0.12 320);  /* plum */
 
-  --sidebar: oklch(0.975 0.003 150);
-  --sidebar-foreground: oklch(0.18 0.005 150);
-  --sidebar-primary: oklch(0.69 0.18 152);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.05 152);
-  --sidebar-accent-foreground: oklch(0.20 0.005 150);
-  --sidebar-border: oklch(0.91 0.005 150);
-  --sidebar-ring: oklch(0.69 0.18 152);
+  --sidebar: #F7F8F8;
+  --sidebar-foreground: #16181B;
+  --sidebar-primary: #00BF63;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #ECFBF3;
+  --sidebar-accent-foreground: #00904A;
+  --sidebar-border: #E5E8EA;
+  --sidebar-ring: #00BF63;
 }
 
 .dark {
@@ -68,8 +68,8 @@
   --card-foreground: oklch(0.97 0.003 150);
   --popover: oklch(0.215 0.006 150);
   --popover-foreground: oklch(0.97 0.003 150);
-  --primary: oklch(0.74 0.18 152);       /* brighter green in dark */
-  --primary-foreground: oklch(0.13 0.005 150);
+  --primary: #00BF63;       /* brighter green in dark */
+  --primary-foreground: #FFFFFF;
   --secondary: oklch(0.26 0.008 150);
   --secondary-foreground: oklch(0.97 0.003 150);
   --muted: oklch(0.26 0.008 150);
@@ -78,22 +78,22 @@
   --accent-foreground: oklch(0.97 0.003 150);
   --destructive: oklch(0.65 0.20 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.74 0.18 152);       /* matches primary */
+  --success: #00BF63;       /* matches primary */
   --warning: oklch(0.78 0.15 65);
   --border: oklch(0.30 0.008 150);
   --input: oklch(0.30 0.008 150);
-  --ring: oklch(0.74 0.18 152);
+  --ring: #00BF63;
   --dot-color: oklch(0.32 0.01 150);
 
   --ink: oklch(0.97 0.003 150);
   --ink-foreground: oklch(0.18 0.005 150);
 
-  --status-venta: oklch(0.74 0.18 152);
+  --status-venta: #00BF63;
   --status-alquiler: oklch(0.78 0.15 65);
   --status-vendida: oklch(0.65 0.008 150);
   --status-alquilada: oklch(0.65 0.20 25);
 
-  --chart-1: oklch(0.74 0.18 152);
+  --chart-1: #00BF63;
   --chart-2: oklch(0.65 0.15 245);
   --chart-3: oklch(0.78 0.15 65);
   --chart-4: oklch(0.65 0.20 25);
@@ -101,12 +101,12 @@
 
   --sidebar: oklch(0.155 0.005 150);
   --sidebar-foreground: oklch(0.97 0.003 150);
-  --sidebar-primary: oklch(0.74 0.18 152);
-  --sidebar-primary-foreground: oklch(0.13 0.005 150);
+  --sidebar-primary: #00BF63;
+  --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: oklch(0.26 0.008 150);
   --sidebar-accent-foreground: oklch(0.97 0.003 150);
   --sidebar-border: oklch(0.30 0.008 150);
-  --sidebar-ring: oklch(0.74 0.18 152);
+  --sidebar-ring: #00BF63;
 }
 
 @theme inline {
@@ -216,6 +216,23 @@ h5 {
   background-size: 16px 16px;
 }
 
+/* Eyebrow / kicker — Estaila brand manual (Space Grotesk 600, +12% tracking,
+   green-700 sobre green-50 pill). Theme-aware vía tokens accent. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-foreground);
+  background: var(--accent);
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+}
+
 /* Ambient glow for hero/page accents — light & dark aware */
 .ambient-glow {
   position: absolute;
@@ -224,7 +241,7 @@ h5 {
   background:
     radial-gradient(
       600px circle at 15% 0%,
-      oklch(0.6231 0.188 259.81 / 0.06),
+      oklch(0.696 0.17 162.48 / 0.06),
       transparent 50%
     ),
     radial-gradient(
@@ -238,7 +255,7 @@ h5 {
   background:
     radial-gradient(
       700px circle at 15% 0%,
-      oklch(0.6231 0.188 259.81 / 0.12),
+      oklch(0.696 0.17 162.48 / 0.12),
       transparent 50%
     ),
     radial-gradient(
@@ -248,10 +265,10 @@ h5 {
     );
 }
 
-/* Selection */
+/* Selection — Estaila Green (manual) */
 ::selection {
-  background: oklch(0.6231 0.188 259.81 / 0.3);
-  color: var(--foreground);
+  background: #00BF63;
+  color: #FFFFFF;
 }
 
 /* Custom scrollbar — subtle Linear/Arc style */
