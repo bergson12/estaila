@@ -68,7 +68,7 @@ const Input = z.object({
 type ParsedInput = z.infer<typeof Input>;
 
 type AgentPhotoResult =
-  | { ok: true; id: string; outputUrl: string; remainingCredits: number }
+  | { ok: true; id: string; outputUrl: string; remainingCredits: number; model: string }
   | { ok: false; error: string; code?: string };
 
 function buildPrompt(d: ParsedInput): string {
@@ -180,6 +180,7 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
       id: gen.id,
       outputUrl: uploaded.url,
       remainingCredits: dbUser.credits - COST,
+      model: result.model,
     };
   } catch (e) {
     await prisma.aIGeneration

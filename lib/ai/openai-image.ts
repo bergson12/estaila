@@ -12,7 +12,7 @@ import "server-only";
  */
 
 export type OpenAIImageResult =
-  | { ok: true; base64: string }
+  | { ok: true; base64: string; model: string }
   | {
       ok: false;
       error: string;
@@ -113,5 +113,5 @@ export async function editAgentPhoto(params: EditParams): Promise<OpenAIImageRes
   if (!b64) {
     return { ok: false, code: "UNKNOWN", error: "OpenAI no devolvió ninguna imagen." };
   }
-  return { ok: true, base64: b64 };
+  return { ok: true, base64: b64, model };
 }

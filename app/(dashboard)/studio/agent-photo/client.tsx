@@ -147,6 +147,7 @@ export function AgentPhotoClient({
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [modelUsed, setModelUsed] = useState<string | null>(null);
 
   const [style, setStyle] = useState<AgentPhotoInput["style"]>("corporativo");
   const [wardrobe, setWardrobe] = useState<AgentPhotoInput["wardrobe"]>("business_casual");
@@ -207,8 +208,9 @@ export function AgentPhotoClient({
         return;
       }
       setResult(r.outputUrl);
+      setModelUsed(r.model);
       setCredits(r.remainingCredits);
-      toast.success("¡Foto profesional lista!");
+      toast.success(`¡Foto profesional lista! (${r.model})`);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -300,17 +302,25 @@ export function AgentPhotoClient({
           </div>
 
           {result && (
-            <div className="flex flex-wrap gap-2">
-              <a href={result} download target="_blank" rel="noreferrer noopener">
-                <Button variant="outline" size="sm">
-                  <Download className="mr-1.5 h-4 w-4" /> Descargar
-                </Button>
-              </a>
-              <Link href="/studio/galeria">
-                <Button variant="ghost" size="sm">
-                  <Images className="mr-1.5 h-4 w-4" /> Ver en galería
-                </Button>
-              </Link>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <a href={result} download target="_blank" rel="noreferrer noopener">
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-1.5 h-4 w-4" /> Descargar
+                  </Button>
+                </a>
+                <Link href="/studio/galeria">
+                  <Button variant="ghost" size="sm">
+                    <Images className="mr-1.5 h-4 w-4" /> Ver en galería
+                  </Button>
+                </Link>
+              </div>
+              {modelUsed && (
+                <p className="text-[11px] text-muted-foreground">
+                  Generado con{" "}
+                  <span className="font-medium text-foreground">{modelUsed}</span>
+                </p>
+              )}
             </div>
           )}
         </Card>
