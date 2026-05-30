@@ -83,15 +83,15 @@ const SIZE_MAP: Record<string, "1024x1024" | "1024x1536" | "1536x1024"> = {
 
 const Input = z.object({
   inputUrl: z.string().url().max(2000),
-  style: z.enum(["corporativo", "moderno", "calido", "editorial", "exterior", "lujo"]).default("corporativo"),
-  wardrobe: z.enum(["traje", "business_casual", "blazer", "camisa", "actual"]).default("business_casual"),
-  background: z.enum(["estudio_gris", "blanco", "oficina", "ciudad", "interior_lujo", "marca"]).default("estudio_gris"),
-  pose: z.enum(["frontal", "brazos", "tres_cuartos", "casual", "actual"]).default("frontal"),
+  style: z.string().trim().min(1).max(120).default("corporativo"),
+  wardrobe: z.string().trim().min(1).max(120).default("business_casual"),
+  background: z.string().trim().min(1).max(120).default("estudio_gris"),
+  pose: z.string().trim().min(1).max(120).default("frontal"),
   size: z.enum(["vertical", "cuadrado", "horizontal"]).default("vertical"),
-  framing: z.enum(["closeup", "bust", "half"]).default("bust"),
-  lighting: z.enum(["studio", "natural", "dramatic", "soft"]).default("studio"),
-  expression: z.enum(["smile", "serious", "confident"]).default("confident"),
-  retouch: z.enum(["natural", "polished"]).default("natural"),
+  framing: z.string().trim().min(1).max(120).default("bust"),
+  lighting: z.string().trim().min(1).max(120).default("studio"),
+  expression: z.string().trim().min(1).max(120).default("confident"),
+  retouch: z.string().trim().min(1).max(120).default("natural"),
   keep: z.array(z.string()).max(8).default([]),
   referenceId: z.string().max(40).optional().nullable(),
   extra: z.string().trim().max(500).optional(),
@@ -106,21 +106,21 @@ type AgentPhotoResult =
 function buildPrompt(d: ParsedInput, hasReference: boolean): string {
   const keepClause =
     d.keep.length > 0
-      ? `Keep ${d.keep.map((k) => KEEP_PROMPT[k]).filter(Boolean).join(", ")} identical to the original.`
+      ? `Keep ${d.keep.map((k) => KEEP_PROMPT[k] ?? k).filter(Boolean).join(", ")} identical to the original.`
       : "";
   return [
     "Transform this photograph into a professional, studio-quality portrait of THE SAME PERSON.",
     "CRITICAL: preserve their exact face, facial features, identity, bone structure, skin tone, hair and approximate age. Do NOT change or over-beautify the face beyond subtle, natural professional retouching.",
     keepClause,
     "This is a professional headshot for a real-estate agent.",
-    STYLE_PROMPT[d.style] + ",",
-    WARDROBE_PROMPT[d.wardrobe] + ",",
-    BACKGROUND_PROMPT[d.background] + ",",
-    POSE_PROMPT[d.pose] + ",",
-    FRAMING_PROMPT[d.framing] + ",",
-    LIGHTING_PROMPT[d.lighting] + ".",
-    `Expression: ${EXPRESSION_PROMPT[d.expression]}.`,
-    RETOUCH_PROMPT[d.retouch] + ".",
+    (STYLE_PROMPT[d.style] ?? d.style) + ",",
+    (WARDROBE_PROMPT[d.wardrobe] ?? `wearing ${d.wardrobe}`) + ",",
+    (BACKGROUND_PROMPT[d.background] ?? `with a ${d.background} background`) + ",",
+    (POSE_PROMPT[d.pose] ?? d.pose) + ",",
+    (FRAMING_PROMPT[d.framing] ?? d.framing) + ",",
+    (LIGHTING_PROMPT[d.lighting] ?? d.lighting) + ".",
+    `Expression: ${EXPRESSION_PROMPT[d.expression] ?? d.expression}.`,
+    (RETOUCH_PROMPT[d.retouch] ?? d.retouch) + ".",
     hasReference
       ? "Use the SECOND image ONLY as a style/lighting/composition reference — replicate its look and feel, but keep the person (face and identity) from the FIRST image."
       : "",

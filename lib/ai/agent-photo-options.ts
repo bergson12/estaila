@@ -38,15 +38,16 @@ export const KEEP_OPTIONS = [
 
 export type AgentPhotoInput = {
   inputUrl: string;
-  style: "corporativo" | "moderno" | "calido" | "editorial" | "exterior" | "lujo";
-  wardrobe: "traje" | "business_casual" | "blazer" | "camisa" | "actual";
-  background: "estudio_gris" | "blanco" | "oficina" | "ciudad" | "interior_lujo" | "marca";
-  pose: "frontal" | "brazos" | "tres_cuartos" | "casual" | "actual";
+  // Cada opción acepta un preset O texto libre (personalizado) → por eso son string.
+  style: string;
+  wardrobe: string;
+  background: string;
+  pose: string;
   size: "vertical" | "cuadrado" | "horizontal";
-  framing: "closeup" | "bust" | "half";
-  lighting: "studio" | "natural" | "dramatic" | "soft";
-  expression: "smile" | "serious" | "confident";
-  retouch: "natural" | "polished";
+  framing: string;
+  lighting: string;
+  expression: string;
+  retouch: string;
   /** valores de KEEP_OPTIONS a preservar exactos */
   keep: string[];
   /** id de StylePreset elegido como referencia de estilo (opcional) */
