@@ -49,6 +49,32 @@ const POSE_PROMPT: Record<string, string> = {
   casual: "in a relaxed, casual leaning pose",
   actual: "keeping their current pose",
 };
+const FRAMING_PROMPT: Record<string, string> = {
+  closeup: "tight close-up headshot framing (head and shoulders)",
+  bust: "bust framing (chest up)",
+  half: "half-body framing (waist up)",
+};
+const LIGHTING_PROMPT: Record<string, string> = {
+  studio: "professional studio lighting with a soft key light",
+  natural: "natural soft daylight",
+  dramatic: "dramatic directional lighting with gentle shadows",
+  soft: "soft, diffused, flattering lighting",
+};
+const EXPRESSION_PROMPT: Record<string, string> = {
+  smile: "a warm, natural smile",
+  serious: "a calm, serious expression",
+  confident: "a confident, approachable expression",
+};
+const RETOUCH_PROMPT: Record<string, string> = {
+  natural: "subtle natural retouching, keep realistic skin texture",
+  polished: "polished magazine-grade retouching while staying photorealistic",
+};
+const KEEP_PROMPT: Record<string, string> = {
+  beard: "the exact same beard",
+  glasses: "the same glasses",
+  hairstyle: "the same hairstyle",
+  skintone: "the exact same skin tone",
+};
 const SIZE_MAP: Record<string, "1024x1024" | "1024x1536" | "1536x1024"> = {
   vertical: "1024x1536",
   cuadrado: "1024x1024",
@@ -62,6 +88,12 @@ const Input = z.object({
   background: z.enum(["estudio_gris", "blanco", "oficina", "ciudad", "interior_lujo", "marca"]).default("estudio_gris"),
   pose: z.enum(["frontal", "brazos", "tres_cuartos", "casual", "actual"]).default("frontal"),
   size: z.enum(["vertical", "cuadrado", "horizontal"]).default("vertical"),
+  framing: z.enum(["closeup", "bust", "half"]).default("bust"),
+  lighting: z.enum(["studio", "natural", "dramatic", "soft"]).default("studio"),
+  expression: z.enum(["smile", "serious", "confident"]).default("confident"),
+  retouch: z.enum(["natural", "polished"]).default("natural"),
+  keep: z.array(z.string()).max(8).default([]),
+  referenceId: z.string().max(40).optional().nullable(),
   extra: z.string().trim().max(500).optional(),
 });
 
@@ -71,16 +103,28 @@ type AgentPhotoResult =
   | { ok: true; id: string; outputUrl: string; remainingCredits: number; model: string }
   | { ok: false; error: string; code?: string };
 
-function buildPrompt(d: ParsedInput): string {
+function buildPrompt(d: ParsedInput, hasReference: boolean): string {
+  const keepClause =
+    d.keep.length > 0
+      ? `Keep ${d.keep.map((k) => KEEP_PROMPT[k]).filter(Boolean).join(", ")} identical to the original.`
+      : "";
   return [
     "Transform this photograph into a professional, studio-quality portrait of THE SAME PERSON.",
     "CRITICAL: preserve their exact face, facial features, identity, bone structure, skin tone, hair and approximate age. Do NOT change or over-beautify the face beyond subtle, natural professional retouching.",
+    keepClause,
     "This is a professional headshot for a real-estate agent.",
-    STYLE_PROMPT[d.style],
+    STYLE_PROMPT[d.style] + ",",
     WARDROBE_PROMPT[d.wardrobe] + ",",
     BACKGROUND_PROMPT[d.background] + ",",
-    POSE_PROMPT[d.pose] + ".",
-    "Studio lighting, photorealistic, sharp focus, high-end corporate photography, flattering and clean composition.",
+    POSE_PROMPT[d.pose] + ",",
+    FRAMING_PROMPT[d.framing] + ",",
+    LIGHTING_PROMPT[d.lighting] + ".",
+    `Expression: ${EXPRESSION_PROMPT[d.expression]}.`,
+    RETOUCH_PROMPT[d.retouch] + ".",
+    hasReference
+      ? "Use the SECOND image ONLY as a style/lighting/composition reference — replicate its look and feel, but keep the person (face and identity) from the FIRST image."
+      : "",
+    "Photorealistic, sharp focus, high-end corporate photography, flattering and clean composition.",
     d.extra?.trim() ? `Additional direction: ${d.extra.trim()}.` : "",
   ]
     .filter(Boolean)
@@ -107,7 +151,15 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
     };
   }
 
-  const prompt = buildPrompt(data);
+  // --- Resolver foto de referencia (opcional) ---
+  let referenceUrl: string | null = null;
+  if (data.referenceId) {
+    const preset = await prisma.stylePreset
+      .findUnique({ where: { id: data.referenceId }, select: { imageUrl: true } })
+      .catch(() => null);
+    referenceUrl = preset?.imageUrl ?? null;
+  }
+  const prompt = buildPrompt(data, !!referenceUrl);
 
   // --- Registro PROCESSING ---
   const gen = await prisma.aIGeneration.create({
@@ -122,6 +174,12 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
         background: data.background,
         pose: data.pose,
         size: data.size,
+        framing: data.framing,
+        lighting: data.lighting,
+        expression: data.expression,
+        retouch: data.retouch,
+        keep: data.keep,
+        referenceId: data.referenceId ?? null,
       }),
       status: "PROCESSING",
       creditsUsed: COST,
@@ -137,9 +195,30 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
     const ext = type.includes("jpeg") || type.includes("jpg") ? "jpg" : type.includes("webp") ? "webp" : "png";
 
+    const images: { data: Uint8Array; name: string; type: string }[] = [
+      { data: bytes, name: `agente.${ext}`, type },
+    ];
+
+    // --- Foto de referencia (best-effort) → 2da imagen para gpt-image-2 ---
+    if (referenceUrl) {
+      try {
+        const rRes = await fetch(referenceUrl);
+        if (rRes.ok) {
+          const rType = rRes.headers.get("content-type") || "image/png";
+          images.push({
+            data: new Uint8Array(await rRes.arrayBuffer()),
+            name: "referencia.png",
+            type: rType,
+          });
+        }
+      } catch {
+        // si falla la referencia, generamos solo con la foto del agente
+      }
+    }
+
     // --- OpenAI ---
     const result = await editAgentPhoto({
-      images: [{ data: bytes, name: `agente.${ext}`, type }],
+      images,
       prompt,
       size: SIZE_MAP[data.size],
       // "high" excede los 60s de Vercel (timeout). "medium" entra en tiempo y cuesta ~3x menos.

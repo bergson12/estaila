@@ -137,6 +137,23 @@ model TesterReviewImage {
 }
 
 // ============================================================
+// STYLE PRESETS (fotos de muestra / referencia, gestionadas por admin)
+// ============================================================
+
+model StylePreset {
+  id        String   @id @default(cuid())
+  label     String
+  category  String   @default("AGENT_PHOTO") // AGENT_PHOTO | STAGING | GENERIC
+  imageUrl  String // foto de muestra (referencia de estilo) en Blob
+  prompt    String? // hint de estilo opcional para reforzar el prompt
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([category, active])
+}
+
+// ============================================================
 // ORGANIZATIONS (teams + agency-tier accounts)
 // ============================================================
 

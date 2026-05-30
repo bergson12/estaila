@@ -18,7 +18,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { generateAgentPhoto } from "@/lib/actions/agent-photo";
-import { AGENT_PHOTO_COST, type AgentPhotoInput } from "@/lib/ai/agent-photo-options";
+import {
+  AGENT_PHOTO_COST,
+  FRAMING,
+  LIGHTING,
+  EXPRESSION,
+  RETOUCH,
+  KEEP_OPTIONS,
+  type AgentPhotoInput,
+} from "@/lib/ai/agent-photo-options";
 
 const ESTILOS = [
   { v: "corporativo", l: "Corporativo" },
@@ -134,12 +142,16 @@ function Field({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+type Preset = { id: string; label: string; imageUrl: string };
+
 export function AgentPhotoClient({
   initialCredits,
   plan,
+  presets,
 }: {
   initialCredits: number;
   plan: string;
+  presets: Preset[];
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [credits, setCredits] = useState(initialCredits);
@@ -154,6 +166,12 @@ export function AgentPhotoClient({
   const [background, setBackground] = useState<AgentPhotoInput["background"]>("estudio_gris");
   const [pose, setPose] = useState<AgentPhotoInput["pose"]>("frontal");
   const [size, setSize] = useState<AgentPhotoInput["size"]>("vertical");
+  const [framing, setFraming] = useState<AgentPhotoInput["framing"]>("bust");
+  const [lighting, setLighting] = useState<AgentPhotoInput["lighting"]>("studio");
+  const [expression, setExpression] = useState<AgentPhotoInput["expression"]>("confident");
+  const [retouch, setRetouch] = useState<AgentPhotoInput["retouch"]>("natural");
+  const [keep, setKeep] = useState<string[]>([]);
+  const [referenceId, setReferenceId] = useState<string | null>(null);
   const [extra, setExtra] = useState("");
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -196,7 +214,21 @@ export function AgentPhotoClient({
     setGenerating(true);
     setResult(null);
     try {
-      const r = await generateAgentPhoto({ inputUrl, style, wardrobe, background, pose, size, extra: extra.trim() || undefined });
+      const r = await generateAgentPhoto({
+        inputUrl,
+        style,
+        wardrobe,
+        background,
+        pose,
+        size,
+        framing,
+        lighting,
+        expression,
+        retouch,
+        keep,
+        referenceId: referenceId ?? undefined,
+        extra: extra.trim() || undefined,
+      });
       if (!r.ok) {
         if (r.code === "NO_KEY") {
           toast.error("Falta configurar OPENAI_API_KEY en el servidor.");
@@ -342,6 +374,77 @@ export function AgentPhotoClient({
           <Field title="Formato">
             <Chips options={FORMATOS} value={size} onChange={setSize} />
           </Field>
+          <Field title="Encuadre">
+            <Chips options={FRAMING} value={framing} onChange={setFraming} />
+          </Field>
+          <Field title="Iluminación">
+            <Chips options={LIGHTING} value={lighting} onChange={setLighting} />
+          </Field>
+          <Field title="Expresión">
+            <Chips options={EXPRESSION} value={expression} onChange={setExpression} />
+          </Field>
+          <Field title="Retoque">
+            <Chips options={RETOUCH} value={retouch} onChange={setRetouch} />
+          </Field>
+          <Field title="Mantener exacto (de tu foto)">
+            <div className="flex flex-wrap gap-1.5">
+              {KEEP_OPTIONS.map((k) => {
+                const on = keep.includes(k.v);
+                return (
+                  <button
+                    key={k.v}
+                    type="button"
+                    onClick={() =>
+                      setKeep((arr) => (on ? arr.filter((x) => x !== k.v) : [...arr, k.v]))
+                    }
+                    className={cn(
+                      "rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all",
+                      on
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+                    )}
+                  >
+                    {k.l}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          {presets.length > 0 && (
+            <Field title="Foto de referencia (estilo)">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                <button
+                  type="button"
+                  onClick={() => setReferenceId(null)}
+                  className={cn(
+                    "flex aspect-[3/4] items-center justify-center rounded-lg border text-[10px] font-medium transition-all",
+                    referenceId === null
+                      ? "border-primary/50 bg-primary/10 text-primary"
+                      : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20"
+                  )}
+                >
+                  Ninguna
+                </button>
+                {presets.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setReferenceId(p.id)}
+                    title={p.label}
+                    className={cn(
+                      "relative overflow-hidden rounded-lg border transition-all",
+                      referenceId === p.id
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border hover:border-foreground/20"
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.imageUrl} alt={p.label} className="aspect-[3/4] w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
           <Field title="Detalles extra (opcional)">
             <textarea
               value={extra}
