@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -26,16 +26,21 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Primary UI font — Inter (variable). Cómoda, neutra, estilo Apple/SF; reemplaza
+// a Space Grotesk + mono en los roles principales para evitar el look "SaaS IA".
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 // Legacy aliases — older components still reference these variable names.
-// --font-raleway now points to Hanken (body) so nothing breaks; decorative
-// display aliases point to Space Grotesk.
 const fontAliases = {
-  "--font-raleway": "var(--font-hanken)",
-  "--font-inter": "var(--font-hanken)",
-  "--font-cormorant": "var(--font-space-grotesk)",
-  "--font-playfair": "var(--font-space-grotesk)",
-  "--font-fraunces": "var(--font-space-grotesk)",
-  "--font-instrument": "var(--font-hanken)",
+  "--font-raleway": "var(--font-inter)",
+  "--font-cormorant": "var(--font-inter)",
+  "--font-playfair": "var(--font-inter)",
+  "--font-fraunces": "var(--font-inter)",
+  "--font-instrument": "var(--font-inter)",
 } as React.CSSProperties;
 
 export const metadata: Metadata = {
@@ -72,7 +77,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${spaceGrotesk.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${hankenGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       style={fontAliases}
       suppressHydrationWarning
     >
