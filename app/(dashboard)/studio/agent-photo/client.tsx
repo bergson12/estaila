@@ -57,10 +57,10 @@ const FORMATOS = [
 ] as const;
 
 /**
- * Convierte cualquier imagen a un PNG limpio vía canvas (cap 2048px lado mayor).
- * Garantiza que OpenAI reciba un formato válido (evita "Invalid image file or mode").
+ * Convierte cualquier imagen a un JPEG comprimido vía canvas (cap 2048px lado mayor).
+ * Pequeño (no revienta el límite de body de Vercel ~4.5MB) y formato válido para OpenAI.
  */
-async function fileToPng(file: File): Promise<Blob> {
+async function fileToJpeg(file: File): Promise<Blob> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -82,11 +82,13 @@ async function fileToPng(file: File): Promise<Blob> {
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("No se pudo procesar la imagen.");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png")
+      canvas.toBlob(resolve, "image/jpeg", 0.9)
     );
-    if (!blob) throw new Error("No se pudo convertir la imagen a PNG.");
+    if (!blob) throw new Error("No se pudo convertir la imagen.");
     return blob;
   } finally {
     URL.revokeObjectURL(url);
@@ -164,9 +166,9 @@ export function AgentPhotoClient({
     setUploading(true);
     setResult(null);
     try {
-      const png = await fileToPng(file);
+      const jpg = await fileToJpeg(file);
       const fd = new FormData();
-      fd.append("file", png, "foto.png");
+      fd.append("file", jpg, "foto.jpg");
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
