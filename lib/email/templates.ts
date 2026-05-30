@@ -50,12 +50,23 @@ function formatPrice(n: number | null): string {
   }).format(n);
 }
 
-/** Shared shell — header logo + footer signature */
-function shell(args: {
+export type EmailVariant = "MINIMAL" | "EDITORIAL";
+
+type ShellArgs = {
+  variant?: EmailVariant;
   preview?: string;
+  subject?: string;
   body: string;
   agent: AgentInfo;
-}): string {
+};
+
+/** Variant dispatcher — picks the chrome around the body content. */
+function shell(args: ShellArgs): string {
+  return args.variant === "EDITORIAL" ? shellEditorial(args) : shellMinimal(args);
+}
+
+/** MINIMAL — clean white card (default). Header logo + footer signature. */
+function shellMinimal(args: ShellArgs): string {
   const preview = args.preview ?? "";
   return `<!doctype html>
 <html lang="es">
@@ -91,6 +102,72 @@ function shell(args: {
         </tr>
         <tr>
           <td style="padding:18px 28px 24px;background:${BG};border-top:1px solid ${BORDER};">
+            ${agentBlock(args.agent)}
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <tr>
+          <td align="center" style="padding:18px 24px;font-size:11px;color:${MUTED};line-height:1.6;">
+            Enviado vía <a href="${APP_URL}" style="color:${MUTED};text-decoration:underline;">estaila</a> · CRM + AI Studio para agentes inmobiliarios
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+}
+
+/** EDITORIAL — premium: brand header band + big subject headline hero. */
+function shellEditorial(args: ShellArgs): string {
+  const preview = args.preview ?? "";
+  const subject = args.subject ?? "";
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Estaila</title>
+</head>
+<body style="margin:0;padding:0;background:#eef0f1;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${TEXT};-webkit-font-smoothing:antialiased;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;visibility:hidden;">${preview}</div>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#eef0f1;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 40px -12px rgba(16,24,32,.18);">
+        <!-- brand header band -->
+        <tr>
+          <td style="background:${PRIMARY};padding:20px 32px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td>
+                  <span style="font-size:20px;font-weight:800;letter-spacing:-.02em;color:#fff;">estaila</span>
+                </td>
+                <td align="right">
+                  <span style="font-size:11px;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.08em;">${new Date().toLocaleDateString("es-DO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- hero headline -->
+        ${
+          subject
+            ? `<tr><td style="padding:34px 32px 6px;">
+                 <div style="width:40px;height:4px;border-radius:3px;background:${PRIMARY};margin-bottom:16px;"></div>
+                 <h1 style="margin:0;font-size:28px;line-height:1.18;font-weight:800;letter-spacing:-.02em;color:${TEXT};">${escapeHtml(subject)}</h1>
+               </td></tr>`
+            : ""
+        }
+        <tr>
+          <td style="padding:18px 32px 28px;">
+            ${args.body}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 26px;background:${BG};border-top:1px solid ${BORDER};">
             ${agentBlock(args.agent)}
           </td>
         </tr>
@@ -196,6 +273,8 @@ export function renderTemplate(args: {
   customSubject?: string;
   customBody?: string;
   customDateTime?: string;
+  variant?: EmailVariant;
+  customHtml?: string;
 }): RenderedEmail {
   const { kind, agent, contact, property } = args;
   const greeting = `Hola ${escapeHtml(contact.name.split(" ")[0] ?? "")},`;
@@ -226,7 +305,10 @@ export function renderTemplate(args: {
     )
     .join("");
 
-  const body = `
+  const customHtml = args.customHtml?.trim();
+  const body = customHtml
+    ? customHtml
+    : `
     <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
     ${msgHtml}
     ${property ? `<div style="margin-top:8px;">${propertyCard(property)}</div>` : ""}
@@ -236,10 +318,14 @@ export function renderTemplate(args: {
     ? `\n\nVer: ${APP_URL}/propiedad/${property.slug ?? property.id}`
     : "";
 
+  const plainText = customHtml
+    ? customHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+    : `${contact.name},\n\n${message}${propLink}\n\n— ${agent.name}`;
+
   return {
     subject,
     preview: subject,
-    html: shell({ preview: subject, body, agent }),
-    text: `${contact.name},\n\n${message}${propLink}\n\n— ${agent.name}`,
+    html: shell({ variant: args.variant, subject, preview: subject, body, agent }),
+    text: plainText,
   };
 }
