@@ -307,7 +307,7 @@ export function renderTemplate(args: {
 
   const customHtml = args.customHtml?.trim();
   const body = customHtml
-    ? customHtml
+    ? `${customHtml}${property ? `<div style="margin-top:18px;">${propertyCard(property)}</div>` : ""}`
     : `
     <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">${greeting}</p>
     ${msgHtml}

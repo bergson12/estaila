@@ -27,9 +27,9 @@ export function MarketingHub({
     },
     {
       key: "email",
-      label: "Email marketing",
+      label: "Email & Newsletter",
       icon: Mail,
-      desc: "Campañas a tus contactos",
+      desc: "Campañas y newsletters",
     },
     {
       key: "posts",

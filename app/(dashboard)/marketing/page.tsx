@@ -2,8 +2,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { MarketingClient } from "@/components/marketing/marketing-client";
 import { MarketingHub } from "@/components/marketing/marketing-hub";
 import { DigitalCardsClient } from "@/components/marketing/digital-cards-client";
-import { EmailMarketingClient } from "@/components/marketing/email-marketing-client";
+import { NewsletterStudio } from "@/components/marketing/newsletter-studio";
 import { listEmailAudience } from "@/lib/actions/email";
+import { listCampaigns } from "@/lib/actions/email-campaign";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function MarketingPage() {
   const user = await requireUser();
 
-  const [posts, properties, digitalCards, audience] = await Promise.all([
+  const [posts, properties, digitalCards, audience, campaigns] = await Promise.all([
     prisma.marketingPost.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -31,13 +32,14 @@ export default async function MarketingPage() {
       },
     }),
     listEmailAudience().catch(() => []),
+    listCampaigns().catch(() => []),
   ]);
 
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Marketing"
-        description="Tarjetas digitales tipo Linktree y calendario editorial de posts."
+        description="Tarjetas digitales, email marketing con newsletters y calendario de posts."
       />
       <MarketingHub
         digitalView={
@@ -76,7 +78,11 @@ export default async function MarketingPage() {
         }
         postsView={<MarketingClient posts={posts} properties={properties} />}
         emailView={
-          <EmailMarketingClient audience={audience} properties={properties} />
+          <NewsletterStudio
+            campaigns={campaigns}
+            audience={audience}
+            properties={properties}
+          />
         }
       />
     </div>
