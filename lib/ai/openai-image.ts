@@ -16,7 +16,7 @@ export type OpenAIImageResult =
   | {
       ok: false;
       error: string;
-      code: "NO_KEY" | "AUTH" | "QUOTA" | "VERIFICATION" | "CONTENT" | "UNKNOWN";
+      code: "NO_KEY" | "AUTH" | "QUOTA" | "VERIFICATION" | "CONTENT" | "TIMEOUT" | "UNKNOWN";
     };
 
 export type EditParams = {
@@ -75,14 +75,26 @@ export async function editAgentPhoto(params: EditParams): Promise<OpenAIImageRes
   }
 
   let res: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55_000);
   try {
     res = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
+      signal: controller.signal,
     });
   } catch (e) {
+    if ((e as Error).name === "AbortError") {
+      return {
+        ok: false,
+        code: "TIMEOUT",
+        error: "La generación tardó demasiado (límite del servidor). Reintenta o usa calidad media.",
+      };
+    }
     return { ok: false, code: "UNKNOWN", error: `Error de red con OpenAI: ${(e as Error).message}` };
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (!res.ok) {

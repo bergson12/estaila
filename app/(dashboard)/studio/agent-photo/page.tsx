@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { AgentPhotoClient } from "./client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // tope de función (Vercel Hobby) para la generación
 export const metadata = { title: "Foto Pro" };
 
 export default async function AgentPhotoPage() {

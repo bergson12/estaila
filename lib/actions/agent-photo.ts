@@ -142,7 +142,8 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
       images: [{ data: bytes, name: `agente.${ext}`, type }],
       prompt,
       size: SIZE_MAP[data.size],
-      quality: "high",
+      // "high" excede los 60s de Vercel (timeout). "medium" entra en tiempo y cuesta ~3x menos.
+      quality: "medium",
     });
 
     if (!result.ok) {
