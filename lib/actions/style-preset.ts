@@ -12,6 +12,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { describePoseTitle } from "@/lib/ai/gemini-vision";
 
 let ready = false;
 async function ensureSchema() {
@@ -39,7 +40,7 @@ async function ensureSchema() {
 export type StyleCategory = "AGENT_PHOTO" | "STAGING" | "GENERIC";
 
 const CreateInput = z.object({
-  label: z.string().trim().min(1).max(120),
+  label: z.string().trim().max(120).optional(),
   category: z.enum(["AGENT_PHOTO", "STAGING", "GENERIC"]).default("AGENT_PHOTO"),
   imageUrl: z.string().url().max(2000),
   prompt: z.string().trim().max(500).optional().nullable(),
@@ -49,9 +50,14 @@ export async function createStylePreset(input: z.infer<typeof CreateInput>) {
   await requireAdmin();
   await ensureSchema();
   const data = CreateInput.parse(input);
+  // Título automático (Gemini flash-lite, el más barato) si no se especifica: "Personaje · Pose".
+  let label = data.label?.trim();
+  if (!label) {
+    label = (await describePoseTitle(data.imageUrl)) || "Muestra de estilo";
+  }
   await prisma.stylePreset.create({
     data: {
-      label: data.label,
+      label,
       category: data.category,
       imageUrl: data.imageUrl,
       prompt: data.prompt || null,

@@ -310,6 +310,51 @@ export function AgentPhotoClient({
         </div>
       </div>
 
+      {/* Estilo de referencia (muestras) — visible arriba */}
+      <Card className="mb-5 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-semibold text-foreground">Estilo de referencia (opcional)</p>
+          {referenceId && (
+            <button
+              type="button"
+              onClick={() => setReferenceId(null)}
+              className="text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              Quitar
+            </button>
+          )}
+        </div>
+        {presets.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">
+            Aún no hay fotos de muestra. El admin las sube en{" "}
+            <span className="font-medium text-foreground">Admin → Fotos muestra</span> y aparecen aquí para elegir.
+          </p>
+        ) : (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {presets.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setReferenceId(referenceId === p.id ? null : p.id)}
+                title={p.label}
+                className="group shrink-0 text-left"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.imageUrl}
+                  alt={p.label}
+                  className={cn(
+                    "h-24 w-20 rounded-lg border-2 object-cover transition-all",
+                    referenceId === p.id ? "border-primary" : "border-transparent hover:border-foreground/20"
+                  )}
+                />
+                <span className="mt-1 block max-w-[80px] truncate text-[10px] text-muted-foreground">{p.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         {/* Preview */}
         <Card className="flex min-h-[420px] flex-col gap-4 p-4">

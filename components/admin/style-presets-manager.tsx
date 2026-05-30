@@ -45,10 +45,6 @@ export function StylePresetsManager({ presets }: { presets: Preset[] }) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (!label.trim()) {
-      toast.error("Escribe un nombre para la muestra primero.");
-      return;
-    }
     setUploading(true);
     try {
       const fd = new FormData();
@@ -59,8 +55,8 @@ export function StylePresetsManager({ presets }: { presets: Preset[] }) {
         throw new Error(err.error || "No se pudo subir la imagen.");
       }
       const { url } = await res.json();
-      await createStylePreset({ label: label.trim(), category: category as never, imageUrl: url });
-      toast.success("Muestra agregada.");
+      await createStylePreset({ label: label.trim() || undefined, category: category as never, imageUrl: url });
+      toast.success("Muestra agregada (título automático si lo dejaste vacío).");
       setLabel("");
       router.refresh();
     } catch (err) {
@@ -103,7 +99,7 @@ export function StylePresetsManager({ presets }: { presets: Preset[] }) {
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Nombre (ej. Ejecutivo fondo gris)"
+            placeholder="Nombre (vacío = título automático con IA)"
             className={cn(inputCls, "min-w-[220px] flex-1")}
             maxLength={120}
           />
