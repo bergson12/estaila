@@ -58,11 +58,11 @@ const COPY = {
   es: {
     nav: { features: "Funciones", studio: "Studio IA", pricing: "Precios", login: "Entrar" },
     hero: {
-      eyebrow: "El sistema operativo del agente inmobiliario",
-      titlePre: "El CRM que",
-      titleEm: "vende",
-      titlePost: "mientras duermes.",
-      lead: "CRM, IA y portal público en una sola plataforma. Construido para agentes inmobiliarios independientes de todo el mundo.",
+      eyebrow: "CRM inmobiliario con IA",
+      titlePre: "Vende",
+      titleEm: "más propiedades",
+      titlePost: ", con menos trabajo manual.",
+      lead: "CRM, staging con IA y portal público en una sola plataforma. Sube una foto vacía y recíbela lista para vender en 60 segundos.",
       ctaPrimary: "Empezar gratis",
       ctaSecondary: "Ver demo",
       pill: "Sin tarjeta de crédito",
@@ -263,11 +263,11 @@ const COPY = {
   en: {
     nav: { features: "Features", studio: "AI Studio", pricing: "Pricing", login: "Sign in" },
     hero: {
-      eyebrow: "The operating system for real estate agents",
-      titlePre: "The CRM that",
-      titleEm: "sells",
-      titlePost: "while you sleep.",
-      lead: "CRM, AI and public portal on a single platform. Built for independent real estate agents worldwide.",
+      eyebrow: "Real estate CRM with visual AI",
+      titlePre: "Sell",
+      titleEm: "more homes",
+      titlePost: ", with less manual work.",
+      lead: "CRM, AI staging and a public portal on a single platform. Upload an empty photo and get it back ready to sell in 60 seconds.",
       ctaPrimary: "Start free",
       ctaSecondary: "Watch demo",
       pill: "No credit card",

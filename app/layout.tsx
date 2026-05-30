@@ -43,12 +43,47 @@ const fontAliases = {
   "--font-instrument": "var(--font-inter)",
 } as React.CSSProperties;
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://estaila.com";
+
 export const metadata: Metadata = {
-  title: "estaila — CRM + Studio IA",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "estaila — CRM inmobiliario con IA: vende más, con menos trabajo",
+    template: "%s — estaila",
+  },
   description:
-    "CRM inmobiliario con herramientas de edición de fotos por IA. Para agentes inmobiliarios independientes en todo el mundo.",
+    "CRM + staging con IA + portal público + email marketing en una sola plataforma para agentes inmobiliarios. Sube una foto vacía y recíbela lista para vender en 60s. Empieza gratis, sin tarjeta.",
   applicationName: "estaila",
+  keywords: [
+    "CRM inmobiliario",
+    "CRM para agentes inmobiliarios",
+    "staging virtual con IA",
+    "home staging IA",
+    "portal inmobiliario",
+    "software para agentes inmobiliarios",
+    "real estate CRM",
+    "virtual staging AI",
+  ],
   manifest: "/manifest.webmanifest",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: "estaila",
+    locale: "es",
+    url: SITE_URL,
+    title: "estaila — CRM inmobiliario con IA",
+    description:
+      "CRM + staging con IA + portal público + email, en una sola plataforma para agentes inmobiliarios. Empieza gratis, sin tarjeta.",
+    images: [{ url: "/logos/iso-estaila.png", width: 512, height: 512, alt: "estaila" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "estaila — CRM inmobiliario con IA",
+    description:
+      "CRM + staging con IA + portal público + email marketing para agentes inmobiliarios. Empieza gratis, sin tarjeta.",
+    images: ["/logos/iso-estaila.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
