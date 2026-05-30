@@ -39,6 +39,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { HtmlCodeEditor } from "@/components/marketing/html-code-editor";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { labelFor, CONTACT_TYPES } from "@/lib/constants";
 import type { EmailAudienceContact } from "@/lib/actions/email";
 import {
@@ -735,13 +753,7 @@ function CampaignEditor({
             {mode === "BLOCKS" ? (
               <BlockEditor blocks={blocks} setBlocks={setBlocks} />
             ) : (
-              <Textarea
-                value={htmlRaw}
-                onChange={(e) => setHtmlRaw(e.target.value)}
-                spellCheck={false}
-                className="min-h-[50vh] w-full resize-none font-mono text-xs leading-relaxed"
-                placeholder="<h2>Tu título</h2>\n<p>Contenido HTML…</p>"
-              />
+              <HtmlCodeEditor value={htmlRaw} onChange={setHtmlRaw} />
             )}
           </div>
         </div>
@@ -811,51 +823,51 @@ function BlockEditor({
   blocks: Block[];
   setBlocks: (b: Block[]) => void;
 }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   function update(id: string, patch: Partial<Block>) {
     setBlocks(blocks.map((b) => (b.id === id ? ({ ...b, ...patch } as Block) : b)));
   }
   function remove(id: string) {
     setBlocks(blocks.filter((b) => b.id !== id));
   }
-  function move(id: string, dir: -1 | 1) {
-    const i = blocks.findIndex((b) => b.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= blocks.length) return;
-    const next = [...blocks];
-    [next[i], next[j]] = [next[j], next[i]];
-    setBlocks(next);
-  }
   function add(type: Block["type"]) {
     setBlocks([...blocks, makeBlock(type)]);
+  }
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (over && active.id !== over.id) {
+      const oldI = blocks.findIndex((b) => b.id === active.id);
+      const newI = blocks.findIndex((b) => b.id === over.id);
+      if (oldI >= 0 && newI >= 0) setBlocks(arrayMove(blocks, oldI, newI));
+    }
   }
 
   return (
     <div className="space-y-3">
-      {blocks.map((b, i) => (
-        <div
-          key={b.id}
-          className="rounded-xl border border-border bg-background p-3"
-        >
-          <div className="mb-2 flex items-center gap-2">
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {BLOCK_PALETTE.find((p) => p.type === b.type)?.label ?? b.type}
-            </span>
-            <div className="ml-auto flex items-center gap-0.5">
-              <MiniBtn title="Subir" onClick={() => move(b.id, -1)} disabled={i === 0}>
-                ↑
-              </MiniBtn>
-              <MiniBtn title="Bajar" onClick={() => move(b.id, 1)} disabled={i === blocks.length - 1}>
-                ↓
-              </MiniBtn>
-              <MiniBtn title="Eliminar" onClick={() => remove(b.id)}>
-                <Trash2 className="h-3 w-3" />
-              </MiniBtn>
-            </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {blocks.map((b) => (
+              <SortableBlockRow
+                key={b.id}
+                block={b}
+                update={update}
+                onRemove={() => remove(b.id)}
+              />
+            ))}
           </div>
-          <BlockFields block={b} update={update} />
-        </div>
-      ))}
+        </SortableContext>
+      </DndContext>
+
+      {blocks.length === 0 && (
+        <p className="rounded-xl border border-dashed border-border py-6 text-center text-xs text-muted-foreground">
+          Sin bloques todavía. Añade uno abajo.
+        </p>
+      )}
 
       {/* Palette */}
       <div className="flex flex-wrap gap-1.5 rounded-xl border border-dashed border-border p-2.5">
@@ -874,6 +886,55 @@ function BlockEditor({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function SortableBlockRow({
+  block,
+  update,
+  onRemove,
+}: {
+  block: Block;
+  update: (id: string, patch: Partial<Block>) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: block.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "rounded-xl border bg-background p-3",
+        isDragging ? "border-primary shadow-lg" : "border-border"
+      )}
+    >
+      <div className="mb-2 flex items-center gap-2">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          title="Arrastrar para reordenar"
+          className="cursor-grab touch-none text-muted-foreground/50 transition-colors hover:text-foreground active:cursor-grabbing"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {BLOCK_PALETTE.find((p) => p.type === block.type)?.label ?? block.type}
+        </span>
+        <div className="ml-auto">
+          <MiniBtn title="Eliminar" onClick={onRemove}>
+            <Trash2 className="h-3 w-3" />
+          </MiniBtn>
+        </div>
+      </div>
+      <BlockFields block={block} update={update} />
     </div>
   );
 }
