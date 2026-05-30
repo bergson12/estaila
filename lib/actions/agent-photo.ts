@@ -221,8 +221,11 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
       images,
       prompt,
       size: SIZE_MAP[data.size],
-      // "high" excede los 60s de Vercel (timeout). "medium" entra en tiempo y cuesta ~3x menos.
-      quality: "medium",
+      // En Vercel Hobby (60s) gpt-image-2 solo entra fiable en "low" (medium/high
+      // hacen timeout). Para subir calidad se necesita Vercel Pro (300s) + setear
+      // OPENAI_IMAGE_QUALITY=medium|high en las env vars.
+      quality:
+        (process.env.OPENAI_IMAGE_QUALITY as "low" | "medium" | "high" | "auto") || "low",
     });
 
     if (!result.ok) {

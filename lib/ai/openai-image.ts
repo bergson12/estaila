@@ -76,7 +76,7 @@ export async function editAgentPhoto(params: EditParams): Promise<OpenAIImageRes
 
   let res: Response;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 55_000);
+  const timeout = setTimeout(() => controller.abort(), 58_000);
   try {
     res = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
@@ -89,7 +89,7 @@ export async function editAgentPhoto(params: EditParams): Promise<OpenAIImageRes
       return {
         ok: false,
         code: "TIMEOUT",
-        error: "La generación tardó demasiado (límite del servidor). Reintenta o usa calidad media.",
+        error: "La generación tardó demasiado (límite de 60s de Vercel Hobby). Reintenta; para calidad alta y sin cortes se requiere Vercel Pro.",
       };
     }
     return { ok: false, code: "UNKNOWN", error: `Error de red con OpenAI: ${(e as Error).message}` };
