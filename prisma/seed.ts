@@ -3,10 +3,11 @@
  * Run: pnpm db:seed
  */
 import "dotenv/config";
+import { hashPassword } from "better-auth/crypto";
 import { prisma } from "../lib/db";
 
 const DEMO_EMAIL = "demo@estaila.com";
-const DEMO_PASSWORD = "demo1234";
+const DEMO_PASSWORD = "demo123";
 
 // Unsplash placeholders for property photos (royalty-free)
 const PHOTO = {
@@ -42,11 +43,38 @@ async function ensureDemoUser() {
   }
   if (!user) throw new Error("Could not create demo user");
 
-  // Upgrade demo to PRO with extra credits for showcase
+  // Cuenta ANCLA: plan AGENCY (todos los módulos desbloqueados) + créditos altos
+  // para que el visitante vea TODO el sistema funcionando y quiera suscribirse.
   user = await prisma.user.update({
     where: { id: user.id },
-    data: { plan: "PRO", credits: 25, emailVerified: true },
+    data: { plan: "AGENCY", credits: 500, emailVerified: true },
   });
+
+  // Garantiza la contraseña demo123 aunque la cuenta ya exista (hash oficial).
+  try {
+    const hashed = await hashPassword(DEMO_PASSWORD);
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: "credential" },
+      select: { id: true },
+    });
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password: hashed },
+      });
+    } else {
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          providerId: "credential",
+          accountId: DEMO_EMAIL,
+          password: hashed,
+        },
+      });
+    }
+  } catch (e) {
+    console.log("password set note:", (e as Error).message);
+  }
   return user;
 }
 
@@ -475,6 +503,20 @@ async function main() {
       { userId: user.id, propertyId: props[5].id, url: PHOTO.aybResidences, order: 0 },
     ],
   });
+
+  // === STUDIO IA — galería de generaciones (showcase del módulo estrella) ===
+  await prisma.aIGeneration.deleteMany({ where: { userId: user.id } });
+  await prisma.aIGeneration.createMany({
+    data: [
+      { userId: user.id, tool: "STAGING", inputUrl: PHOTO.altInterior1, outputUrl: PHOTO.miraflores, prompt: "Staging moderno, sala luminosa", style: "modern", roomType: "living", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+      { userId: user.id, tool: "TWILIGHT", inputUrl: PHOTO.alamos, outputUrl: PHOTO.merida, prompt: "Atardecer cinematográfico", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+      { userId: user.id, tool: "SKY", inputUrl: PHOTO.losRosales, outputUrl: PHOTO.aybResidences, prompt: "Cielo azul vibrante", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+      { userId: user.id, tool: "DECLUTTER", inputUrl: PHOTO.altInterior2, outputUrl: PHOTO.altInterior3, prompt: "Espacio despejado y ordenado", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+      { userId: user.id, tool: "POOL", inputUrl: PHOTO.merida, outputUrl: PHOTO.aybResidences, prompt: "Piscina con agua turquesa", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+      { userId: user.id, tool: "ENHANCE", inputUrl: PHOTO.altInterior3, outputUrl: PHOTO.altInterior1, prompt: "Mejora de luz y nitidez", style: "luxury", roomType: "bedroom", status: "COMPLETED", creditsUsed: 1, completedAt: new Date() },
+    ],
+  });
+  console.log("✓ AI gallery: 6 generaciones");
 
   // === TRANSACTIONS ===
   await prisma.transaction.createMany({
