@@ -11,6 +11,7 @@ import { getActiveOrgBranding } from "@/lib/org-branding";
 import { getLayoutMode } from "@/lib/layout-prefs";
 import { EstailaChatbot } from "@/components/layout/estaila-chatbot";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { TesterFab } from "@/components/tester/tester-fab";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 
 // Server actions invoked from this segment inherit this cap.
@@ -34,6 +35,7 @@ export default async function DashboardLayout({
         plan: true,
         credits: true,
         role: true,
+        isTester: true,
       },
     }),
     getAppSettings(),
@@ -48,6 +50,7 @@ export default async function DashboardLayout({
     plan: "FREE",
     credits: 0,
     role: "USER",
+    isTester: false,
   };
 
   // Maintenance mode — only admins bypass
@@ -130,6 +133,7 @@ export default async function DashboardLayout({
         <EstailaChatbot plan={sidebarUser.plan ?? "FREE"} />
       )}
       <MobileTabBar role={sidebarUser.role} />
+      {sidebarUser.isTester && <TesterFab />}
     </div>
   );
 }

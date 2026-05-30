@@ -1,5 +1,6 @@
 import {
   Sparkles,
+  Camera,
   Sofa,
   Eraser,
   Wand2,
@@ -18,6 +19,14 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-server";
 
 const TOOLS = [
+  {
+    href: "/studio/agent-photo",
+    icon: Camera,
+    title: "Foto Pro del Agente",
+    desc: "Tu foto personal a nivel estudio: poses, ropa, fondos. Conserva tu rostro.",
+    cost: 4,
+    featured: true,
+  },
   {
     href: "/studio/staging",
     icon: Sofa,

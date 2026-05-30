@@ -29,6 +29,7 @@ import {
   FileText,
   BarChart3,
   LifeBuoy,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
@@ -106,6 +107,7 @@ const ADMIN_NAV = [
   { label: "Billing", href: "/admin/billing", icon: Receipt },
   { label: "Tickets", href: "/admin/soporte", icon: LifeBuoy },
   { label: "Generaciones IA", href: "/admin/generations", icon: Activity },
+  { label: "Reseñas", href: "/admin/reviews", icon: Star },
   { label: "Auditoría", href: "/admin/audit", icon: FileClock },
   { label: "Configuración", href: "/admin/settings", icon: Settings },
 ] as const;

@@ -78,6 +78,58 @@ async function ensureDemoUser() {
   return user;
 }
 
+async function ensureTesterUser() {
+  const EMAIL = "tester@estaila.com";
+  const PASSWORD = "tester123";
+  let user = await prisma.user.findUnique({ where: { email: EMAIL } });
+  // Rol tester: módulos desbloqueados (AGENCY) + créditos IA capados (margen medio).
+  // Creamos el usuario directo con prisma (auth.api.signUpEmail no carga bien bajo tsx).
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: EMAIL,
+        name: "Tester estaila",
+        emailVerified: true,
+        isTester: true,
+        plan: "AGENCY",
+        credits: 150,
+      },
+    });
+  } else {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { isTester: true, plan: "AGENCY", credits: 150, emailVerified: true },
+    });
+  }
+
+  // Garantiza la contraseña aunque la cuenta ya exista (hash oficial).
+  try {
+    const hashed = await hashPassword(PASSWORD);
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: "credential" },
+      select: { id: true },
+    });
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password: hashed },
+      });
+    } else {
+      await prisma.account.create({
+        data: {
+          userId: user.id,
+          providerId: "credential",
+          accountId: EMAIL,
+          password: hashed,
+        },
+      });
+    }
+  } catch (e) {
+    console.log("password set (tester) note:", (e as Error).message);
+  }
+  return user;
+}
+
 async function main() {
   console.log("→ Seeding estaila...");
 
@@ -94,6 +146,11 @@ async function main() {
 
   const user = await ensureDemoUser();
   console.log(`✓ Demo user: ${user.email} (id=${user.id})`);
+
+  const tester = await ensureTesterUser();
+  console.log(
+    `✓ Tester user: ${tester.email} (id=${tester.id}) — isTester, plan AGENCY, 150 créditos`
+  );
 
   // Clean prior demo data (idempotent re-seed)
   await prisma.aIGeneration.deleteMany({ where: { userId: user.id } });

@@ -59,6 +59,7 @@ export function ensureLightweightMigrations(): Promise<void> {
   if (migrationsPromise) return migrationsPromise;
   const adds: string[] = [
     `ALTER TABLE "user" ADD COLUMN "agentBio" TEXT`,
+    `ALTER TABLE "user" ADD COLUMN "isTester" BOOLEAN NOT NULL DEFAULT false`,
   ];
   migrationsPromise = (async () => {
     for (const sql of adds) {

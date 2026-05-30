@@ -35,6 +35,7 @@ model User {
   planActive       Boolean   @default(true)
   planRenewsAt     DateTime?
   suspended        Boolean   @default(false)
+  isTester         Boolean   @default(false) // cuenta tester: módulos desbloqueados (nivel AGENCY) + créditos IA capados
   // Onboarding — null = wizard pendiente; set cuando complete (o haga "skip & explore")
   onboardedAt   DateTime?
   // Optional profile fields populated during onboarding
@@ -68,6 +69,7 @@ model User {
   chatConvos     ChatConversation[]
   supportTickets SupportTicket[]
   emailCampaigns EmailCampaign[]
+  testerReviews  TesterReview[]
 
   // Better-Auth relations
   sessions Session[]
@@ -81,6 +83,57 @@ model User {
   invitedMembers          OrganizationMember[] @relation("MemberInvitedBy")
 
   @@map("user")
+}
+
+// ============================================================
+// TESTER REVIEWS (feedback de cuentas tester)
+// ============================================================
+
+model TesterReview {
+  id           String   @id @default(cuid())
+  userId       String
+  positive     String? // qué funcionó bien
+  negative     String? // qué no le gustó / falló
+  improvements String? // puntos de mejora
+  overall      Int? // calificación global 1-5 (opcional)
+  status       String   @default("NEW") // NEW | SEEN | RESOLVED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ratings TesterModuleRating[]
+  images  TesterReviewImage[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model TesterModuleRating {
+  id        String   @id @default(cuid())
+  reviewId  String
+  moduleId  String // p.ej. "studio", "propiedades"
+  rating    Int // 1-5
+  note      String?
+  createdAt DateTime @default(now())
+
+  review TesterReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, moduleId])
+  @@index([reviewId])
+}
+
+model TesterReviewImage {
+  id          String   @id @default(cuid())
+  reviewId    String
+  moduleId    String? // módulo al que pertenece el screenshot
+  imageUrl    String // PNG anotado (aplanado) en Blob
+  caption     String? // nota del tester sobre la imagen
+  annotations String? // JSON de marcas (para re-editar, opcional)
+  createdAt   DateTime @default(now())
+
+  review TesterReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
 }
 
 // ============================================================
