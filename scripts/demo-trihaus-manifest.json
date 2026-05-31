@@ -1,0 +1,238 @@
+[
+  {
+    "folder": "CORAL BAY",
+    "title": "Coral Bay Residences",
+    "location": "Cana Bay, Punta Cana",
+    "priceUSD": 290000,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 115,
+    "status": "EN_CONSTRUCCION",
+    "description": "Apartamentos de lujo en Cana Bay, Punta Cana, en un entorno tropical de ensueño. Arquitectura moderna y elegante con acabados de alta calidad. Amenidades: Club de Playa, restaurante, tenis y pádel, piscina, Hard Rock Golf Club. Solo 1 unidad disponible (1er nivel, 115 m²).",
+    "slug": "demo-coral-bay-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences---Portada-3FMVBDlpY2evlabxvYeeDZ561fMmtg.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--2--B9KtRr0BG6Fwl6XExiE0MEX3hhnAM2.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--3--2X9V2vQuLinpeLnuARe00TTQaNaJ4M.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--4--JaRITY2ERVYyP94mYci2tvBXqQUaCf.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--5--sIgyvJjLfQt6hYOL3d0VzcB5zFhPxO.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--6--79SG7ES7tVw6B6G2omsZt5TqyKKe5L.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--7--fyvDWBiSrJGSSCPGMEOtFmpF4DadYT.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/coral-bay-residences/Coral-Bay-Residences--8--iWr12tbupBBuM3nopK1Ahqmozdf76S.jpg"
+    ]
+  },
+  {
+    "folder": "FULHAM GARDEN II",
+    "title": "Residencial Fulham Gardens II",
+    "location": "Monte Verde, Los Álamos, Santiago",
+    "priceUSD": 63000,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 90,
+    "status": "EN_PLANO",
+    "description": "Proyecto residencial de 2 edificios de 4 niveles, 4 apartamentos por nivel, de 1 y 2 habitaciones. Zona exclusiva de Santiago (frente al hospital HOMS). Cocinas modulares con tope de granito, porcelanato importado, gas centralizado, lobby con control de acceso. Precio desde US$63,000. Inicial 30%, separación US$2,000, cuotas desde US$700.",
+    "slug": "demo-residencial-fulham-gardens-ii",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--1--jPeIHahF0N6WneGQE3IDC9bgQpODYQ.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--2--P3ts9RF7CdhinwTHwftDFEGJLyrN0g.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--3--T7tUXryMVJ7ZRD1iULOhmvOpXfrdZF.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--4--0ZrBbN7rcyd4UlFcOgvc7XPRw1jC9f.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--5--krZAKLYHzhhoYDLtH3yFIYwxLZk7DT.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-fulham-gardens-ii/Fullham-Garden-ll--6--L2mDRTRhS82KBsG7VeoSIU9E37VVRa.jpg"
+    ]
+  },
+  {
+    "folder": "AMANA RESIDENCES",
+    "title": "Amana Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 95,
+    "status": "EN_PLANO",
+    "description": "Vanguardista diseño arquitectónico con fina terminación, espacios funcionales e integridad estructural. 28 apartamentos de 90 y 97 m²; primer nivel con patio exclusivo, cuarto nivel con área en azotea. Amenidades: piscina, gazebo, BBQ, garita de seguridad, cámaras, gas centralizado.",
+    "slug": "demo-amana-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--1--zMal7xSPpe30VeEmhQeh3zpFnkWTrr.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--2--ZehGlIME3SD5mwnPmxshWMwCWfEhF8.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--3--ozuX9psAOkhxm1cIhC92iYl3J7v1RP.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--4--suAcqMapU4QmDLzdj4ro9D5b5lOA97.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--5--oHBioWo5YlR3rN33yoUmaGrrGdmcf4.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--6--EsFJW7tjdMwA07aHs7ORUXWAWJicoH.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--7--tM7keTZQNtnuQsBfaynxMy1o3pK7Z8.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/amana-residences/Amana-Residences--8--cWGPGR4Msj1jqefMdn9npq2NHhfd9a.jpg"
+    ]
+  },
+  {
+    "folder": "HAUS RESIDENCES",
+    "title": "Haus Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 3,
+    "bathrooms": 3,
+    "metersSquared": 120,
+    "status": "EN_CONSTRUCCION",
+    "description": "Imponente torre de diseño vanguardista con rooftop espectacular: gimnasio equipado, jacuzzi y terraza con vistas panorámicas. Apartamentos de 3 habitaciones (principal con walking closet), 2 parqueos. Amenidades: lobby, ascensor, planta eléctrica, vigilancia 24h, cámaras.",
+    "slug": "demo-haus-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/1-ZL6q2ky2keCS4sbyZz4RuzSVBXVADS.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/2-Dep4m0CahRPhFjsSr1S5gz6zqRHAhN.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/3-Nzqvq7KkrdfJKa6GAt44WHGQQPjJbJ.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/4-usgNWYSp0ghjF2sfqhX74GvEOR36dy.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/5-x3ZZARX9jFW3Rin7jm7oUF9hspUJPZ.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/6-Glbe8ODzkoFxloubpWVY8GyJ2WQzKL.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/haus-residences/7-0qpXQaP78w8egutwLojZHnDp3aOmAr.jpg"
+    ]
+  },
+  {
+    "folder": "GREEN VALLEY",
+    "title": "Green Valley Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "metersSquared": 130,
+    "status": "EN_PLANO",
+    "description": "Propuesta vanguardista que integra flora y urbanismo. 3 habitaciones, estudio y terraza. Amenidades: piscina, gimnasio, gazebo, área de juegos infantiles, ascensor, planta eléctrica, vigilancia 24h, amplio jardín.",
+    "slug": "demo-green-valley-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--1--p6JG6skmqofBYOHVnsriyTr6NHonkx.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--2--jst8OG0BED9D9tO2ORMaU9SK8WtC85.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--3--lV28fWUororOS27sVfHwMw43JCTsUr.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--4--lBsjo87TYzB39tviNQRnJkvn3XWs0B.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--5--FAovKCVvtD5MtgPey7qhR0x9q9cYZ0.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/green-valley-residences/Green-Valley--6--RSmHUAEEswpsyQdGxM0cxMJdQnAz09.jpg"
+    ]
+  },
+  {
+    "folder": "ALINA TOWERS",
+    "title": "Alina Towers",
+    "location": "Villa María, Santiago",
+    "priceUSD": null,
+    "bedrooms": 3,
+    "bathrooms": 3,
+    "metersSquared": 141,
+    "status": "EN_CONSTRUCCION",
+    "description": "Lujosas torres en Villa María, Santiago, a 2 min del HOMS, Los Álamos y centros comerciales. Apartamentos de 141 m² y 200 m²: dormitorio principal con baño y vestidor, 2 dormitorios con baño común, cuarto de servicio. Primer nivel con derecho a patio.",
+    "slug": "demo-alina-towers",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--1--4TvGbOlkqBiy6ZJgNbyFTRyaK0dAyC.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--2--ZoWK6GMNSYbNJPS4aNANkyhJpdovS5.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--3--MVB2ZlyPv1OBJc0B0tSQUslWVzYKmG.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--4--TjE1ea8ILgXTXrN3hcQBey4VAiW0M6.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--5--76hDsNl9kAJQaAPw7j83non1m7XW7M.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--6--2QHzJGNkp4sgPqfRUYM83Ayf05hdJG.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--7--zmL69Q71HWgQRj41InhINbY3xCzfbG.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/alina-towers/Alina-Towers--8--Gtl64gCYL2H5mV6ogZUtOejOtlyicE.jpg"
+    ]
+  },
+  {
+    "folder": "ELEGANT TOWER",
+    "title": "Elegant Tower",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 110,
+    "status": "EN_CONSTRUCCION",
+    "description": "Torre residencial de línea contemporánea en Santiago. Apartamentos con acabados de calidad, amplios espacios sociales y amenidades modernas. (Datos demo — ajustar specs/precio reales.)",
+    "slug": "demo-elegant-tower",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/1-qRhVTHmecADPq331MdlS9V3CRnsYvD.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/2-TCRH0KZw0a3EySWkMSuF8CPFeCzvJb.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/3-T6qwDs23kRgrMAA2Al5uz2PHHOOXNS.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/4-FR0M4NS98fcGad6jYwlhGXz4QxVb25.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/5-raDNJOcWeDXgT0yWB6cNN87jykuCXz.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/6-So9oABH3Hd3b4YNrScrqK4R7qa5aOI.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/7-5GqgGmo52keawBHJzWqZr5Ab23cMpq.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/elegant-tower/8-YhY7nWrrK1QZDZxXj70kjzh6RAri66.jpg"
+    ]
+  },
+  {
+    "folder": "GARDENO RESIDENCES",
+    "title": "Gardeno Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 100,
+    "status": "EN_PLANO",
+    "description": "Residencial moderno rodeado de áreas verdes en Santiago. Apartamentos funcionales con amenidades familiares. (Datos demo — ajustar specs/precio reales.)",
+    "slug": "demo-gardeno-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/1-xrjSMDoaul6WGY2E4sIHmC1GOO91EQ.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/2-4JoQGblHvJ8PfZTtiiBAaMyYAC7R34.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/3-jFyDKxk5opqcefI6ZoNB0ZJwqwIzTO.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/4-mads7v0Zz5YyRjKSEZ4D4M2iBY95eO.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/5-3AjWviJNNIRN5edDZtfp7DKS1wxbn7.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/6-jfw9F73XHGJx4N8kXWRqaU6dy3uPZM.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/7-aYBBDgeET61n7FhcoeDoidyLvL3ynp.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/gardeno-residences/8-LNJI8NfMvRRNgVngnoMLNhQCrMzlDM.jpg"
+    ]
+  },
+  {
+    "folder": "LAURA MARI RESIDENCES",
+    "title": "Laura Mari Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 95,
+    "status": "EN_PLANO",
+    "description": "Proyecto residencial de diseño elegante y acabados de calidad en Santiago. (Datos demo — ajustar specs/precio reales.)",
+    "slug": "demo-laura-mari-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--1--cTwT095cIwREWYZepb1dvYrhb5rdYU.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--2--nGkoCNOTaWe1PGHdk8HcHil0alPiDP.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--3--jn1AP92dsnuTJoAYlO03G9Z9yoBIuo.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--4--wrfm6sjuwU6Rd9QRbbLbci2BN5WuEZ.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--5--ZDTqAZ9lKThx13bd8U6ZAKVPPUzIsX.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--6--s3QxtiB30tiyohn3sT83lhsjP9qtqY.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/laura-mari-residences/Laura-Mari-Residences--7--5A90kleblfGTD7sOpKgcybKwXZl7Wv.jpg"
+    ]
+  },
+  {
+    "folder": "RESIDENCIAL VISTA DON DIEGO",
+    "title": "Residencial Vista Don Diego",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "metersSquared": 125,
+    "status": "EN_CONSTRUCCION",
+    "description": "Residencial con vistas privilegiadas y amenidades completas en Santiago. Apartamentos amplios ideales para familias. (Datos demo — ajustar specs/precio reales.)",
+    "slug": "demo-residencial-vista-don-diego",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--1--bkGI4K3RNXepCHstLkJK7nPjSa7UMb.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--2--K4oVLtYCBF9vYGYtygU2OvJRMcuWqO.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--3--mg4sQL7ZQffdOdbz2UCEnY3BysI8SD.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--4--rRaRLF88KN4pLE4aLEdMDEcAoRK2eV.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--5--GvcUFS6puugWt1EwfwZe9GyBslIPrm.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--6--NudDutpcamxGizNcXxQzdJCbQaFFts.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--7--KYMWjhwmjbfamBwS7boYAxek99Xyby.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/residencial-vista-don-diego/Residencial-Vista-Don-Diego--8--F0fjqIS3yOP7LSaLVzmGOyCYqVCEmT.jpg"
+    ]
+  },
+  {
+    "folder": "ZORAL RESIDENCES",
+    "title": "Zoral Residences",
+    "location": "Santiago de los Caballeros",
+    "priceUSD": null,
+    "bedrooms": 2,
+    "bathrooms": 2,
+    "metersSquared": 105,
+    "status": "EN_PLANO",
+    "description": "Proyecto contemporáneo con espacios bien distribuidos y amenidades modernas en Santiago. (Datos demo — ajustar specs/precio reales.)",
+    "slug": "demo-zoral-residences",
+    "photoUrls": [
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--1--1eClMc2e5a3RhDO4vQlo7X5dmLIAK0.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--2--HYoZckZSYuYCFqc2agwbjEevmJ7DPc.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--3--swz0KhPPFCCUJb37ApxXxbtkDeY2Nf.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--4--RTE0TrnYGafhXEbA9dGu8re66vmpFc.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--5--GYd4NPob59WamqDttCYVDCqFKw0kon.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--6--nAeTbyW29NUrchN87em9MfUcHHjLbw.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--7--dRFYnhz3gOdDeKo00pFdxRhdj8Flgc.jpg",
+      "https://jpq6i52yfvzekjol.public.blob.vercel-storage.com/demo/zoral-residences/Zoral-Residences--8--qbHH3fyBgo7jQ5BidTNmgHNK9PnHnZ.jpg"
+    ]
+  }
+]
