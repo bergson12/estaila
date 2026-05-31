@@ -4,7 +4,7 @@
  */
 import "dotenv/config";
 import { hashPassword } from "better-auth/crypto";
-import { prisma } from "../lib/db";
+import { prisma, ensureLightweightMigrations } from "../lib/db";
 
 const DEMO_EMAIL = "demo@estaila.com";
 const DEMO_PASSWORD = "demo123";
@@ -24,31 +24,25 @@ const PHOTO = {
 
 async function ensureDemoUser() {
   let user = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
-  if (!user) {
-    // Dynamic import — auth.ts pulls in server-only deps that break tsx
-    // if loaded eagerly. Only import when we actually need it.
-    try {
-      const { auth } = await import("../lib/auth");
-      await auth.api.signUpEmail({
-        body: {
-          email: DEMO_EMAIL,
-          password: DEMO_PASSWORD,
-          name: "Demo Agente",
-        },
-      });
-    } catch (e) {
-      console.log("signUpEmail note:", (e as Error).message);
-    }
-    user = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
-  }
-  if (!user) throw new Error("Could not create demo user");
-
   // Cuenta ANCLA: plan AGENCY (todos los módulos desbloqueados) + créditos altos
   // para que el visitante vea TODO el sistema funcionando y quiera suscribirse.
-  user = await prisma.user.update({
-    where: { id: user.id },
-    data: { plan: "AGENCY", credits: 500, emailVerified: true },
-  });
+  // Creación directa con prisma (auth.api.signUpEmail no carga bien bajo tsx).
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: DEMO_EMAIL,
+        name: "Demo Agente",
+        emailVerified: true,
+        plan: "AGENCY",
+        credits: 500,
+      },
+    });
+  } else {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { plan: "AGENCY", credits: 500, emailVerified: true },
+    });
+  }
 
   // Garantiza la contraseña demo123 aunque la cuenta ya exista (hash oficial).
   try {
@@ -143,6 +137,9 @@ async function main() {
     );
     return;
   }
+
+  // Asegura columnas aditivas (isTester, agentBio) en la DB de prod antes de sembrar.
+  await ensureLightweightMigrations();
 
   const user = await ensureDemoUser();
   console.log(`✓ Demo user: ${user.email} (id=${user.id})`);
