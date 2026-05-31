@@ -7,6 +7,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -363,58 +364,46 @@ export default async function PricingPage({
         })}
       </div>
 
-      {/* Credit packs */}
-      <div className="mt-12">
-        <h2 className="mb-1 text-lg font-semibold">
+      {/* Credit packs — compacto: una fila por pack */}
+      <div className="mt-10">
+        <h2 className="text-base font-semibold">
           ¿Necesitas más créditos puntuales?
         </h2>
-        <p className="mb-5 text-sm text-muted-foreground">
-          Compra packs one-time sin cambiar de plan. Se suman a tus créditos.
+        <p className="mb-4 mt-0.5 text-sm text-muted-foreground">
+          Packs one-time, sin cambiar de plan. Se suman a tus créditos.
         </p>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {CREDIT_PACKS.map((pack) => (
             <Card
               key={pack.id}
-              className="flex items-center justify-between p-5 transition-colors hover:border-primary/40"
+              className="flex items-center justify-between gap-2 px-4 py-3 transition-colors hover:border-primary/40"
             >
-              <div>
-                <p className="font-mono text-2xl font-bold tabular-nums">
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-mono text-xl font-bold leading-none tabular-nums">
                   {pack.credits}
-                </p>
-                <p className="text-xs text-muted-foreground">créditos</p>
+                </span>
+                <span className="text-xs text-muted-foreground">créditos</span>
               </div>
-              <div className="text-right">
-                <p className="font-mono text-lg font-semibold tabular-nums">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-sm font-semibold tabular-nums">
                   US${pack.priceUSD}
-                </p>
-                <div className="mt-1 flex items-center justify-end gap-1">
-                  {lsReady && (
-                    <form action={buyLemonPackAction}>
-                      <input type="hidden" name="packId" value={pack.id} />
-                      <Button
-                        type="submit"
-                        variant="default"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                      >
-                        Comprar
-                      </Button>
-                    </form>
-                  )}
-                  {ppReady && !lsReady && (
-                    <form action={buyCreditPackAction}>
-                      <input type="hidden" name="packId" value={pack.id} />
-                      <Button
-                        type="submit"
-                        variant="default"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                      >
-                        Comprar
-                      </Button>
-                    </form>
-                  )}
-                </div>
+                </span>
+                {lsReady && (
+                  <form action={buyLemonPackAction}>
+                    <input type="hidden" name="packId" value={pack.id} />
+                    <Button type="submit" size="sm" className="h-7 px-3 text-xs">
+                      Comprar
+                    </Button>
+                  </form>
+                )}
+                {ppReady && !lsReady && (
+                  <form action={buyCreditPackAction}>
+                    <input type="hidden" name="packId" value={pack.id} />
+                    <Button type="submit" size="sm" className="h-7 px-3 text-xs">
+                      Comprar
+                    </Button>
+                  </form>
+                )}
               </div>
             </Card>
           ))}
@@ -443,10 +432,14 @@ export default async function PricingPage({
         </div>
       )}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
-        {lsReady
-          ? "Procesado por Lemon Squeezy (Merchant of Record) · Cancela cuando quieras"
-          : "Procesado por PayPal · Cancela en cualquier momento"}
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        Pago seguro · Cancela cuando quieras ·{" "}
+        <Link
+          href="/legal/reembolsos"
+          className="text-primary underline-offset-2 hover:underline"
+        >
+          Política de precios y reembolsos
+        </Link>
       </p>
     </div>
   );
