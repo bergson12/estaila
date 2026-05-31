@@ -98,26 +98,6 @@ export default async function StudioPage() {
   const credits = dbUser?.credits ?? 0;
   const plan = dbUser?.plan ?? "FREE";
 
-  // Preview de la card Foto Pro: última generación AGENT_PHOTO del usuario,
-  // o la primera muestra activa de esa categoría como fallback.
-  const [lastAgentPhoto, samplePreset] = await Promise.all([
-    prisma.aIGeneration
-      .findFirst({
-        where: { userId: user.id, tool: "AGENT_PHOTO", status: "COMPLETED" },
-        orderBy: { createdAt: "desc" },
-        select: { outputUrl: true },
-      })
-      .catch(() => null),
-    prisma.stylePreset
-      .findFirst({
-        where: { category: "AGENT_PHOTO", active: true },
-        orderBy: { sortOrder: "asc" },
-        select: { imageUrl: true },
-      })
-      .catch(() => null),
-  ]);
-  const agentPreviewUrl = lastAgentPhoto?.outputUrl ?? samplePreset?.imageUrl ?? null;
-
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -131,7 +111,7 @@ export default async function StudioPage() {
         actions={
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="/studio/galeria">
-              <Button className="gap-1.5">
+              <Button className="gap-1.5 rounded-lg">
                 <Images className="h-4 w-4" />
                 Galería de fotos
               </Button>
@@ -161,14 +141,6 @@ export default async function StudioPage() {
                 <Badge className="absolute right-2 top-2 z-10 bg-primary/15 px-1.5 py-0 text-[9px] text-primary hover:bg-primary/15 sm:right-3 sm:top-3 sm:text-xs">
                   Popular
                 </Badge>
-              )}
-              {t.href === "/studio/agent-photo" && agentPreviewUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={agentPreviewUrl}
-                  alt="Ejemplo de Foto Pro"
-                  className="mb-3 h-24 w-full rounded-lg object-cover"
-                />
               )}
               <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110 sm:mb-4 sm:h-10 sm:w-10">
                 <t.icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.75} />
