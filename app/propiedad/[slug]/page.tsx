@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { recordPropertyView, deviceFromUA, decodeCity } from "@/lib/analytics";
 import { getActiveOrgBranding } from "@/lib/org-branding";
 import { PublicPropertyView } from "@/components/property-public/public-property-view";
 
@@ -114,6 +115,15 @@ export default async function PublicPropertyPage({
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const host = hdrs.get("host") ?? "estaila.com";
   const canonical = `${proto}://${host}/propiedad/${slug}`;
+
+  // Evento de vista enriquecido (device / ciudad / referrer) — best-effort.
+  void recordPropertyView({
+    propertyId: property.id,
+    device: deviceFromUA(hdrs.get("user-agent")),
+    country: hdrs.get("x-vercel-ip-country"),
+    city: decodeCity(hdrs.get("x-vercel-ip-city")),
+    referrer: hdrs.get("referer"),
+  });
 
   const photos = [
     ...(property.featuredPhoto ? [property.featuredPhoto] : []),

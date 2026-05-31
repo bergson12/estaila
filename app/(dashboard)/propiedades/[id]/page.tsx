@@ -21,6 +21,7 @@ import { PropertyHubTabs } from "@/components/properties/property-hub-tabs";
 import { PropertyShareButton } from "@/components/properties/property-share-button";
 import { PropertyQrButton } from "@/components/properties/property-qr-dialog";
 import { prisma } from "@/lib/db";
+import { getPropertyAnalytics } from "@/lib/analytics";
 import { requireUser } from "@/lib/auth-server";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
@@ -77,6 +78,9 @@ export default async function PropertyDetailPage({
     clicks: property.shares.reduce((sum, s) => sum + (s.clicks ?? 0), 0),
     leads: property._count.leads,
   };
+
+  // Analytics enriquecido (eventos por día / dispositivo / ciudad).
+  const enriched = await getPropertyAnalytics(property.id);
 
   const poiData = property.pois.map((p) => ({
     id: p.id,
@@ -391,6 +395,7 @@ export default async function PropertyDetailPage({
         pois={poiData}
         marketingKits={property.marketingKits}
         analytics={analytics}
+        enriched={enriched}
       >
         {overview}
       </PropertyHubTabs>

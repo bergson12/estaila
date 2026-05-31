@@ -76,6 +76,20 @@ type PropertyAnalytics = {
 
 const ZERO_ANALYTICS: PropertyAnalytics = { views: 0, shares: 0, clicks: 0, leads: 0 };
 
+type EnrichedAnalytics = {
+  total: number;
+  byDay: { day: string; count: number }[];
+  devices: { mobile: number; desktop: number };
+  topCities: { city: string; count: number }[];
+};
+
+const ZERO_ENRICHED: EnrichedAnalytics = {
+  total: 0,
+  byDay: [],
+  devices: { mobile: 0, desktop: 0 },
+  topCities: [],
+};
+
 const TABS: { value: string; label: string; icon: LucideIcon; soon?: boolean; rentalOnly?: boolean }[] = [
   { value: "overview", label: "Vista general", icon: Info },
   { value: "map", label: "Mapa & POIs", icon: MapPin },
@@ -110,6 +124,7 @@ export function PropertyHubTabs({
   pois,
   marketingKits = [],
   analytics = ZERO_ANALYTICS,
+  enriched = ZERO_ENRICHED,
   children,
 }: {
   property: PropertyForHub;
@@ -125,6 +140,7 @@ export function PropertyHubTabs({
   pois: POIData[];
   marketingKits?: MarketingKitRow[];
   analytics?: PropertyAnalytics;
+  enriched?: EnrichedAnalytics;
   /** Overview content rendered by parent (existing sections) */
   children: React.ReactNode;
 }) {
@@ -200,7 +216,9 @@ export function PropertyHubTabs({
           {tab === "landing" && (
             <LandingTab property={property} hasSite={hasSite} siteSlug={siteSlug} />
           )}
-          {tab === "analytics" && <AnalyticsTab analytics={analytics} hasSite={hasSite} />}
+          {tab === "analytics" && (
+            <AnalyticsTab analytics={analytics} hasSite={hasSite} enriched={enriched} />
+          )}
           {tab === "documents" && <DocumentsTab property={property} />}
           {tab === "rental" && <RentalTab propertyId={property.id} />}
         </motion.div>
@@ -883,9 +901,11 @@ function LandingTab({
 function AnalyticsTab({
   analytics,
   hasSite,
+  enriched,
 }: {
   analytics: PropertyAnalytics;
   hasSite: boolean;
+  enriched: EnrichedAnalytics;
 }) {
   const { views, shares, clicks, leads } = analytics;
   const hasData = views > 0 || shares > 0 || clicks > 0 || leads > 0;
@@ -972,18 +992,90 @@ function AnalyticsTab({
         </Card>
       )}
 
-      {/* Honesto: tracking que aún no existe (series por día, ciudades, fuentes) */}
-      <Card className="border-dashed p-5">
-        <div className="mb-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Próximamente
+      {/* Tendencias enriquecidas — eventos reales de la landing pública */}
+      {enriched.total > 0 ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_15rem]">
+          <Card className="p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+              <Activity className="h-4 w-4 text-primary" strokeWidth={1.75} />
+              Visitas · últimos 14 días
+            </h3>
+            <div className="flex h-32 items-end gap-1">
+              {(() => {
+                const maxDay = Math.max(1, ...enriched.byDay.map((d) => d.count));
+                return enriched.byDay.map((d) => (
+                  <motion.div
+                    key={d.day}
+                    initial={{ height: 0 }}
+                    animate={{ height: `${Math.max((d.count / maxDay) * 100, d.count > 0 ? 6 : 2)}%` }}
+                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex-1 rounded-sm bg-primary/70 transition-colors hover:bg-primary"
+                    title={`${d.day}: ${d.count} visita${d.count === 1 ? "" : "s"}`}
+                  />
+                ));
+              })()}
+            </div>
+          </Card>
+
+          <Card className="space-y-4 p-5">
+            <div>
+              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Dispositivos
+              </h3>
+              {(() => {
+                const t = enriched.devices.mobile + enriched.devices.desktop;
+                const mpct = t > 0 ? Math.round((enriched.devices.mobile / t) * 100) : 0;
+                return (
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span>Móvil</span>
+                      <span className="font-mono tabular-nums text-muted-foreground">{mpct}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${mpct}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span>Escritorio</span>
+                      <span className="font-mono tabular-nums text-muted-foreground">{100 - mpct}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${100 - mpct}%` }} />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+            {enriched.topCities.length > 0 && (
+              <div className="border-t border-border pt-3">
+                <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Top ciudades
+                </h3>
+                <ul className="space-y-1.5 text-xs">
+                  {enriched.topCities.map((c) => (
+                    <li key={c.city} className="flex items-center justify-between gap-2">
+                      <span className="truncate">{c.city}</span>
+                      <span className="font-mono tabular-nums text-muted-foreground">
+                        {c.count}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
         </div>
-        <h3 className="text-sm font-semibold">Tendencias y origen del tráfico</h3>
-        <p className="mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
-          Visitas por día, ciudades y dispositivos de los visitantes, y fuentes
-          (Instagram, WhatsApp, web). Requiere registrar cada visita como evento;
-          se activará en una próxima actualización.
-        </p>
-      </Card>
+      ) : (
+        <Card className="border-dashed p-5">
+          <div className="mb-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Tendencias
+          </div>
+          <h3 className="text-sm font-semibold">Aún sin eventos de tráfico</h3>
+          <p className="mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
+            Cuando tu landing pública reciba visitas, aquí verás visitas por día,
+            dispositivos (móvil / escritorio) y ciudades de los visitantes.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }

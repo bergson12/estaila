@@ -732,6 +732,20 @@ model MaintenanceTicket {
 // PHOTOS + AI GENERATIONS
 // ============================================================
 
+// Eventos de vista de la landing pública (analytics enriquecido por propiedad).
+// Tabla creada en runtime vía ensurePropertyViewSchema() (patrón Turso).
+model PropertyView {
+  id         String   @id @default(cuid())
+  propertyId String
+  device     String   @default("desktop") // mobile | desktop
+  country    String?
+  city       String?
+  referrer   String?
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, createdAt])
+}
+
 model Photo {
   id          String   @id @default(cuid())
   propertyId  String?
