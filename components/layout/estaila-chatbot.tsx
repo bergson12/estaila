@@ -468,7 +468,7 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/30 inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] top-[4.25rem] sm:inset-x-auto sm:top-auto sm:bottom-5 sm:right-5 sm:h-[640px] sm:max-h-[calc(100dvh-2.5rem)] sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
+            className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/30 inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] top-[4.25rem] md:inset-x-auto md:top-auto md:bottom-5 md:right-5 md:h-[640px] md:max-h-[calc(100dvh-2.5rem)] md:w-[420px] md:max-w-[calc(100vw-2.5rem)]"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 to-transparent px-3.5 py-2.5">
