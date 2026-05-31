@@ -56,6 +56,7 @@ import {
   toggleContactFavorite,
 } from "@/lib/actions/contact";
 import { ContactDialog } from "./contact-dialog";
+import { ContactAppointmentDialog } from "./contact-appointment-dialog";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 type Contact = {
@@ -155,6 +156,7 @@ export function ContactDetailClient({
   const [, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [apptOpen, setApptOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "citas" | "data" | "docs"
   >("overview");
@@ -343,7 +345,10 @@ export function ContactDetailClient({
           {/* Action bar */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Button className="bg-foreground text-background hover:bg-foreground/85">
+              <Button
+                className="bg-foreground text-background hover:bg-foreground/85"
+                onClick={() => setApptOpen(true)}
+              >
                 <Video className="mr-1.5 h-4 w-4" />
                 Crear cita
               </Button>
@@ -398,7 +403,7 @@ export function ContactDetailClient({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setApptOpen(true)}>
                       <Calendar className="mr-2 h-4 w-4" />
                       Agendar cita
                     </DropdownMenuItem>
@@ -503,7 +508,10 @@ export function ContactDetailClient({
       {/* === CITAS === */}
       {activeTab === "citas" && (
         <div className="mt-4">
-          <AppointmentsList appointments={appointments} contactId={contact.id} />
+          <AppointmentsList
+            appointments={appointments}
+            onNew={() => setApptOpen(true)}
+          />
         </div>
       )}
 
@@ -546,6 +554,14 @@ export function ContactDetailClient({
         onClose={() => setEmailOpen(false)}
         contactIds={[contact.id]}
         contactCount={1}
+      />
+
+      <ContactAppointmentDialog
+        open={apptOpen}
+        onOpenChange={setApptOpen}
+        contactId={contact.id}
+        contactName={contact.name}
+        contactPhone={contact.whatsapp ?? contact.phone}
       />
 
       <ContactDialog
@@ -1126,10 +1142,10 @@ const APPT_STATUS_COLOR: Record<string, string> = {
 
 function AppointmentsList({
   appointments,
-  contactId,
+  onNew,
 }: {
   appointments: AppointmentItem[];
-  contactId: string;
+  onNew: () => void;
 }) {
   return (
     <Card className="p-6">
@@ -1138,18 +1154,22 @@ function AppointmentsList({
           <Calendar className="h-3.5 w-3.5" />
           Citas · {appointments.length}
         </h2>
-        <Button size="sm" variant="outline" asChild>
-          <Link href={`/agenda?contactId=${contactId}&new=1`}>
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nueva cita
-          </Link>
+        <Button size="sm" variant="outline" onClick={onNew}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Nueva cita
         </Button>
       </div>
 
       {appointments.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">
-          Sin citas registradas con este contacto.
-        </p>
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Sin citas registradas con este contacto.
+          </p>
+          <Button size="sm" variant="outline" onClick={onNew}>
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Agendar primera cita
+          </Button>
+        </div>
       ) : (
         <ul className="space-y-2">
           {appointments.map((a) => {

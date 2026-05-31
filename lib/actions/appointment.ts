@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 export type AppointmentInput = {
   title: string;
   propertyId?: string;
+  contactId?: string;
   startAt: Date;
   endAt?: Date;
   status?: string;
@@ -22,6 +23,9 @@ export async function createAppointment(input: AppointmentInput) {
       userId: user.id,
       title: input.title,
       propertyId: input.propertyId || null,
+      // Vincula la cita al contacto cuando se crea desde su ficha, así
+      // aparece en la pestaña "Citas" del contacto.
+      contactId: input.contactId || null,
       startAt: input.startAt,
       endAt: input.endAt ?? null,
       status: input.status ?? "PENDIENTE",
@@ -32,6 +36,7 @@ export async function createAppointment(input: AppointmentInput) {
   });
   revalidatePath("/agenda");
   revalidatePath("/");
+  if (input.contactId) revalidatePath(`/contactos/${input.contactId}`);
   return { id: a.id };
 }
 
