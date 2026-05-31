@@ -498,7 +498,7 @@ function NewTransactionDialog({
 
       const r = await scanReceipt(upData.url as string);
       if (r.ok) {
-        setCategory("GASTO"); // un recibo es, por defecto, un gasto
+        setCategory(r.data.flujo ?? "GASTO"); // el OCR detecta ingreso/gasto
         if (r.data.concepto) setConcept(r.data.concepto);
         if (r.data.monto != null) setAmount(String(r.data.monto));
         if (r.data.moneda) setCurrency(r.data.moneda);

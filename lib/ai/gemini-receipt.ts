@@ -12,8 +12,9 @@ export type ReceiptData = {
   moneda: "USD" | "DOP" | null;
   fecha: string | null; // YYYY-MM-DD
   proveedor: string | null;
-  categoria: string | null; // subtipo de transacción
-  notes: string | null; // datos importantes que no caben en otros campos (ITBIS, ref, etc.)
+  categoria: string | null; // subtipo de transacción (accounting_category)
+  flujo: "INGRESO" | "GASTO" | null; // dirección del dinero
+  notes: string | null; // resumen rico: tipo doc, dynamic fields, entidades, warnings
 };
 
 export type ReceiptResult =
@@ -62,23 +63,39 @@ export async function extractReceipt(imageUrl: string): Promise<ReceiptResult> {
 
   const model = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
   const prompt = [
-    "Eres un OCR financiero para un agente inmobiliario en República Dominicana.",
-    "La imagen puede ser CUALQUIERA de estos: una factura de consumo (supermercado/tienda), un recibo de punto de venta o tarjeta (CARDNET, Visa), una transferencia bancaria (app del banco, ACH, TDC), o cualquier comprobante de pago. SIEMPRE extrae lo más importante; nunca te rindas.",
-    "Responde SOLO un JSON válido con estas claves exactas:",
-    `{"concepto": string, "monto": number, "moneda": "USD"|"DOP", "fecha": "YYYY-MM-DD", "proveedor": string, "categoria": "${CATEGORIES.join('"|"')}", "notes": string}`,
+    "Eres un sistema OCR inteligente de documentos para un CRM inmobiliario en República Dominicana.",
+    "Detecta automáticamente el TIPO de documento y extrae TODA la información relevante; NO te limites a campos predefinidos. El documento puede ser: factura, recibo, recibo de tarjeta/POS (CARDNET, Visa), transferencia bancaria (ACH/app/TDC), depósito, cheque, contrato (venta/alquiler/exclusividad), estado de cuenta, comprobante de combustible/mantenimiento/publicidad/legal, nómina, comisión, captura de WhatsApp, correo, tasación, certificado de título, documento de identidad, etc.",
+    "Responde SOLO un JSON válido con esta forma EXACTA:",
+    `{
+  "document_type": "tipo en minúsculas (ej: factura_consumo, recibo_pos, transferencia_bancaria, contrato_alquiler, comision)",
+  "confidence": 0.0,
+  "flujo": "INGRESO"|"GASTO",
+  "concepto": "descripción corta y útil del movimiento",
+  "known_fields": {
+    "total": 0,
+    "subtotal": null,
+    "impuestos": null,
+    "moneda": "DOP"|"USD",
+    "fecha_emision": "YYYY-MM-DD"|null,
+    "fecha_pago": "YYYY-MM-DD"|null,
+    "proveedor": "comercio/banco/beneficiario"|null
+  },
+  "dynamic_fields": {},
+  "entities": [{"type":"cliente|propietario|agente|empresa|banco|proveedor|propiedad","name":"..."}],
+  "accounting_category": "${CATEGORIES.join("|")}",
+  "crm_category": "texto libre",
+  "warnings": []
+}`,
     "REGLAS:",
-    '- "monto": el TOTAL final pagado (busca TOTAL, TOTALRD, "Monto total", "Monto"). Número sin símbolos ni separadores de miles (ej: 4283.85, NO "RD$4,283.85").',
-    '- "concepto": SIEMPRE genera uno útil aunque el documento no tenga un campo de concepto:',
-    '   * Recibo de tarjeta/POS (CARDNET, Visa): "Compra en {comercio}" (ej: "Compra en Tropigas Santiago").',
-    '   * Factura de tienda/supermercado: "Compra {tienda}" (ej: "Compra Bohío Market").',
-    '   * Transferencia bancaria: usa el concepto o el beneficiario (ej: "Pago BDH - Ballista Contreras" o "Transferencia a Méndez Méndez Nailea").',
-    '   NUNCA devuelvas null en "concepto" si hay un comercio, beneficiario o total visible.',
-    '- "proveedor": el comercio, banco o beneficiario/destino.',
-    '- "moneda": RD$/DOP/pesos → "DOP"; US$/USD/dólares → "USD". Por defecto "DOP".',
-    '- "fecha": fecha del documento en formato YYYY-MM-DD.',
-    '- "categoria": la opción más razonable de la lista.',
-    '- "notes": resumen corto de datos importantes que no caben en los otros campos: proveedor, RNC/NCF, ITBIS, número de aprobación/referencia, últimos dígitos de tarjeta, banco origen/destino, y los artículos principales si es una factura. Ej: "ITBIS RD$48.81 · Aprob. 453324 · Tarjeta ****5799".',
-    '- Si un dato no aparece, usa null (EXCEPTO "concepto" y "monto": esfuérzate al máximo por derivarlos).',
+    '- "known_fields.total" y "concepto" SIEMPRE deben tener valor si hay algo legible; "concepto" NUNCA null.',
+    '- Montos: numero plano sin simbolos ni separadores de miles (4283.85, NO "RD$4,283.85").',
+    '- "concepto" ejemplos: "Compra en Tropigas Santiago" (POS), "Compra Bohio Market" (factura), "Pago BDH - Ballista Contreras" (transferencia), "Comision venta Casa Miraflores".',
+    '- "moneda": RD$/DOP/pesos = "DOP"; US$/USD/dolares = "USD". Por defecto "DOP".',
+    '- "flujo": compras/facturas/recibos/pagos enviados = "GASTO"; transferencias o pagos RECIBIDOS, comisiones cobradas, depositos a favor = "INGRESO". Por defecto "GASTO".',
+    '- "accounting_category": la opcion mas razonable de la lista.',
+    '- "dynamic_fields": coloca AQUI todo dato extra SIN perder informacion (RNC, NCF, numero de aprobacion/referencia, ultimos digitos de tarjeta, lote, torre, unidad, matricula, banco origen/destino, articulos principales, etc.) como clave:valor.',
+    '- "confidence": numero 0..1 de que tan seguro estas del tipo de documento.',
+    '- "warnings": avisos (dato ilegible, monto dudoso, imagen borrosa).',
   ].join("\n");
 
   try {
@@ -95,7 +112,7 @@ export async function extractReceipt(imageUrl: string): Promise<ReceiptResult> {
           ],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 800,
+            maxOutputTokens: 1500,
             responseMimeType: "application/json",
           },
         }),
@@ -160,43 +177,85 @@ function normalize(o: Record<string, unknown>): ReceiptData {
   const toStr = (v: unknown): string | null =>
     typeof v === "string" && v.trim() ? v.trim().slice(0, 200) : null;
 
+  const asObj = (v: unknown): Record<string, unknown> =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : {};
+
+  const kf = asObj(o.known_fields);
+  const df = asObj(o.dynamic_fields);
+
   const moneda = (() => {
-    const m = toStr(o.moneda)?.toUpperCase();
-    return m === "USD" || m === "DOP" ? (m as "USD" | "DOP") : null;
-  })();
-  const categoria = (() => {
-    const c = toStr(o.categoria)?.toUpperCase();
-    return c && CATEGORIES.includes(c) ? c : null;
+    const m = toStr(kf.moneda)?.toUpperCase();
+    return m === "USD" || m === "DOP" ? (m as "USD" | "DOP") : "DOP";
   })();
   const fecha = (() => {
-    const f = toStr(o.fecha);
+    const f = toStr(kf.fecha_emision) ?? toStr(kf.fecha_pago);
     return f && /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : null;
   })();
+  const categoria = (() => {
+    const c = toStr(o.accounting_category)?.toUpperCase();
+    return c && CATEGORIES.includes(c) ? c : "OTRO";
+  })();
+  const flujo: "INGRESO" | "GASTO" =
+    toStr(o.flujo)?.toUpperCase() === "INGRESO" ? "INGRESO" : "GASTO";
 
-  const proveedor = toStr(o.proveedor);
+  const entities = (Array.isArray(o.entities) ? o.entities : [])
+    .map((e) => {
+      const obj = asObj(e);
+      const name = toStr(obj.name);
+      const type = toStr(obj.type) ?? "?";
+      return name ? { type, name } : null;
+    })
+    .filter((e): e is { type: string; name: string } => e !== null);
 
-  // "concepto" SIEMPRE útil: si el modelo no lo dio, se deriva del proveedor o la fecha.
+  const proveedor =
+    toStr(kf.proveedor) ??
+    entities.find((e) => /proveedor|empresa|banco/i.test(e.type))?.name ??
+    null;
+
+  // "concepto" SIEMPRE util: si el modelo no lo dio, se deriva del proveedor o la fecha.
   let concepto = toStr(o.concepto);
   if (!concepto) {
     concepto = proveedor
       ? `Compra ${proveedor}`
       : fecha
-        ? `Transacción ${fecha}`
-        : "Transacción";
+        ? `Transaccion ${fecha}`
+        : "Transaccion";
   }
 
-  const notes =
-    typeof o.notes === "string" && o.notes.trim()
-      ? o.notes.trim().slice(0, 500)
-      : null;
+  // notes: resumen rico (tipo doc + confianza + ITBIS + dynamic fields + entidades + warnings).
+  const parts: string[] = [];
+  const docType = toStr(o.document_type);
+  const conf =
+    typeof o.confidence === "number" ? Math.round(o.confidence * 100) : null;
+  if (docType) parts.push(`Tipo: ${docType}${conf != null ? ` (${conf}%)` : ""}`);
+  const itbis = toNum(kf.impuestos);
+  if (itbis != null) parts.push(`ITBIS: ${itbis}`);
+  for (const [k, v] of Object.entries(df)) {
+    if (v != null && String(v).trim()) {
+      parts.push(`${k}: ${String(v).slice(0, 60)}`);
+    }
+  }
+  if (entities.length) {
+    parts.push(
+      `Entidades: ${entities.map((e) => `${e.type}=${e.name}`).join(", ")}`
+    );
+  }
+  const warnings = (Array.isArray(o.warnings) ? o.warnings : [])
+    .map((w) => String(w).trim())
+    .filter(Boolean);
+  if (warnings.length) parts.push(`Avisos: ${warnings.join("; ")}`);
+  const notes = parts.length ? parts.join(" | ").slice(0, 800) : null;
 
   return {
     concepto,
-    monto: toNum(o.monto),
+    monto: toNum(kf.total),
     moneda,
     fecha,
     proveedor,
     categoria,
+    flujo,
     notes,
   };
 }
