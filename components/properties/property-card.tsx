@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bed, Bath, Car, Maximize2, MapPin, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatNumber } from "@/lib/utils";
-import { labelFor, CATEGORIES, OPERATIONS } from "@/lib/constants";
+import { labelFor, CATEGORIES, OPERATIONS, PROPERTY_STATUSES } from "@/lib/constants";
 
 type PropertyCardData = {
   id: string;
@@ -32,9 +32,11 @@ const OP_BADGE: Record<string, string> = {
 export function PropertyCard({
   property: p,
   index,
+  locale,
 }: {
   property: PropertyCardData;
   index?: number;
+  locale?: "es" | "en";
 }) {
   return (
     <Link
@@ -73,24 +75,18 @@ export function PropertyCard({
           <span
             className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${OP_BADGE[p.operation] ?? OP_BADGE.CONSIGNACION}`}
           >
-            {labelFor(OPERATIONS, p.operation)}
+            {labelFor(OPERATIONS, p.operation, locale)}
           </span>
           {p.status && p.status !== "NUEVO" && (
             <span className="inline-flex items-center rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white ring-1 ring-white/15 backdrop-blur-md">
-              {p.status === "EN_PLANO"
-                ? "En plano"
-                : p.status === "EN_CONSTRUCCION"
-                  ? "En construcción"
-                  : p.status === "DESLINDADA"
-                    ? "Deslindada"
-                    : p.status}
+              {labelFor(PROPERTY_STATUSES, p.status, locale)}
             </span>
           )}
         </div>
 
         {/* Category badge — dark glass for readability over any photo */}
         <span className="absolute right-3 top-3 inline-flex items-center rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white ring-1 ring-white/15 backdrop-blur-md">
-          {labelFor(CATEGORIES, p.category)}
+          {labelFor(CATEGORIES, p.category, locale)}
         </span>
       </div>
 

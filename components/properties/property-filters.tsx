@@ -16,7 +16,8 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, OPERATIONS, PROPERTY_STATUSES } from "@/lib/constants";
+import { CATEGORIES, OPERATIONS, PROPERTY_STATUSES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   CASA: Home,
@@ -36,6 +37,7 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
 
   const q = sp.get("q") ?? "";
@@ -87,7 +89,7 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por título, ubicación..."
+          placeholder={t.properties.searchPlaceholder}
           className="pl-9"
         />
         {search && (
@@ -108,7 +110,7 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
           active={!cat}
           onClick={() => setParam("cat", "")}
           icon={LayoutGrid}
-          label="Todas"
+          label={t.properties.all}
           count={counts.total}
         />
         {CATEGORIES.map((c) => {
@@ -121,7 +123,7 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
               active={cat === c.value}
               onClick={() => setParam("cat", c.value === cat ? "" : c.value)}
               icon={Icon}
-              label={c.label}
+              label={labelFor(CATEGORIES, c.value, locale)}
               count={n}
             />
           );
@@ -131,23 +133,26 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
       {/* Operation + Status row */}
       <div className="flex flex-wrap items-center gap-3 text-xs">
         <FilterDropdown
-          label="Operación"
+          label={t.properties.operation}
           value={op}
           options={[
-            { value: "", label: "Todas" },
+            { value: "", label: t.properties.all },
             ...OPERATIONS.map((o) => ({
               value: o.value,
-              label: `${o.label} (${counts.byOperation[o.value] ?? 0})`,
+              label: `${labelFor(OPERATIONS, o.value, locale)} (${counts.byOperation[o.value] ?? 0})`,
             })),
           ]}
           onChange={(v) => setParam("op", v)}
         />
         <FilterDropdown
-          label="Estado"
+          label={t.properties.status}
           value={status}
           options={[
-            { value: "", label: "Todos" },
-            ...PROPERTY_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+            { value: "", label: t.properties.allMasc },
+            ...PROPERTY_STATUSES.map((s) => ({
+              value: s.value,
+              label: labelFor(PROPERTY_STATUSES, s.value, locale),
+            })),
           ]}
           onChange={(v) => setParam("status", v)}
         />
@@ -158,7 +163,7 @@ export function PropertyFilters({ counts }: { counts: Counts }) {
             className="h-7 px-2 text-xs text-muted-foreground"
             onClick={clearAll}
           >
-            Limpiar filtros
+            {t.properties.clearFilters}
           </Button>
         )}
       </div>

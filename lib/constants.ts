@@ -61,10 +61,54 @@ export const PIPELINE_STAGES = [
   },
 ] as const;
 
+/**
+ * Etiquetas en inglés por `value` para los enums de dominio mostrados en UI.
+ * `labelFor(..., "en")` las usa; sin locale o "es" devuelve la etiqueta ES.
+ * (i18n del panel — se amplía a medida que se traducen más módulos.)
+ */
+const EN_LABELS: Record<string, string> = {
+  // Categorías
+  CASA: "House",
+  APARTAMENTO: "Apartment",
+  SOLAR: "Lot",
+  TERRENO: "Land",
+  LOCAL_COMERCIAL: "Commercial",
+  // Operaciones
+  EN_VENTA: "For sale",
+  EN_ALQUILER: "For rent",
+  VENDIDA: "Sold",
+  ALQUILADA: "Rented",
+  CONSIGNACION: "Consignment",
+  // Estados de propiedad
+  NUEVO: "New",
+  EN_PLANO: "Off-plan",
+  EN_CONSTRUCCION: "Under construction",
+  DESLINDADA: "Surveyed",
+  // Tipos de contacto
+  PROPIETARIO: "Owner",
+  CLIENTE: "Client",
+  INQUILINO: "Tenant",
+  ABOGADO: "Lawyer",
+  COLEGA_INMOBILIARIO: "Realtor colleague",
+  PLOMERO: "Plumber",
+  ELECTRICISTA: "Electrician",
+  CONTRATISTA: "Contractor",
+  EMPRESA: "Company",
+  UTILITY: "Utility",
+  // Etapas de pipeline
+  CONTACTADO: "Contacted",
+  VISITA: "Visit",
+  NEGOCIACION: "Negotiation",
+  CERRADO: "Closed",
+  PERDIDO: "Lost",
+};
+
 export function labelFor<T extends ReadonlyArray<{ value: string; label: string }>>(
   list: T,
-  value: string | null | undefined
+  value: string | null | undefined,
+  locale?: "es" | "en"
 ) {
+  if (locale === "en" && value && EN_LABELS[value]) return EN_LABELS[value];
   return list.find((x) => x.value === value)?.label ?? value ?? "—";
 }
 

@@ -7,6 +7,7 @@ import { PropertyCard } from "@/components/properties/property-card";
 import { PropertyFilters } from "@/components/properties/property-filters";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function PropiedadesPage({
 }) {
   const user = await requireUser();
   const sp = await searchParams;
+  const [t, locale] = await Promise.all([getDict(), getLocale()]);
 
   const where = {
     userId: user.id,
@@ -84,20 +86,20 @@ export default async function PropiedadesPage({
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Propiedades"
-        description={`${properties.length} de ${total} propiedades`}
+        title={t.properties.title}
+        description={`${properties.length} ${t.properties.ofWord} ${total} ${t.properties.countSuffix}`}
         actions={
           <div className="flex gap-2">
             <Button asChild variant="outline">
               <Link href="/importar?type=PROPERTIES">
                 <Upload className="mr-2 h-4 w-4" />
-                Importar CSV
+                {t.properties.importCsv}
               </Link>
             </Button>
             <Button asChild>
               <Link href="/propiedades/nueva">
                 <Plus className="mr-2 h-4 w-4" />
-                Nueva propiedad
+                {t.properties.newProperty}
               </Link>
             </Button>
           </div>
@@ -110,13 +112,13 @@ export default async function PropiedadesPage({
         total === 0 ? (
           <EmptyState
             icon={Building2}
-            title="Aún no tienes propiedades"
-            description="Empieza agregando tu primera propiedad para verla aquí en la galería."
+            title={t.properties.emptyTitle}
+            description={t.properties.emptyDesc}
             action={
               <Button asChild>
                 <Link href="/propiedades/nueva">
                   <Plus className="mr-2 h-4 w-4" />
-                  Agregar primera propiedad
+                  {t.properties.addFirst}
                 </Link>
               </Button>
             }
@@ -124,8 +126,8 @@ export default async function PropiedadesPage({
         ) : (
           <EmptyState
             icon={Building2}
-            title="Sin resultados"
-            description="Ningún inmueble coincide con los filtros aplicados."
+            title={t.properties.noResultsTitle}
+            description={t.properties.noResultsDesc}
           />
         )
       ) : (
@@ -134,6 +136,7 @@ export default async function PropiedadesPage({
             <PropertyCard
               key={p.id}
               index={i}
+              locale={locale}
               property={{
                 ...p,
                 priceUSD: p.priceUSD?.toString() ?? null,
