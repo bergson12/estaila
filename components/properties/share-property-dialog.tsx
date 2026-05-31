@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPropertyShare } from "@/lib/actions/property-share";
 import type { ShareChannel } from "@/lib/share-channels";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type Property = {
   id: string;
@@ -72,6 +73,7 @@ export function SharePropertyDialog({
   property: Property;
   agentName: string;
 }) {
+  const { t } = useT();
   const [recipientKind, setRecipientKind] = useState<RecipientKind>("anyone");
   const [channel, setChannel] = useState<ShareChannel>("WHATSAPP");
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -92,8 +94,8 @@ export function SharePropertyDialog({
     if (!open) return;
     setShareUrl(null);
     const specs = [
-      property.bedrooms != null ? `${property.bedrooms} hab` : null,
-      property.bathrooms != null ? `${property.bathrooms} baños` : null,
+      property.bedrooms != null ? `${property.bedrooms} ${t.propDialogs.specBeds}` : null,
+      property.bathrooms != null ? `${property.bathrooms} ${t.propDialogs.specBaths}` : null,
       property.metersSquared != null ? `${property.metersSquared}m²` : null,
     ]
       .filter(Boolean)
@@ -102,15 +104,17 @@ export function SharePropertyDialog({
     const recipientName =
       recipientKind === "contact" && selectedContactId
         ? contacts.find((c) => c.id === selectedContactId)?.name.split(" ")[0] ??
-          "amigo"
+          t.propDialogs.greetFallback
         : recipientKind === "manual" && manualName
           ? manualName.split(" ")[0]
           : "";
-    const greet = recipientName ? `Hola ${recipientName}` : "Hola";
+    const greet = recipientName
+      ? `${t.propDialogs.greetHi} ${recipientName}`
+      : t.propDialogs.greetHi;
     setMessage(
-      `${greet} 👋\n\nTe comparto esta propiedad que creo te puede interesar 🏠\n\n*${property.title}*\n💰 ${price}${
+      `${greet} 👋\n\n${t.propDialogs.shareMsgIntro} 🏠\n\n*${property.title}*\n💰 ${price}${
         specs ? `\n${specs}` : ""
-      }${property.location ? `\n📍 ${property.location}` : ""}\n\nMira los detalles aquí:\n{LINK}\n\nCualquier duda me avisas 👋\n— ${agentName}`
+      }${property.location ? `\n📍 ${property.location}` : ""}\n\n${t.propDialogs.shareMsgSeeDetails}\n{LINK}\n\n${t.propDialogs.shareMsgClosing} 👋\n— ${agentName}`
     );
   }, [
     open,
@@ -120,6 +124,7 @@ export function SharePropertyDialog({
     manualName,
     contacts,
     agentName,
+    t,
   ]);
 
   // ----------------------------------------------------------
@@ -131,7 +136,7 @@ export function SharePropertyDialog({
     fetch("/api/contacts/lite")
       .then((r) => r.json())
       .then((data: ContactOption[]) => setContacts(data))
-      .catch(() => toast.error("No pude cargar contactos"))
+      .catch(() => toast.error(t.propDialogs.contactsLoadError))
       .finally(() => setLoadingContacts(false));
   }, [open, recipientKind, contacts.length]);
 
@@ -208,7 +213,7 @@ export function SharePropertyDialog({
 
   function doWhatsApp() {
     if (!recipient.phone && recipientKind !== "anyone") {
-      toast.error("Necesito un número de WhatsApp del destinatario.");
+      toast.error(t.propDialogs.needWhatsapp);
       return;
     }
     buildAndAct((url) => {
@@ -219,14 +224,14 @@ export function SharePropertyDialog({
         ? `https://wa.me/${cleaned}?text=${encodeURIComponent(finalMessage)}`
         : `https://wa.me/?text=${encodeURIComponent(finalMessage)}`;
       window.open(waUrl, "_blank", "noopener,noreferrer");
-      toast.success("Abriendo WhatsApp...");
+      toast.success(t.propDialogs.openingWhatsapp);
       onOpenChange(false);
     });
   }
 
   function doEmail() {
     if (!recipient.email) {
-      toast.error("Necesito un email del destinatario.");
+      toast.error(t.propDialogs.needEmail);
       return;
     }
     buildAndAct((url) => {
@@ -236,7 +241,7 @@ export function SharePropertyDialog({
         subject
       )}&body=${encodeURIComponent(finalMessage)}`;
       window.location.href = mailto;
-      toast.success("Abriendo cliente de correo...");
+      toast.success(t.propDialogs.openingEmail);
       onOpenChange(false);
     });
   }
@@ -244,7 +249,7 @@ export function SharePropertyDialog({
   function doCopy() {
     buildAndAct((url) => {
       navigator.clipboard.writeText(url).then(() => {
-        toast.success("Link copiado al portapapeles");
+        toast.success(t.propDialogs.linkCopied);
       });
     });
   }
@@ -260,7 +265,7 @@ export function SharePropertyDialog({
         target = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
       } else if (network === "INSTAGRAM") {
         navigator.clipboard.writeText(text);
-        toast.message("Instagram no permite share por URL. Link copiado.");
+        toast.message(t.propDialogs.instagramNoShare);
         return;
       }
       if (target) window.open(target, "_blank", "noopener,noreferrer");
@@ -276,11 +281,10 @@ export function SharePropertyDialog({
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Send className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            Compartir propiedad
+            {t.propDialogs.shareTitle}
           </DialogTitle>
           <DialogDescription>
-            Genera link compartible con tracking opcional. Cada click queda
-            registrado en tus analytics.
+            {t.propDialogs.shareDesc}
           </DialogDescription>
         </DialogHeader>
 
@@ -288,47 +292,46 @@ export function SharePropertyDialog({
           {/* Recipient kind */}
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Destinatario
+              {t.propDialogs.recipient}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <RecipientButton
                 active={recipientKind === "anyone"}
                 onClick={() => setRecipientKind("anyone")}
                 icon={Users}
-                label="Cualquiera"
+                label={t.propDialogs.recipientAnyone}
               />
               <RecipientButton
                 active={recipientKind === "contact"}
                 onClick={() => setRecipientKind("contact")}
                 icon={Users}
-                label="Contacto"
+                label={t.propDialogs.recipientContact}
               />
               <RecipientButton
                 active={recipientKind === "manual"}
                 onClick={() => setRecipientKind("manual")}
                 icon={UserIcon}
-                label="Nuevo"
+                label={t.propDialogs.recipientNew}
               />
             </div>
 
             <div className="mt-3">
               {recipientKind === "anyone" && (
                 <p className="rounded-xl border border-dashed border-border bg-background/40 p-3 text-[11px] text-muted-foreground">
-                  Sin destinatario fijo. Útil para compartir en redes sociales o
-                  pegar el link en grupos.
+                  {t.propDialogs.recipientAnyoneHint}
                 </p>
               )}
 
               {recipientKind === "manual" && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Nombre" className="sm:col-span-2">
+                  <Field label={t.propDialogs.fieldName} className="sm:col-span-2">
                     <Input
                       placeholder="María Rodríguez"
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
                     />
                   </Field>
-                  <Field label="Email">
+                  <Field label={t.propDialogs.fieldEmail}>
                     <Input
                       type="email"
                       placeholder="cliente@email.com"
@@ -336,7 +339,7 @@ export function SharePropertyDialog({
                       onChange={(e) => setManualEmail(e.target.value)}
                     />
                   </Field>
-                  <Field label="WhatsApp / Teléfono">
+                  <Field label={t.propDialogs.fieldWhatsappPhone}>
                     <Input
                       placeholder="+1 555 0100"
                       value={manualPhone}
@@ -350,12 +353,11 @@ export function SharePropertyDialog({
                 <div>
                   {loadingContacts ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      Cargando contactos...
+                      {t.propDialogs.loadingContacts}
                     </p>
                   ) : contacts.length === 0 ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      No tienes contactos. Usa &quot;Nuevo&quot; para ingresar
-                      manualmente.
+                      {t.propDialogs.noContactsUseNew}
                     </p>
                   ) : (
                     <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-border p-1">
@@ -403,7 +405,7 @@ export function SharePropertyDialog({
           {/* Message editor */}
           <div>
             <Label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Mensaje
+              {t.propDialogs.message}
             </Label>
             <Textarea
               rows={8}
@@ -412,8 +414,8 @@ export function SharePropertyDialog({
               className="font-mono text-xs leading-relaxed"
             />
             <p className="mt-1.5 text-[10px] text-muted-foreground">
-              <code className="rounded bg-secondary/60 px-1">{`{LINK}`}</code> se
-              reemplaza por el link de la propiedad al enviar.
+              <code className="rounded bg-secondary/60 px-1">{`{LINK}`}</code>{" "}
+              {t.propDialogs.linkPlaceholderHint}
             </p>
           </div>
 
@@ -431,9 +433,9 @@ export function SharePropertyDialog({
                 <Building2 className="h-4 w-4" strokeWidth={2} />
               </span>
               <div>
-                <p className="text-sm font-medium">Trackear este link</p>
+                <p className="text-sm font-medium">{t.propDialogs.trackThisLink}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Saber cuántas veces se abrió + de qué canal vino
+                  {t.propDialogs.trackThisLinkHint}
                 </p>
               </div>
             </div>
@@ -449,7 +451,7 @@ export function SharePropertyDialog({
           {shareUrl && (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                Link generado
+                {t.propDialogs.linkGenerated}
               </p>
               <code className="mt-1 block break-all rounded-md bg-background/60 p-2 font-mono text-[10px]">
                 {shareUrl}
@@ -467,7 +469,7 @@ export function SharePropertyDialog({
             onClick={doCopy}
           >
             <Copy className="h-3.5 w-3.5" />
-            Copiar
+            {t.propDialogs.copy}
           </Button>
           <Button
             variant="outline"

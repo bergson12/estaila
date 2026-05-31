@@ -7,17 +7,19 @@ import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { cn } from "@/lib/utils";
-
-const TONES = [
-  { value: "TURQUOISE", label: "Turquesa", hex: "#5EEAD4" },
-  { value: "AZURE", label: "Azul cielo", hex: "#7DD3FC" },
-  { value: "TROPICAL", label: "Tropical", hex: "#22D3EE" },
-  { value: "DEEP", label: "Profundo", hex: "#0EA5E9" },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function PoolClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t } = useT();
   const [tone, setTone] = useState<string>("TURQUOISE");
+
+  const TONES = [
+    { value: "TURQUOISE", label: t.studio.poolTurquoise, hex: "#5EEAD4" },
+    { value: "AZURE", label: t.studio.poolAzure, hex: "#7DD3FC" },
+    { value: "TROPICAL", label: t.studio.poolTropical, hex: "#22D3EE" },
+    { value: "DEEP", label: t.studio.poolDeep, hex: "#0EA5E9" },
+  ] as const;
 
   return (
     <StudioShell
@@ -25,13 +27,13 @@ export function PoolClient({ plan }: { plan: string }) {
       title={
         <>
           <Waves className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Piscina Cristalina
+          {t.studio.toolPoolTitle}
         </>
       }
-      description="Limpia el agua, agrega reflejos y vibrancia natural."
+      description={t.studio.poolDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Tono del agua">
+          <OptionsPanel title={t.studio.waterTone}>
             <div className="grid grid-cols-2 gap-2">
               {TONES.map((t) => (
                 <button
@@ -61,18 +63,18 @@ export function PoolClient({ plan }: { plan: string }) {
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Incluye">
+          <OptionsPanel title={t.studio.includes}>
             <ul className="space-y-1.5 text-xs text-muted-foreground">
-              <li>• Agua cristalina sin algas ni manchas</li>
-              <li>• Reflejos naturales en superficie</li>
-              <li>• Bordes y baldosas limpias</li>
-              <li>• Color uniforme</li>
+              <li>• {t.studio.poolIncl1}</li>
+              <li>• {t.studio.poolIncl2}</li>
+              <li>• {t.studio.poolIncl3}</li>
+              <li>• {t.studio.poolIncl4}</li>
             </ul>
           </OptionsPanel>
 
           <GenerateButton
             onClick={() => runGenerate({ preset: tone })}
-            label="Limpiar piscina"
+            label={t.studio.cleanPoolBtn}
           />
         </>
       }

@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import {
   deleteMarketingPost,
   updateMarketingStatus,
@@ -68,10 +69,10 @@ const CHANNEL_META: Record<
   EMAIL: { label: "Email", icon: "✉️", gradient: "from-amber-500 to-amber-400" },
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: "Borrador",
-  SCHEDULED: "Programado",
-  PUBLISHED: "Publicado",
+const STATUS_LABEL_KEY: Record<string, string> = {
+  DRAFT: "statusDraft",
+  SCHEDULED: "statusScheduled",
+  PUBLISHED: "statusPublished",
 };
 
 export function PostDetailModal({
@@ -83,6 +84,7 @@ export function PostDetailModal({
   open: boolean;
   onOpenChange: (b: boolean) => void;
 }) {
+  const { t } = useT();
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [tab, setTab] = useState<"preview" | "content">("preview");
@@ -97,7 +99,7 @@ export function PostDetailModal({
   function copyContent() {
     if (!post) return;
     navigator.clipboard.writeText(post.content);
-    toast.success("Contenido copiado al portapapeles");
+    toast.success(t.marketing.toastContentCopied);
   }
 
   function changeStatus(status: string) {
@@ -105,7 +107,9 @@ export function PostDetailModal({
     startTransition(async () => {
       try {
         await updateMarketingStatus(post.id, status);
-        toast.success(`Marcado como ${STATUS_LABEL[status].toLowerCase()}`);
+        toast.success(
+          `${t.marketing.toastMarkedAs} ${t.marketing[STATUS_LABEL_KEY[status]].toLowerCase()}`
+        );
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -115,11 +119,11 @@ export function PostDetailModal({
 
   function handleDelete() {
     if (!post) return;
-    if (!confirm("¿Eliminar este post?")) return;
+    if (!confirm(t.marketing.confirmDeletePost)) return;
     startTransition(async () => {
       try {
         await deleteMarketingPost(post.id);
-        toast.success("Post eliminado");
+        toast.success(t.marketing.toastPostDeleted);
         onOpenChange(false);
         router.refresh();
       } catch (e) {
@@ -164,7 +168,7 @@ export function PostDetailModal({
                       realestate.x
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      Patrocinado
+                      {t.marketing.sponsored}
                     </p>
                   </div>
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -194,7 +198,7 @@ export function PostDetailModal({
                     <Share2 className="h-5 w-5" strokeWidth={1.5} />
                   </div>
                   <p className="text-xs font-semibold">
-                    {Math.floor(Math.random() * 800 + 200)} me gusta
+                    {Math.floor(Math.random() * 800 + 200)} {t.marketing.likes}
                   </p>
                   <p className="mt-1 line-clamp-3 text-xs">
                     <span className="font-semibold">realestate.x</span>{" "}
@@ -207,7 +211,7 @@ export function PostDetailModal({
               </motion.div>
 
               <p className="mt-4 text-center text-[10px] uppercase tracking-[0.2em] text-white/60">
-                Preview · {channel.label}
+                {t.marketing.previewLabel} · {channel.label}
               </p>
             </div>
           </div>
@@ -229,7 +233,7 @@ export function PostDetailModal({
                   )}
                 >
                   <span className="inline-flex h-1.5 w-1.5 rounded-full bg-current" />
-                  {STATUS_LABEL[post.status]}
+                  {t.marketing[STATUS_LABEL_KEY[post.status]]}
                 </Badge>
                 <span className="text-xs">{channel.icon}</span>
                 <span className="text-xs font-medium">{channel.label}</span>
@@ -239,7 +243,7 @@ export function PostDetailModal({
                 {post.scheduledFor && (
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    Programado:{" "}
+                    {t.marketing.scheduledLabel}{" "}
                     {format(new Date(post.scheduledFor), "d MMM, h:mm a", {
                       locale: es,
                     })}
@@ -248,7 +252,7 @@ export function PostDetailModal({
                 {post.publishedAt && (
                   <span className="flex items-center gap-1 text-emerald-500">
                     <Send className="h-3 w-3" />
-                    Publicado{" "}
+                    {t.marketing.publishedLabel}{" "}
                     {format(new Date(post.publishedAt), "d MMM", { locale: es })}
                   </span>
                 )}
@@ -258,19 +262,19 @@ export function PostDetailModal({
             {/* Tabs */}
             <div className="border-b border-border px-5 pt-3">
               <div className="flex gap-4">
-                {(["preview", "content"] as const).map((t) => (
+                {(["preview", "content"] as const).map((tk) => (
                   <button
-                    key={t}
-                    onClick={() => setTab(t)}
+                    key={tk}
+                    onClick={() => setTab(tk)}
                     className={cn(
                       "relative pb-2 text-xs font-semibold uppercase tracking-wider transition-colors",
-                      tab === t
+                      tab === tk
                         ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    {t === "preview" ? "Resumen" : "Contenido"}
-                    {tab === t && (
+                    {tk === "preview" ? t.marketing.tabSummary : t.marketing.tabContent}
+                    {tab === tk && (
                       <motion.span
                         layoutId="tab-underline"
                         className="absolute -bottom-px left-0 right-0 h-0.5 bg-primary"
@@ -286,12 +290,12 @@ export function PostDetailModal({
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Métricas estimadas
+                      {t.marketing.estimatedMetrics}
                     </p>
                     <div className="mt-2 grid grid-cols-3 gap-2">
-                      <MetricCell label="Alcance" value="2.4k" trend="+12%" />
-                      <MetricCell label="Engagement" value="3.8%" trend="+5%" />
-                      <MetricCell label="Saves" value="48" trend="+18%" />
+                      <MetricCell label={t.marketing.metricReach} value="2.4k" trend="+12%" />
+                      <MetricCell label={t.marketing.metricEngagement} value="3.8%" trend="+5%" />
+                      <MetricCell label={t.marketing.metricSaves} value="48" trend="+18%" />
                     </div>
                   </div>
 
@@ -299,7 +303,7 @@ export function PostDetailModal({
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         <Hash className="-mt-0.5 mr-1 inline h-3 w-3" />
-                        Hashtags ({hashtagsInContent.length})
+                        {t.marketing.hashtags} ({hashtagsInContent.length})
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {hashtagsInContent.slice(0, 15).map((tag) => (
@@ -317,14 +321,14 @@ export function PostDetailModal({
                   <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                     <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
                       <Sparkles className="h-3 w-3" />
-                      Tip de IA
+                      {t.marketing.aiTip}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {post.status === "DRAFT"
-                        ? "Programa este post para los mejores momentos: martes-jueves entre 6-8pm hora local."
+                        ? t.marketing.aiTipDraft
                         : post.status === "SCHEDULED"
-                          ? "Buen horario. Considera crear una variación para Reels para maximizar alcance."
-                          : "Mide qué partes del caption funcionaron mejor y replica el patrón."}
+                          ? t.marketing.aiTipScheduled
+                          : t.marketing.aiTipPublished}
                     </p>
                   </div>
                 </div>
@@ -340,7 +344,7 @@ export function PostDetailModal({
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" size="sm" onClick={copyContent}>
                   <Copy className="mr-1.5 h-3.5 w-3.5" />
-                  Copiar
+                  {t.marketing.copy}
                 </Button>
                 {post.status === "DRAFT" && (
                   <Button
@@ -348,7 +352,7 @@ export function PostDetailModal({
                     onClick={() => changeStatus("SCHEDULED")}
                   >
                     <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                    Programar
+                    {t.marketing.schedule}
                   </Button>
                 )}
                 {post.status !== "PUBLISHED" && (
@@ -358,7 +362,7 @@ export function PostDetailModal({
                     onClick={() => changeStatus("PUBLISHED")}
                   >
                     <Send className="mr-1.5 h-3.5 w-3.5" />
-                    Publicar
+                    {t.marketing.publish}
                   </Button>
                 )}
               </div>
@@ -369,7 +373,7 @@ export function PostDetailModal({
                 className="mt-2 w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                Eliminar post
+                {t.marketing.deletePost}
               </Button>
             </div>
           </div>

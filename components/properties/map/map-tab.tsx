@@ -24,11 +24,13 @@ import {
   setPropertyCoordinates,
   togglePinPOI,
 } from "@/lib/actions/poi";
-import { POI_TYPE_META, formatDistance, type PoiTypeKey } from "./poi-icons";
+import { POI_TYPE_META, formatDistance, poiLabel, type PoiTypeKey } from "./poi-icons";
 import { POIDialog } from "./poi-dialog";
 import { PropertyMap, type POIData } from "./property-map";
 import { SuggestNearbyDialog } from "./suggest-dialog";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import type { Dict, Locale } from "@/lib/i18n/dictionary";
 
 export type MapTabProps = {
   property: {
@@ -48,6 +50,7 @@ type DialogState =
 
 export function MapTab({ property, pois }: MapTabProps) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [pending, startTransition] = useTransition();
   const [editPropMode, setEditPropMode] = useState(false);
   const [dialog, setDialog] = useState<DialogState>({ open: false });
@@ -62,7 +65,7 @@ export function MapTab({ property, pois }: MapTabProps) {
       startTransition(async () => {
         try {
           await setPropertyCoordinates(property.id, lat, lng);
-          toast.success("Ubicación de propiedad actualizada");
+          toast.success(t.propDialogs.propLocationUpdated);
           setEditPropMode(false);
           router.refresh();
         } catch (e) {
@@ -76,11 +79,11 @@ export function MapTab({ property, pois }: MapTabProps) {
   }
 
   function handleDelete(id: string) {
-    if (!confirm("¿Eliminar este lugar?")) return;
+    if (!confirm(t.propDialogs.deletePlaceConfirm)) return;
     startTransition(async () => {
       try {
         await deletePOI(id);
-        toast.success("Lugar eliminado");
+        toast.success(t.propDialogs.placeDeleted);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -106,10 +109,10 @@ export function MapTab({ property, pois }: MapTabProps) {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-base font-semibold tracking-tight">
-              Mapa & Lugares cercanos
+              {t.propDialogs.mapAndNearby}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Pin con icono. Click en el mapa para agregar un nuevo lugar.
+              {t.propDialogs.mapHint}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -125,7 +128,7 @@ export function MapTab({ property, pois }: MapTabProps) {
               ) : (
                 <Target className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {editPropMode ? "Click para ubicar..." : "Fijar ubicación"}
+              {editPropMode ? t.propDialogs.clickToLocate : t.propDialogs.setLocation}
             </Button>
             <Button
               size="sm"
@@ -134,13 +137,13 @@ export function MapTab({ property, pois }: MapTabProps) {
               disabled={!hasCoords || pending}
               title={
                 !hasCoords
-                  ? "Fija la ubicación primero"
-                  : "Buscar restaurantes, escuelas, gyms, parques cerca"
+                  ? t.propDialogs.setLocationFirst
+                  : t.propDialogs.autoDetectTitle
               }
               className="h-9 rounded-full"
             >
               <Wand2 className="mr-1.5 h-3.5 w-3.5 text-primary" />
-              Auto-detectar
+              {t.propDialogs.autoDetect}
               <Sparkles className="ml-1 h-3 w-3 text-primary/70" />
             </Button>
             <Button
@@ -149,7 +152,7 @@ export function MapTab({ property, pois }: MapTabProps) {
               className="h-9 rounded-full"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Agregar lugar
+              {t.propDialogs.addPlace}
             </Button>
           </div>
         </div>
@@ -157,13 +160,13 @@ export function MapTab({ property, pois }: MapTabProps) {
         {editPropMode && (
           <div className="mb-3 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/[0.06] px-3 py-2 text-xs text-foreground">
             <Target className="h-3.5 w-3.5 text-primary" />
-            Haz click en el mapa para fijar la ubicación de la propiedad.
+            {t.propDialogs.clickMapToSetLocation}
             <button
               type="button"
               onClick={() => setEditPropMode(false)}
               className="ml-auto text-xs text-muted-foreground hover:text-foreground"
             >
-              Cancelar
+              {t.propDialogs.cancel}
             </button>
           </div>
         )}
@@ -180,7 +183,7 @@ export function MapTab({ property, pois }: MapTabProps) {
           <div className="mt-5">
             <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               <Pin className="h-3 w-3" />
-              Destacados
+              {t.propDialogs.featured}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {pinnedPois.map((p) => (
@@ -195,9 +198,9 @@ export function MapTab({ property, pois }: MapTabProps) {
       <Card className="rounded-2xl border-border p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold">Lugares ({pois.length})</h3>
+            <h3 className="text-sm font-semibold">{t.propDialogs.placesCount} ({pois.length})</h3>
             <p className="text-xs text-muted-foreground">
-              Pin con icono y distancia
+              {t.propDialogs.placesSubtitle}
             </p>
           </div>
         </div>
@@ -207,10 +210,9 @@ export function MapTab({ property, pois }: MapTabProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
               <MapPin className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium">Sin lugares aún</p>
+            <p className="text-sm font-medium">{t.propDialogs.noPlacesYet}</p>
             <p className="max-w-[26ch] text-xs text-muted-foreground">
-              Click en el mapa o en el botón &quot;Agregar lugar&quot; para
-              añadir restaurantes, escuelas, gimnasios y más.
+              {t.propDialogs.noPlacesHint}
             </p>
             <Button
               size="sm"
@@ -218,7 +220,7 @@ export function MapTab({ property, pois }: MapTabProps) {
               className="mt-2 rounded-full"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Primer lugar
+              {t.propDialogs.firstPlace}
             </Button>
           </div>
         ) : (
@@ -231,6 +233,8 @@ export function MapTab({ property, pois }: MapTabProps) {
                 onDelete={() => handleDelete(p.id)}
                 onTogglePin={() => handleTogglePin(p.id)}
                 pending={pending}
+                t={t}
+                locale={locale}
               />
             ))}
           </ul>
@@ -278,12 +282,16 @@ function PoiListItem({
   onDelete,
   onTogglePin,
   pending,
+  t,
+  locale,
 }: {
   poi: POIData;
   onEdit: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
   pending: boolean;
+  t: Dict;
+  locale: Locale;
 }) {
   const meta = POI_TYPE_META[poi.type as PoiTypeKey] ?? POI_TYPE_META.OTHER;
   const Icon = meta.icon;
@@ -309,11 +317,11 @@ function PoiListItem({
           {poi.pinned && (
             <Badge className="rounded-full bg-amber-500/15 px-1.5 py-0 text-[9px] text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">
               <Pin className="mr-0.5 h-2.5 w-2.5" />
-              Top
+              {t.propDialogs.top}
             </Badge>
           )}
         </div>
-        <p className="text-[11px] text-muted-foreground">{meta.label}</p>
+        <p className="text-[11px] text-muted-foreground">{poiLabel(poi.type, locale)}</p>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
             <MapPin className="h-2.5 w-2.5" />
@@ -337,7 +345,7 @@ function PoiListItem({
             rel="noopener noreferrer"
             className="mt-1 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
           >
-            Ver más
+            {t.propDialogs.seeMore}
             <ExternalLink className="h-2.5 w-2.5" />
           </a>
         )}
@@ -348,7 +356,7 @@ function PoiListItem({
           type="button"
           onClick={onTogglePin}
           disabled={pending}
-          aria-label={poi.pinned ? "Quitar destacado" : "Destacar"}
+          aria-label={poi.pinned ? t.propDialogs.unpin : t.propDialogs.pin}
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-secondary",
             poi.pinned ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
@@ -364,7 +372,7 @@ function PoiListItem({
           type="button"
           onClick={onEdit}
           disabled={pending}
-          aria-label="Editar"
+          aria-label={t.propDialogs.edit}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -373,7 +381,7 @@ function PoiListItem({
           type="button"
           onClick={onDelete}
           disabled={pending}
-          aria-label="Eliminar"
+          aria-label={t.propDialogs.delete}
           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5" />

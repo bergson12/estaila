@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileClock } from "lucide-react";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 const ACTION_COLOR: Record<string, string> = {
   "user.changePlan": "bg-violet-500/15 text-violet-600",
@@ -18,31 +19,35 @@ const ACTION_COLOR: Record<string, string> = {
 };
 
 export default async function AdminAuditPage() {
-  const logs = await listAuditLogs(100);
+  const [logs, t, locale] = await Promise.all([
+    listAuditLogs(100),
+    getDict(),
+    getLocale(),
+  ]);
 
   return (
     <div>
       <PageHeader
-        title="Auditoría de acciones admin"
-        description={`Últimas ${logs.length} acciones administrativas registradas`}
+        title={t.adminPanel.auditTitle}
+        description={`${t.adminPanel.auditLast} ${logs.length} ${t.adminPanel.auditActionsLogged}`}
       />
 
       <Card className="overflow-hidden p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-2.5 font-semibold">Fecha</th>
-              <th className="px-3 py-2.5 font-semibold">Admin</th>
-              <th className="px-3 py-2.5 font-semibold">Acción</th>
-              <th className="px-3 py-2.5 font-semibold">Target</th>
-              <th className="px-3 py-2.5 font-semibold">Detalles</th>
+              <th className="px-4 py-2.5 font-semibold">{t.adminPanel.colDate}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colAdmin}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colAction}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colTarget}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colDetails}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {logs.map((l) => (
               <tr key={l.id} className="hover:bg-muted/30">
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(l.createdAt).toLocaleString("es", {
+                  {new Date(l.createdAt).toLocaleString(locale === "en" ? "en-US" : "es", {
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",
@@ -96,7 +101,7 @@ export default async function AdminAuditPage() {
               <tr>
                 <td colSpan={5} className="px-4 py-16 text-center text-sm text-muted-foreground">
                   <FileClock className="mx-auto mb-2 h-5 w-5 opacity-40" />
-                  Aún no hay acciones administrativas registradas
+                  {t.adminPanel.auditEmpty}
                 </td>
               </tr>
             )}

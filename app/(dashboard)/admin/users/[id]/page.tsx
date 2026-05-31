@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { getUserDetail } from "@/lib/actions/admin";
 import { UserDetailActions } from "@/components/admin/user-detail-actions";
 import { PageHeader } from "@/components/shared/page-header";
+import { getDict, getLocale } from "@/lib/i18n/server";
+import { CATEGORIES, OPERATIONS, labelFor } from "@/lib/constants";
 
 const TYPE_COLOR: Record<string, string> = {
   SUB_ACTIVATED: "bg-emerald-500/15 text-emerald-600",
@@ -38,9 +40,14 @@ export default async function UserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await getUserDetail(id);
+  const [data, t, locale] = await Promise.all([
+    getUserDetail(id),
+    getDict(),
+    getLocale(),
+  ]);
   if (!data) notFound();
   const { user, billingEvents, recentGens, recentProps, site } = data;
+  const dateLocale = locale === "en" ? "en-US" : "es";
 
   const counts = user._count;
 
@@ -51,7 +58,7 @@ export default async function UserDetailPage({
         className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" />
-        Volver a usuarios
+        {t.adminPanel.backToUsers}
       </Link>
 
       <PageHeader
@@ -71,12 +78,12 @@ export default async function UserDetailPage({
         )}
         {user.suspended && (
           <Badge variant="outline" className="border-rose-500/40 text-rose-600">
-            Suspendido
+            {t.adminPanel.suspended}
           </Badge>
         )}
         {!user.planActive && (
           <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-            Plan inactivo
+            {t.adminPanel.planInactive}
           </Badge>
         )}
         {user.paypalSubId && (
@@ -85,7 +92,7 @@ export default async function UserDetailPage({
           </Badge>
         )}
         <span className="ml-auto text-xs text-muted-foreground">
-          Registrado {new Date(user.createdAt).toLocaleDateString("es", {
+          {t.adminPanel.registered} {new Date(user.createdAt).toLocaleDateString(dateLocale, {
             day: "2-digit",
             month: "short",
             year: "numeric",
@@ -106,13 +113,13 @@ export default async function UserDetailPage({
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
-        <Stat icon={CreditCard} label="Créditos" value={user.credits.toString()} highlight />
-        <Stat icon={Building2} label="Propiedades" value={counts.properties.toString()} />
-        <Stat icon={UsersIcon} label="Contactos" value={counts.contacts.toString()} />
-        <Stat icon={Sparkles} label="Generaciones" value={counts.aiGenerations.toString()} />
-        <Stat icon={ImageIcon} label="Fotos" value={counts.photos.toString()} />
-        <Stat icon={Calendar} label="Citas" value={counts.appointments.toString()} />
-        <Stat icon={Megaphone} label="Posts" value={counts.marketingPosts.toString()} />
+        <Stat icon={CreditCard} label={t.adminPanel.statCredits} value={user.credits.toString()} highlight />
+        <Stat icon={Building2} label={t.adminPanel.statProperties} value={counts.properties.toString()} />
+        <Stat icon={UsersIcon} label={t.adminPanel.statContacts} value={counts.contacts.toString()} />
+        <Stat icon={Sparkles} label={t.adminPanel.statGenerations} value={counts.aiGenerations.toString()} />
+        <Stat icon={ImageIcon} label={t.adminPanel.statPhotos} value={counts.photos.toString()} />
+        <Stat icon={Calendar} label={t.adminPanel.statAppointments} value={counts.appointments.toString()} />
+        <Stat icon={Megaphone} label={t.adminPanel.statPosts} value={counts.marketingPosts.toString()} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -120,11 +127,11 @@ export default async function UserDetailPage({
         <Card className="p-5 lg:col-span-2">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <CreditCard className="h-3.5 w-3.5" />
-            Movimientos de billing ({billingEvents.length})
+            {t.adminPanel.billingMovements} ({billingEvents.length})
           </h3>
           {billingEvents.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Sin movimientos de billing aún.
+              {t.adminPanel.noBillingYet}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -133,7 +140,7 @@ export default async function UserDetailPage({
                   {billingEvents.map((e) => (
                     <tr key={e.id} className="hover:bg-muted/30">
                       <td className="py-2.5 pr-3 text-xs text-muted-foreground">
-                        {new Date(e.createdAt).toLocaleString("es", {
+                        {new Date(e.createdAt).toLocaleString(dateLocale, {
                           day: "2-digit",
                           month: "short",
                           hour: "2-digit",
@@ -168,19 +175,19 @@ export default async function UserDetailPage({
           <Card className="p-5">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               <Mail className="h-3.5 w-3.5" />
-              Perfil
+              {t.adminPanel.profile}
             </h3>
             <Field label="ID" value={<code className="text-[10px]">{user.id}</code>} />
             <Field label="Email" value={user.email} />
-            <Field label="Renueva en" value={user.planRenewsAt ? new Date(user.planRenewsAt).toLocaleDateString("es") : "—"} />
-            <Field label="Última actualización" value={new Date(user.updatedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })} />
+            <Field label={t.adminPanel.renewsOn} value={user.planRenewsAt ? new Date(user.planRenewsAt).toLocaleDateString(dateLocale) : "—"} />
+            <Field label={t.adminPanel.lastUpdate} value={new Date(user.updatedAt).toLocaleString(dateLocale, { dateStyle: "medium", timeStyle: "short" })} />
           </Card>
 
           {site && (
             <Card className="p-5">
               <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 <Globe className="h-3.5 w-3.5" />
-                Sitio público
+                {t.adminPanel.publicSite}
               </h3>
               <div className="space-y-1.5 text-sm">
                 <div className="flex items-center justify-between">
@@ -194,17 +201,17 @@ export default async function UserDetailPage({
                   </Link>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Plantilla</span>
+                  <span className="text-muted-foreground">{t.adminPanel.template}</span>
                   <span className="font-medium">{site.template}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Estado</span>
+                  <span className="text-muted-foreground">{t.adminPanel.statusWord}</span>
                   {site.published ? (
                     <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15">
-                      Publicado
+                      {t.adminPanel.published}
                     </Badge>
                   ) : (
-                    <Badge variant="outline">Borrador</Badge>
+                    <Badge variant="outline">{t.adminPanel.draft}</Badge>
                   )}
                 </div>
               </div>
@@ -218,10 +225,10 @@ export default async function UserDetailPage({
         <Card className="p-5">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5" />
-            Últimas generaciones IA
+            {t.adminPanel.latestAiGenerations}
           </h3>
           {recentGens.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin generaciones todavía.</p>
+            <p className="text-sm text-muted-foreground">{t.adminPanel.noGensYet}</p>
           ) : (
             <ul className="space-y-1.5">
               {recentGens.map((g) => (
@@ -244,7 +251,7 @@ export default async function UserDetailPage({
                     <span className="font-mono">{g.creditsUsed}c</span>
                     <Clock className="h-3 w-3" />
                     <span>
-                      {new Date(g.createdAt).toLocaleDateString("es", {
+                      {new Date(g.createdAt).toLocaleDateString(dateLocale, {
                         day: "2-digit",
                         month: "short",
                       })}
@@ -259,10 +266,10 @@ export default async function UserDetailPage({
         <Card className="p-5">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
-            Últimas propiedades
+            {t.adminPanel.latestProperties}
           </h3>
           {recentProps.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aún no ha creado propiedades.</p>
+            <p className="text-sm text-muted-foreground">{t.adminPanel.noPropsYet}</p>
           ) : (
             <ul className="space-y-1.5">
               {recentProps.map((p) => (
@@ -273,7 +280,7 @@ export default async function UserDetailPage({
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{p.title}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {p.category} · {p.operation}
+                      {labelFor(CATEGORIES, p.category, locale)} · {labelFor(OPERATIONS, p.operation, locale)}
                     </p>
                   </div>
                   <span className="shrink-0 font-mono tabular-nums">

@@ -32,6 +32,7 @@ import {
   setSuspended,
   setRole,
 } from "@/lib/actions/admin";
+import { useT } from "@/lib/i18n/provider";
 
 type UserRow = {
   id: string;
@@ -63,6 +64,7 @@ export function AdminUsersTable({
   initialPlan: "ALL" | "FREE" | "PRO" | "TEAM";
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [search, setSearch] = useState(initialSearch);
   const [plan, setPlan] = useState<"ALL" | "FREE" | "PRO" | "TEAM">(initialPlan);
   const [pending, startTransition] = useTransition();
@@ -98,7 +100,7 @@ export function AdminUsersTable({
         >
           <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Buscar por email o nombre"
+            placeholder={t.adminPanel.searchByEmailOrName}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8"
@@ -118,7 +120,7 @@ export function AdminUsersTable({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {p === "ALL" ? "Todos" : p}
+              {p === "ALL" ? t.adminPanel.filterAll : p}
             </button>
           ))}
         </div>
@@ -129,13 +131,13 @@ export function AdminUsersTable({
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30">
               <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-2.5 font-semibold">Usuario</th>
-                <th className="px-3 py-2.5 font-semibold">Rol</th>
-                <th className="px-3 py-2.5 font-semibold">Plan</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Créditos</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Props</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Gens</th>
-                <th className="px-3 py-2.5 font-semibold">Estado</th>
+                <th className="px-4 py-2.5 font-semibold">{t.adminPanel.colUser}</th>
+                <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colRole}</th>
+                <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colPlan}</th>
+                <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colCredits}</th>
+                <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colProps}</th>
+                <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colGens}</th>
+                <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colState}</th>
                 <th className="px-3 py-2.5"></th>
               </tr>
             </thead>
@@ -174,7 +176,7 @@ export function AdminUsersTable({
                     {u.paypalSubId && (
                       <span
                         className="ml-1 text-[9px] text-muted-foreground"
-                        title="Suscripción PayPal activa"
+                        title={t.adminPanel.paypalSubActive}
                       >
                         PP
                       </span>
@@ -192,11 +194,11 @@ export function AdminUsersTable({
                   <td className="px-3 py-3">
                     {u.suspended ? (
                       <Badge variant="outline" className="border-rose-500/40 text-rose-600">
-                        Suspendido
+                        {t.adminPanel.suspended}
                       </Badge>
                     ) : !u.planActive ? (
                       <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                        Inactivo
+                        {t.adminPanel.inactive}
                       </Badge>
                     ) : (
                       <span className="text-xs text-emerald-600">●</span>
@@ -211,12 +213,12 @@ export function AdminUsersTable({
                           className="h-7 px-2 text-xs"
                           disabled={pending}
                         >
-                          Acciones
+                          {t.adminPanel.actions}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
-                          Cambiar plan
+                          {t.adminPanel.changePlan}
                         </DropdownMenuLabel>
                         {(["FREE", "PRO", "TEAM"] as const).map((p) => (
                           <DropdownMenuItem
@@ -234,45 +236,45 @@ export function AdminUsersTable({
                         ))}
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
-                          Créditos
+                          {t.adminPanel.creditsCapitalized}
                         </DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() =>
                             withToast(
                               adjustCredits(u.id, 50, "Admin grant"),
-                              "+50 créditos"
+                              `+50 ${t.adminPanel.creditsWord}`
                             )
                           }
                         >
-                          <Plus className="mr-2 h-3.5 w-3.5" /> +50 créditos
+                          <Plus className="mr-2 h-3.5 w-3.5" /> +50 {t.adminPanel.creditsWord}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             withToast(
                               adjustCredits(u.id, -10, "Admin debit"),
-                              "-10 créditos"
+                              `-10 ${t.adminPanel.creditsWord}`
                             )
                           }
                           disabled={u.credits < 10}
                         >
-                          <Minus className="mr-2 h-3.5 w-3.5" /> -10 créditos
+                          <Minus className="mr-2 h-3.5 w-3.5" /> -10 {t.adminPanel.creditsWord}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() =>
                             withToast(
                               setSuspended(u.id, !u.suspended),
-                              u.suspended ? "Reactivado" : "Suspendido"
+                              u.suspended ? t.adminPanel.toastReactivated : t.adminPanel.toastSuspended
                             )
                           }
                         >
                           {u.suspended ? (
                             <>
-                              <Play className="mr-2 h-3.5 w-3.5" /> Reactivar
+                              <Play className="mr-2 h-3.5 w-3.5" /> {t.adminPanel.reactivate}
                             </>
                           ) : (
                             <>
-                              <Pause className="mr-2 h-3.5 w-3.5" /> Suspender
+                              <Pause className="mr-2 h-3.5 w-3.5" /> {t.adminPanel.suspend}
                             </>
                           )}
                         </DropdownMenuItem>
@@ -286,11 +288,11 @@ export function AdminUsersTable({
                         >
                           {u.role === "ADMIN" ? (
                             <>
-                              <UserIcon className="mr-2 h-3.5 w-3.5" /> Quitar admin
+                              <UserIcon className="mr-2 h-3.5 w-3.5" /> {t.adminPanel.removeAdmin}
                             </>
                           ) : (
                             <>
-                              <ShieldCheck className="mr-2 h-3.5 w-3.5" /> Hacer admin
+                              <ShieldCheck className="mr-2 h-3.5 w-3.5" /> {t.adminPanel.makeAdmin}
                             </>
                           )}
                         </DropdownMenuItem>
@@ -302,7 +304,7 @@ export function AdminUsersTable({
               {users.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                    Sin resultados
+                    {t.adminPanel.noResults}
                   </td>
                 </tr>
               )}

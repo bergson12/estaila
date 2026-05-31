@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStudioPipeline, type PipelineStep } from "@/lib/stores/studio-pipeline";
+import { useT } from "@/lib/i18n/provider";
 
 const TOOL_HREF: Record<string, string> = {
   STAGING: "/studio/staging",
@@ -20,21 +21,22 @@ const TOOL_HREF: Record<string, string> = {
   LAWN: "/studio/lawn",
 };
 
-const TOOL_LABEL: Record<string, string> = {
-  STAGING: "Staging",
-  DECLUTTER: "Declutter",
-  ENHANCE: "Mejorar",
-  STYLE_CHANGE: "Estilo",
-  SKY: "Cielo",
-  TWILIGHT: "Atardecer",
-  POOL: "Piscina",
-  LAWN: "Césped",
-};
-
 export function PipelineBreadcrumb() {
   const router = useRouter();
+  const { t } = useT();
   const { originalUrl, steps, currentStepIndex, revertTo, reset } =
     useStudioPipeline();
+
+  const TOOL_LABEL: Record<string, string> = {
+    STAGING: t.studio.stepStaging,
+    DECLUTTER: t.studio.stepDeclutter,
+    ENHANCE: t.studio.stepEnhance,
+    STYLE_CHANGE: t.studio.stepStyle,
+    SKY: t.studio.stepSky,
+    TWILIGHT: t.studio.toolTwilightShort,
+    POOL: t.studio.toolPoolShort,
+    LAWN: t.studio.toolLawnShort,
+  };
 
   if (!originalUrl) return null;
 
@@ -48,9 +50,9 @@ export function PipelineBreadcrumb() {
       reset();
       return;
     }
-    if (!confirm("¿Descartar el pipeline actual? Empezarás desde una foto nueva.")) return;
+    if (!confirm(t.studio.discardPipelineConfirm)) return;
     reset();
-    toast.success("Pipeline reiniciado");
+    toast.success(t.studio.pipelineReset);
     router.refresh();
   }
 
@@ -66,13 +68,13 @@ export function PipelineBreadcrumb() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary"></span>
         </span>
-        Pipeline
+        {t.studio.pipeline}
       </div>
 
       {/* Original step */}
       <StepChip
         thumbnailUrl={originalUrl}
-        label="Original"
+        label={t.studio.original}
         active={currentStepIndex === -1}
         icon={<Camera className="h-3 w-3" />}
         onClick={() => revertTo(-1)}
@@ -97,6 +99,7 @@ export function PipelineBreadcrumb() {
               active={currentStepIndex === i}
               onClick={() => revertTo(i)}
               onJump={() => jumpTo(step)}
+              jumpTitle={t.studio.doubleClickToOpenTool}
             />
           </motion.div>
         ))}
@@ -109,10 +112,10 @@ export function PipelineBreadcrumb() {
             size="sm"
             className="h-7 px-2 text-xs"
             onClick={() => revertTo(-1)}
-            title="Volver al original"
+            title={t.studio.backToOriginal}
           >
             <RotateCcw className="mr-1 h-3 w-3" />
-            Original
+            {t.studio.original}
           </Button>
         )}
         <Button
@@ -120,7 +123,7 @@ export function PipelineBreadcrumb() {
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={handleReset}
-          title="Descartar pipeline"
+          title={t.studio.discardPipeline}
         >
           <X className="h-3.5 w-3.5" />
         </Button>
@@ -138,6 +141,7 @@ function StepChip({
   icon,
   onClick,
   onJump,
+  jumpTitle,
 }: {
   thumbnailUrl: string;
   label: string;
@@ -147,6 +151,7 @@ function StepChip({
   icon?: React.ReactNode;
   onClick: () => void;
   onJump?: () => void;
+  jumpTitle?: string;
 }) {
   return (
     <button
@@ -158,7 +163,7 @@ function StepChip({
           ? "border-primary/50 bg-primary/10 shadow-sm shadow-primary/10"
           : "border-border bg-card hover:border-foreground/20"
       )}
-      title={onJump ? "Doble-click para abrir herramienta" : label}
+      title={onJump ? (jumpTitle ?? label) : label}
     >
       <div className="relative h-7 w-7 overflow-hidden rounded-md bg-muted ring-1 ring-border">
         {/* eslint-disable-next-line @next/next/no-img-element */}

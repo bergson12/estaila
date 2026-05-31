@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useStudio } from "./studio-context";
 import { compressImage, formatBytes } from "@/lib/compress-image";
+import { useT } from "@/lib/i18n/provider";
 
 export function UploadZone() {
   const { setImage } = useStudio();
+  const { t } = useT();
   const [isOver, setIsOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [stage, setStage] = useState<"" | "compress" | "upload">("");
@@ -16,7 +18,7 @@ export function UploadZone() {
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.type.startsWith("image/")) {
-        toast.error("Solo imágenes");
+        toast.error(t.studio.toastOnlyImages);
         return;
       }
       setUploading(true);
@@ -26,7 +28,7 @@ export function UploadZone() {
         const compressed = await compressImage(file, "raw");
         const saved =
           compressed.size < originalSize
-            ? `${Math.round(((originalSize - compressed.size) / originalSize) * 100)}% más liviana`
+            ? `${Math.round(((originalSize - compressed.size) / originalSize) * 100)}% ${t.studio.lighter}`
             : null;
 
         setStage("upload");
@@ -34,9 +36,9 @@ export function UploadZone() {
         form.append("file", compressed);
         const res = await fetch("/api/upload", { method: "POST", body: form });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Error al subir");
+        if (!res.ok) throw new Error(data.error ?? t.studio.uploadError);
         setImage({ url: data.url, filename: data.filename });
-        toast.success("Foto subida", {
+        toast.success(t.studio.toastPhotoUploaded, {
           description: saved
             ? `${formatBytes(originalSize)} → ${formatBytes(compressed.size)} · ${saved}`
             : `${formatBytes(compressed.size)}`,
@@ -48,7 +50,7 @@ export function UploadZone() {
         setStage("");
       }
     },
-    [setImage]
+    [setImage, t]
   );
 
   function onDrop(e: React.DragEvent) {
@@ -92,18 +94,18 @@ export function UploadZone() {
       </div>
       <h3 className="text-base font-semibold">
         {stage === "compress"
-          ? "Comprimiendo imagen..."
+          ? t.studio.compressing
           : stage === "upload"
-            ? "Subiendo..."
-            : "Sube una foto"}
+            ? t.studio.uploading
+            : t.studio.uploadTitle}
       </h3>
       <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-        Arrastra una imagen o haz click para seleccionar.<br />
-        JPG, PNG, WEBP · máx 15MB
+        {t.studio.uploadHintLine1}<br />
+        {t.studio.uploadHintFormats}
       </p>
       <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
         <ImageIcon className="h-3.5 w-3.5" />
-        Recomendado: ≥ 1024×1024px para mejores resultados
+        {t.studio.uploadRecommended}
       </div>
     </label>
   );

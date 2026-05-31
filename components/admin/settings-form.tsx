@@ -27,9 +27,11 @@ import {
 } from "@/components/ui/select";
 import { updateAppSettings } from "@/lib/actions/admin";
 import type { AppSettingsValues } from "@/lib/app-settings";
+import { useT } from "@/lib/i18n/provider";
 
 export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
   const router = useRouter();
+  const { t } = useT();
   const [state, setState] = useState<AppSettingsValues>(initial);
   const [pending, startTransition] = useTransition();
 
@@ -41,7 +43,7 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
     startTransition(async () => {
       try {
         await updateAppSettings(state);
-        toast.success("Configuración guardada");
+        toast.success(t.adminPanel.toastSettingsSaved);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -57,17 +59,17 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Megaphone className="h-3.5 w-3.5" />
-          Anuncio global
+          {t.adminPanel.globalAnnouncement}
         </h3>
         <p className="mb-4 text-xs text-muted-foreground">
-          Mensaje que aparece en la parte superior del dashboard para todos los usuarios.
+          {t.adminPanel.globalAnnouncementDesc}
         </p>
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
             <div>
-              <Label className="text-sm font-medium">Banner activo</Label>
+              <Label className="text-sm font-medium">{t.adminPanel.bannerActive}</Label>
               <p className="text-xs text-muted-foreground">
-                Muestra/oculta el banner sin borrar el mensaje
+                {t.adminPanel.bannerActiveDesc}
               </p>
             </div>
             <Switch
@@ -76,17 +78,17 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
             />
           </div>
           <div>
-            <Label className="text-xs">Mensaje</Label>
+            <Label className="text-xs">{t.adminPanel.bannerMessageLabel}</Label>
             <Textarea
               value={state.bannerMessage ?? ""}
               onChange={(e) => set("bannerMessage", e.target.value || null)}
-              placeholder="Ej: Mantenimiento programado el sábado 5pm UTC. Studio IA puede estar lento."
+              placeholder={t.adminPanel.bannerMessagePlaceholder}
               rows={2}
               className="mt-1"
             />
           </div>
           <div>
-            <Label className="text-xs">Tono</Label>
+            <Label className="text-xs">{t.adminPanel.bannerToneLabel}</Label>
             <Select
               value={state.bannerType}
               onValueChange={(v) => set("bannerType", v as AppSettingsValues["bannerType"])}
@@ -95,9 +97,9 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="INFO">Info (azul)</SelectItem>
-                <SelectItem value="SUCCESS">Éxito (verde)</SelectItem>
-                <SelectItem value="WARN">Advertencia (ámbar)</SelectItem>
+                <SelectItem value="INFO">{t.adminPanel.toneInfo}</SelectItem>
+                <SelectItem value="SUCCESS">{t.adminPanel.toneSuccess}</SelectItem>
+                <SelectItem value="WARN">{t.adminPanel.toneWarn}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -108,30 +110,30 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <ToggleRight className="h-3.5 w-3.5" />
-          Feature flags
+          {t.adminPanel.featureFlags}
         </h3>
 
         <FlagRow
-          label="Signups abiertos"
-          desc="Permite registro de nuevos usuarios. Desactívalo para cerrar la plataforma temporalmente."
+          label={t.adminPanel.flagSignupsLabel}
+          desc={t.adminPanel.flagSignupsDesc}
           checked={state.signupsEnabled}
           onChange={(v) => set("signupsEnabled", v)}
         />
         <FlagRow
-          label="Studio IA disponible"
-          desc="Si está OFF, las herramientas de Studio retornan error. Útil para emergencias de costos."
+          label={t.adminPanel.flagStudioLabel}
+          desc={t.adminPanel.flagStudioDesc}
           checked={state.studioEnabled}
           onChange={(v) => set("studioEnabled", v)}
         />
         <FlagRow
-          label="Marketing IA disponible"
-          desc="Generación de copys + hashtags + reels via IA."
+          label={t.adminPanel.flagMarketingLabel}
+          desc={t.adminPanel.flagMarketingDesc}
           checked={state.marketingEnabled}
           onChange={(v) => set("marketingEnabled", v)}
         />
         <FlagRow
-          label="Modo mantenimiento"
-          desc="Bloquea TODAS las rutas excepto /login y /admin. Mostrar página de mantenimiento."
+          label={t.adminPanel.flagMaintenanceLabel}
+          desc={t.adminPanel.flagMaintenanceDesc}
           checked={state.maintenanceMode}
           onChange={(v) => set("maintenanceMode", v)}
           danger
@@ -142,10 +144,10 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5" />
-          Proveedor IA
+          {t.adminPanel.aiProvider}
         </h3>
         <p className="mb-4 text-xs text-muted-foreground">
-          Forzar un proveedor o dejar que el sistema escoja automáticamente.
+          {t.adminPanel.aiProviderDesc}
         </p>
         <Select
           value={state.aiProvider}
@@ -155,13 +157,13 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="AUTO">AUTO — Gemini si hay key, fallback a mock</SelectItem>
-            <SelectItem value="GEMINI">GEMINI — solo Nano Banana real (cobra)</SelectItem>
-            <SelectItem value="MOCK">MOCK — solo filtros CSS (sin costo)</SelectItem>
+            <SelectItem value="AUTO">{t.adminPanel.aiProviderAuto}</SelectItem>
+            <SelectItem value="GEMINI">{t.adminPanel.aiProviderGemini}</SelectItem>
+            <SelectItem value="MOCK">{t.adminPanel.aiProviderMock}</SelectItem>
           </SelectContent>
         </Select>
         <p className="mt-2 text-xs text-muted-foreground">
-          MOCK es útil para test sin gastar cuota. GEMINI fuerza error si la key no funciona (en lugar de fallback silencioso).
+          {t.adminPanel.aiProviderHint}
         </p>
       </Card>
 
@@ -169,10 +171,10 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Hash className="h-3.5 w-3.5" />
-          Defaults de usuarios nuevos
+          {t.adminPanel.newUserDefaults}
         </h3>
         <div>
-          <Label className="text-xs">Créditos iniciales al registrarse (plan FREE)</Label>
+          <Label className="text-xs">{t.adminPanel.initialCreditsLabel}</Label>
           <Input
             type="number"
             min={0}
@@ -182,7 +184,7 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
             className="mt-1 max-w-[160px]"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Recomendado: 5-10. Demasiado bajo desincentiva pruebas, demasiado alto come margen.
+            {t.adminPanel.initialCreditsHint}
           </p>
         </div>
       </Card>
@@ -194,18 +196,18 @@ export function SettingsForm({ initial }: { initial: AppSettingsValues }) {
         }`}
       >
         <SettingsIcon className="h-4 w-4 text-amber-500" />
-        <span className="text-sm font-medium">Cambios sin guardar</span>
+        <span className="text-sm font-medium">{t.adminPanel.unsavedChanges}</span>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setState(initial)}
           disabled={pending}
         >
-          Descartar
+          {t.adminPanel.discard}
         </Button>
         <Button size="sm" onClick={save} disabled={pending}>
           <Save className="mr-1.5 h-3.5 w-3.5" />
-          Guardar
+          {t.adminPanel.save}
         </Button>
       </div>
     </div>

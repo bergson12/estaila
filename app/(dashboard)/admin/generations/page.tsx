@@ -2,6 +2,7 @@ import { listRecentGenerations } from "@/lib/actions/admin";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 const STATUS_COLOR: Record<string, string> = {
   COMPLETED: "bg-emerald-500/15 text-emerald-600",
@@ -11,34 +12,38 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default async function AdminGenerationsPage() {
-  const gens = await listRecentGenerations(60);
+  const [gens, t, locale] = await Promise.all([
+    listRecentGenerations(60),
+    getDict(),
+    getLocale(),
+  ]);
   const failed = gens.filter((g) => g.status === "FAILED").length;
   const completed = gens.filter((g) => g.status === "COMPLETED").length;
 
   return (
     <div>
       <PageHeader
-        title="Generaciones IA recientes"
-        description={`${gens.length} mostradas · ${completed} ok · ${failed} fallidas`}
+        title={t.adminPanel.gensTitle}
+        description={`${gens.length} ${t.adminPanel.gensShown} · ${completed} ${t.adminPanel.gensOk} · ${failed} ${t.adminPanel.gensFailed}`}
       />
 
       <Card className="overflow-hidden p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-2.5 font-semibold">Fecha</th>
-              <th className="px-3 py-2.5 font-semibold">Usuario</th>
-              <th className="px-3 py-2.5 font-semibold">Tool</th>
-              <th className="px-3 py-2.5 font-semibold">Status</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Costo</th>
-              <th className="px-3 py-2.5 font-semibold">Error</th>
+              <th className="px-4 py-2.5 font-semibold">{t.adminPanel.colDate}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colUser}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colTool}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colStatus}</th>
+              <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colCost}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colError}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {gens.map((g) => (
               <tr key={g.id} className="hover:bg-muted/30">
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {new Date(g.createdAt).toLocaleString("es", {
+                  {new Date(g.createdAt).toLocaleString(locale === "en" ? "en-US" : "es", {
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",

@@ -7,16 +7,18 @@ import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { cn } from "@/lib/utils";
-
-const INTENSITIES = [
-  { value: "SUBTLE", label: "Sutil", desc: "Hora dorada suave" },
-  { value: "GOLDEN", label: "Dorado", desc: "Cálido y vibrante" },
-  { value: "DRAMATIC", label: "Dramático", desc: "Máximo contraste" },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function TwilightClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t } = useT();
   const [intensity, setIntensity] = useState<string>("GOLDEN");
+
+  const INTENSITIES = [
+    { value: "SUBTLE", label: t.studio.twilightSubtle, desc: t.studio.twilightSubtleDesc },
+    { value: "GOLDEN", label: t.studio.twilightGolden, desc: t.studio.twilightGoldenDesc },
+    { value: "DRAMATIC", label: t.studio.twilightDramatic, desc: t.studio.twilightDramaticDesc },
+  ] as const;
 
   return (
     <StudioShell
@@ -24,10 +26,10 @@ export function TwilightClient({ plan }: { plan: string }) {
       title={
         <>
           <Sunset className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Atardecer Dorado
+          {t.studio.toolTwilightTitle}
         </>
       }
-      description="Convierte fotos de día en escenas de atardecer cinematográficas."
+      description={t.studio.twilightDescription}
       optionsPanel={
         <>
           <OptionsPanel>
@@ -35,17 +37,16 @@ export function TwilightClient({ plan }: { plan: string }) {
               <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div>
                 <p className="text-xs font-medium text-primary">
-                  +35% más clicks
+                  {t.studio.twilightClicksTitle}
                 </p>
                 <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                  Las fotos al atardecer reciben en promedio 35% más interés
-                  según data de portales inmobiliarios.
+                  {t.studio.twilightClicksDesc}
                 </p>
               </div>
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Intensidad">
+          <OptionsPanel title={t.studio.intensity}>
             <div className="grid grid-cols-3 gap-1.5">
               {INTENSITIES.map((i) => (
                 <button
@@ -76,7 +77,7 @@ export function TwilightClient({ plan }: { plan: string }) {
 
           <GenerateButton
             onClick={() => runGenerate({ preset: intensity })}
-            label="Aplicar atardecer"
+            label={t.studio.applyTwilightBtn}
           />
         </>
       }

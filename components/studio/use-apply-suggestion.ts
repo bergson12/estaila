@@ -6,8 +6,10 @@ import {
   ROOM_TYPES,
   STAGING_STYLES,
   BUYER_TARGETS,
+  labelFor,
 } from "@/lib/constants";
 import { useStudio } from "./studio-context";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Auto-apply Gemini's PhotoAnalysis recommendations to the right-side sidebar
@@ -27,6 +29,7 @@ export function useApplySuggestion(setters: {
   setBuyerTarget?: (v: string) => void;
 }) {
   const { suggestion } = useStudio();
+  const { t, locale } = useT();
   const lastAppliedRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export function useApplySuggestion(setters: {
       );
       if (match) {
         setters.setRoomType(match.value);
-        applied.push(`Habitación: ${match.label}`);
+        applied.push(`${t.studio.applyRoomPrefix} ${labelFor(ROOM_TYPES, match.value, locale)}`);
       }
     }
 
@@ -57,7 +60,7 @@ export function useApplySuggestion(setters: {
       );
       if (match) {
         setters.setStyle(match.value);
-        applied.push(`Estilo: ${match.label}`);
+        applied.push(`${t.studio.applyStylePrefix} ${labelFor(STAGING_STYLES, match.value, locale)}`);
       }
     }
 
@@ -68,12 +71,12 @@ export function useApplySuggestion(setters: {
       );
       if (match) {
         setters.setBuyerTarget(match.value);
-        applied.push(`Buyer: ${match.label}`);
+        applied.push(`${t.studio.applyBuyerPrefix} ${labelFor(BUYER_TARGETS, match.value, locale)}`);
       }
     }
 
     if (applied.length > 0) {
-      toast.success("Recomendaciones IA aplicadas al panel", {
+      toast.success(t.studio.toastSuggestionsApplied, {
         description: applied.join(" · "),
         duration: 4000,
       });

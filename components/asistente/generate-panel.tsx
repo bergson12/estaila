@@ -23,7 +23,8 @@ import {
 import { generate } from "@/lib/actions/ai";
 import { listMyGenerations, type GalleryItem } from "@/lib/actions/ai";
 import { compressImage } from "@/lib/compress-image";
-import { STAGING_STYLES } from "@/lib/constants";
+import { STAGING_STYLES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import type { AIToolName } from "@/lib/ai/types";
 
 export type GenResult = {
@@ -38,18 +39,18 @@ export type GenResult = {
 
 const TOOLS: {
   value: AIToolName;
-  label: string;
+  labelKey: string;
   credits: number;
   style?: boolean;
 }[] = [
-  { value: "STAGING", label: "Amueblar", credits: 2, style: true },
-  { value: "ENHANCE", label: "Mejorar", credits: 1 },
-  { value: "DECLUTTER", label: "Vaciar", credits: 1 },
-  { value: "STYLE_CHANGE", label: "Estilo", credits: 2, style: true },
-  { value: "SKY", label: "Cielo", credits: 1 },
-  { value: "TWILIGHT", label: "Atardecer", credits: 1 },
-  { value: "POOL", label: "Piscina", credits: 1 },
-  { value: "LAWN", label: "Césped", credits: 1 },
+  { value: "STAGING", labelKey: "toolStaging", credits: 2, style: true },
+  { value: "ENHANCE", labelKey: "toolEnhance", credits: 1 },
+  { value: "DECLUTTER", labelKey: "toolDeclutter", credits: 1 },
+  { value: "STYLE_CHANGE", labelKey: "toolStyle", credits: 2, style: true },
+  { value: "SKY", labelKey: "toolSky", credits: 1 },
+  { value: "TWILIGHT", labelKey: "toolTwilight", credits: 1 },
+  { value: "POOL", labelKey: "toolPool", credits: 1 },
+  { value: "LAWN", labelKey: "toolLawn", credits: 1 },
 ];
 
 export function GeneratePanel({
@@ -61,6 +62,7 @@ export function GeneratePanel({
   onClose: () => void;
   onResult: (r: GenResult) => void;
 }) {
+  const { t, locale } = useT();
   const [tab, setTab] = useState<"upload" | "gallery">("upload");
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -69,7 +71,8 @@ export function GeneratePanel({
   const [style, setStyle] = useState("MODERN");
   const [generating, setGenerating] = useState(false);
 
-  const toolDef = TOOLS.find((t) => t.value === tool)!;
+  const toolDef = TOOLS.find((td) => td.value === tool)!;
+  const toolLabel = t.asistente[toolDef.labelKey as keyof typeof t.asistente];
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +94,7 @@ export function GeneratePanel({
 
   async function handleUpload(file: File) {
     if (!file.type.startsWith("image/")) {
-      toast.error("Solo imágenes");
+      toast.error(t.asistente.toastOnlyImages);
       return;
     }
     setUploading(true);
@@ -112,7 +115,7 @@ export function GeneratePanel({
 
   async function runGenerate() {
     if (!sourceUrl) {
-      toast.error("Elige una foto primero");
+      toast.error(t.asistente.toastPickPhotoFirst);
       return;
     }
     setGenerating(true);
@@ -128,7 +131,7 @@ export function GeneratePanel({
         beforeUrl: sourceUrl,
         afterUrl: out.outputUrl,
         generationId: out.id,
-        toolLabel: toolDef.label,
+        toolLabel,
         creditsUsed: out.creditsUsed,
         remaining: out.remainingCredits,
         fallbackUsed: out.fallbackUsed,
@@ -147,10 +150,10 @@ export function GeneratePanel({
         <DialogHeader className="border-b border-border px-5 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Sparkles className="h-4 w-4 text-primary" />
-            Generar con Studio IA
+            {t.asistente.panelTitle}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Elige una foto, la herramienta y genera sin salir del chat.
+            {t.asistente.panelDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -158,14 +161,14 @@ export function GeneratePanel({
           {/* 1. Fuente */}
           <div>
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              1 · Foto
+              {t.asistente.step1Photo}
             </p>
             <div className="mb-2 flex gap-1.5">
               <TabBtn active={tab === "upload"} onClick={() => setTab("upload")}>
-                Subir
+                {t.asistente.tabUpload}
               </TabBtn>
               <TabBtn active={tab === "gallery"} onClick={() => setTab("gallery")}>
-                Galería
+                {t.asistente.tabGallery}
               </TabBtn>
             </div>
 
@@ -198,7 +201,7 @@ export function GeneratePanel({
                   <>
                     <ImagePlus className="mb-2 h-6 w-6 text-primary" strokeWidth={1.5} />
                     <span className="text-xs text-muted-foreground">
-                      Sube o arrastra una foto
+                      {t.asistente.uploadPrompt}
                     </span>
                   </>
                 )}
@@ -207,11 +210,11 @@ export function GeneratePanel({
               <div className="grid max-h-44 grid-cols-4 gap-1.5 overflow-y-auto">
                 {gallery === null ? (
                   <div className="col-span-4 flex justify-center py-6 text-xs text-muted-foreground">
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Cargando...
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> {t.asistente.loading}
                   </div>
                 ) : gallery.length === 0 ? (
                   <div className="col-span-4 py-6 text-center text-xs text-muted-foreground">
-                    Sin fotos en tu galería.
+                    {t.asistente.galleryEmpty}
                   </div>
                 ) : (
                   gallery.map((g) => (
@@ -242,22 +245,22 @@ export function GeneratePanel({
           {/* 2. Herramienta */}
           <div>
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              2 · Herramienta
+              {t.asistente.step2Tool}
             </p>
             <div className="grid grid-cols-4 gap-1.5">
-              {TOOLS.map((t) => (
+              {TOOLS.map((td) => (
                 <button
-                  key={t.value}
-                  onClick={() => setTool(t.value)}
+                  key={td.value}
+                  onClick={() => setTool(td.value)}
                   className={cn(
                     "flex flex-col items-center gap-0.5 rounded-lg border px-1 py-2 text-[11px] font-medium transition-all",
-                    tool === t.value
+                    tool === td.value
                       ? "border-primary/40 bg-primary/10 text-primary"
                       : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20"
                   )}
                 >
-                  {t.label}
-                  <span className="font-mono text-[9px] opacity-70">{t.credits}c</span>
+                  {t.asistente[td.labelKey as keyof typeof t.asistente]}
+                  <span className="font-mono text-[9px] opacity-70">{td.credits}c</span>
                 </button>
               ))}
             </div>
@@ -267,7 +270,7 @@ export function GeneratePanel({
           {toolDef.style && (
             <div>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                3 · Estilo
+                {t.asistente.step3Style}
               </p>
               <div className="grid grid-cols-3 gap-1.5">
                 {STAGING_STYLES.slice(0, 9).map((s) => (
@@ -281,7 +284,7 @@ export function GeneratePanel({
                         : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20"
                     )}
                   >
-                    {s.label}
+                    {labelFor(STAGING_STYLES, s.value, locale)}
                   </button>
                 ))}
               </div>
@@ -293,7 +296,7 @@ export function GeneratePanel({
         <div className="sticky bottom-0 flex items-center justify-between gap-2 border-t border-border bg-popover px-5 py-3">
           <Button variant="outline" size="sm" onClick={onClose} disabled={generating}>
             <X className="mr-1 h-3.5 w-3.5" />
-            Cancelar
+            {t.asistente.cancel}
           </Button>
           <Button size="sm" onClick={runGenerate} disabled={!sourceUrl || generating}>
             {generating ? (
@@ -301,7 +304,8 @@ export function GeneratePanel({
             ) : (
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Generar · {toolDef.credits} crédito{toolDef.credits > 1 ? "s" : ""}
+            {t.asistente.generate} · {toolDef.credits}{" "}
+            {toolDef.credits > 1 ? t.asistente.creditsPlural : t.asistente.creditSingular}
           </Button>
         </div>
       </DialogContent>

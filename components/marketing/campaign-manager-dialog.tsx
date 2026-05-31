@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn, formatCurrency, formatNumber } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import {
   estimateAdReach,
   generateCaptionForProperty,
@@ -50,36 +51,36 @@ import {
 const OBJECTIVES = [
   {
     value: "AWARENESS",
-    label: "Reconocimiento",
-    desc: "Llega a la mayor cantidad de personas",
+    labelKey: "objAwareness",
+    descKey: "objAwarenessDesc",
     icon: Eye,
     color: "text-blue-500",
   },
   {
     value: "TRAFFIC",
-    label: "Tráfico",
-    desc: "Lleva visitantes a tu landing",
+    labelKey: "objTraffic",
+    descKey: "objTrafficDesc",
     icon: MousePointer,
     color: "text-purple-500",
   },
   {
     value: "ENGAGEMENT",
-    label: "Interacciones",
-    desc: "Likes, comentarios, compartidos",
+    labelKey: "objEngagement",
+    descKey: "objEngagementDesc",
     icon: MessageCircle,
     color: "text-pink-500",
   },
   {
     value: "LEADS",
-    label: "Leads",
-    desc: "Captura formularios de interesados",
+    labelKey: "objLeads",
+    descKey: "objLeadsDesc",
     icon: Target,
     color: "text-emerald-500",
   },
   {
     value: "CONVERSIONS",
-    label: "Conversiones",
-    desc: "Cierres efectivos de venta/alquiler",
+    labelKey: "objConversions",
+    descKey: "objConversionsDesc",
     icon: CheckCircle2,
     color: "text-amber-500",
   },
@@ -105,6 +106,7 @@ export function CampaignManagerDialog({
   onOpenChange: (b: boolean) => void;
   properties: Property[];
 }) {
+  const { t } = useT();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [propertyId, setPropertyId] = useState<string>("");
@@ -161,12 +163,12 @@ export function CampaignManagerDialog({
   }, [dailyBudget, days, objective, audienceSize]);
 
   async function generateCaption() {
-    if (!propertyId) return toast.error("Selecciona una propiedad primero");
+    if (!propertyId) return toast.error(t.marketing.toastSelectPropertyFirst);
     setGenerating("caption");
     try {
       const r = await generateCaptionForProperty(propertyId);
       setCaption(r.captions[0]);
-      toast.success("Caption generado con IA");
+      toast.success(t.marketing.toastCaptionGenerated);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -175,12 +177,12 @@ export function CampaignManagerDialog({
   }
 
   async function generateHashtags() {
-    if (!propertyId) return toast.error("Selecciona una propiedad primero");
+    if (!propertyId) return toast.error(t.marketing.toastSelectPropertyFirst);
     setGenerating("hashtags");
     try {
       const r = await generateHashtagsForProperty(propertyId);
       setHashtags(r.hashtags);
-      toast.success("Hashtags generados con IA");
+      toast.success(t.marketing.toastHashtagsGenerated);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -195,11 +197,11 @@ export function CampaignManagerDialog({
   }
 
   const steps = [
-    { label: "Objetivo", number: "01" },
-    { label: "Audiencia", number: "02" },
-    { label: "Ubicaciones", number: "03" },
-    { label: "Presupuesto", number: "04" },
-    { label: "Creativo", number: "05" },
+    { label: t.marketing.stepObjective, number: "01" },
+    { label: t.marketing.stepAudience, number: "02" },
+    { label: t.marketing.stepPlacements, number: "03" },
+    { label: t.marketing.stepBudget, number: "04" },
+    { label: t.marketing.stepCreative, number: "05" },
   ];
 
   const canGoNext =
@@ -219,8 +221,8 @@ export function CampaignManagerDialog({
   }
 
   function handleFinish() {
-    toast.success("Campaña creada (mock)", {
-      description: `${formatCurrency(estimate?.totalSpend ?? 0)} · ${formatNumber(estimate?.estReach ?? 0)} alcance estimado`,
+    toast.success(t.marketing.toastCampaignCreatedMock, {
+      description: `${formatCurrency(estimate?.totalSpend ?? 0)} · ${formatNumber(estimate?.estReach ?? 0)} ${t.marketing.estimatedReachSuffix}`,
     });
     onOpenChange(false);
     reset();
@@ -236,9 +238,9 @@ export function CampaignManagerDialog({
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-primary-foreground">
                 <Sparkles className="h-3.5 w-3.5" />
               </span>
-              Crear campaña publicitaria
+              {t.marketing.createAdCampaign}
               <span className="ml-auto rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                Beta · Meta Ads
+                {t.marketing.betaMetaAds}
               </span>
             </DialogTitle>
           </DialogHeader>
@@ -304,9 +306,9 @@ export function CampaignManagerDialog({
                 {step === 0 && (
                   <>
                     <div>
-                      <h3 className="text-base font-semibold">Define tu objetivo</h3>
+                      <h3 className="text-base font-semibold">{t.marketing.defineObjective}</h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        ¿Qué quieres lograr con esta campaña?
+                        {t.marketing.defineObjectiveDesc}
                       </p>
                     </div>
                     <div className="space-y-2">
@@ -333,8 +335,8 @@ export function CampaignManagerDialog({
                               <Icon className="h-4 w-4" strokeWidth={1.75} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold">{o.label}</p>
-                              <p className="text-xs text-muted-foreground">{o.desc}</p>
+                              <p className="text-sm font-semibold">{t.marketing[o.labelKey]}</p>
+                              <p className="text-xs text-muted-foreground">{t.marketing[o.descKey]}</p>
                             </div>
                             {active && (
                               <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -345,12 +347,12 @@ export function CampaignManagerDialog({
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Nombre de campaña
+                        {t.marketing.campaignName}
                       </Label>
                       <Input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Ej: Casa Miraflores - Lanzamiento"
+                        placeholder={t.marketing.campaignNamePlaceholder}
                       />
                     </div>
                   </>
@@ -361,17 +363,17 @@ export function CampaignManagerDialog({
                     <div>
                       <h3 className="flex items-center gap-2 text-base font-semibold">
                         <Users className="h-4 w-4 text-primary" />
-                        ¿A quién quieres llegar?
+                        {t.marketing.whoToReach}
                       </h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Define tu buyer persona ideal
+                        {t.marketing.whoToReachDesc}
                       </p>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-1.5">
                         <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                           <MapPin className="-mt-0.5 mr-1 inline h-3 w-3" />
-                          Ubicación
+                          {t.marketing.location}
                         </Label>
                         <Select
                           value={audienceLocation}
@@ -381,16 +383,16 @@ export function CampaignManagerDialog({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="LOCAL">Ciudad local (50 km)</SelectItem>
-                            <SelectItem value="REGION">Región amplia (200 km)</SelectItem>
-                            <SelectItem value="COUNTRY">Todo el país</SelectItem>
-                            <SelectItem value="INTERNATIONAL">Internacional (multi-país)</SelectItem>
+                            <SelectItem value="LOCAL">{t.marketing.locLocal}</SelectItem>
+                            <SelectItem value="REGION">{t.marketing.locRegion}</SelectItem>
+                            <SelectItem value="COUNTRY">{t.marketing.locCountry}</SelectItem>
+                            <SelectItem value="INTERNATIONAL">{t.marketing.locInternational}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                          Rango de edad
+                          {t.marketing.ageRange}
                         </Label>
                         <div className="flex items-center gap-2">
                           <Input
@@ -415,7 +417,7 @@ export function CampaignManagerDialog({
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Intereses (separados por comas)
+                        {t.marketing.interests}
                       </Label>
                       <Textarea
                         rows={2}
@@ -428,15 +430,15 @@ export function CampaignManagerDialog({
                               .filter(Boolean)
                           )
                         }
-                        placeholder="Real estate, Home buying, Family, Investment..."
+                        placeholder={t.marketing.interestsPlaceholder}
                       />
                     </div>
 
                     <div className="rounded-lg border border-border bg-card/50 p-4">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Audiencia estimada</span>
+                        <span className="text-muted-foreground">{t.marketing.estimatedAudience}</span>
                         <span className="font-mono font-semibold tabular-nums">
-                          {formatNumber(audienceSize)} personas
+                          {formatNumber(audienceSize)} {t.marketing.peopleWord}
                         </span>
                       </div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -451,10 +453,10 @@ export function CampaignManagerDialog({
                       </div>
                       <p className="mt-1.5 text-[11px] text-muted-foreground">
                         {audienceSize < 100_000
-                          ? "⚠ Audiencia muy específica"
+                          ? t.marketing.audienceTooSpecific
                           : audienceSize > 800_000
-                            ? "⚠ Audiencia muy amplia — costos pueden aumentar"
-                            : "✓ Tamaño ideal"}
+                            ? t.marketing.audienceTooBroad
+                            : t.marketing.audienceIdeal}
                       </p>
                     </div>
                   </>
@@ -463,9 +465,9 @@ export function CampaignManagerDialog({
                 {step === 2 && (
                   <>
                     <div>
-                      <h3 className="text-base font-semibold">Ubicaciones del anuncio</h3>
+                      <h3 className="text-base font-semibold">{t.marketing.adPlacements}</h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Dónde se mostrará tu campaña
+                        {t.marketing.adPlacementsDesc}
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -492,7 +494,7 @@ export function CampaignManagerDialog({
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Selecciona al menos una ubicación. Recomendado: 3-4 para mejor optimización.
+                      {t.marketing.placementsHint}
                     </p>
                   </>
                 )}
@@ -502,10 +504,10 @@ export function CampaignManagerDialog({
                     <div>
                       <h3 className="flex items-center gap-2 text-base font-semibold">
                         <DollarSign className="h-4 w-4 text-emerald-500" />
-                        Presupuesto y duración
+                        {t.marketing.budgetDuration}
                       </h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Calculadora con proyecciones en tiempo real
+                        {t.marketing.budgetDurationDesc}
                       </p>
                     </div>
 
@@ -513,7 +515,7 @@ export function CampaignManagerDialog({
                       <div>
                         <div className="mb-1.5 flex items-center justify-between text-xs">
                           <Label className="uppercase tracking-wider text-muted-foreground">
-                            Presupuesto diario
+                            {t.marketing.dailyBudget}
                           </Label>
                           <span className="font-mono text-base font-bold tabular-nums">
                             {formatCurrency(dailyBudget)}
@@ -537,10 +539,10 @@ export function CampaignManagerDialog({
                       <div>
                         <div className="mb-1.5 flex items-center justify-between text-xs">
                           <Label className="uppercase tracking-wider text-muted-foreground">
-                            Duración (días)
+                            {t.marketing.durationDays}
                           </Label>
                           <span className="font-mono text-base font-bold tabular-nums">
-                            {days} días
+                            {days} {t.marketing.daysWord}
                           </span>
                         </div>
                         <input
@@ -560,13 +562,13 @@ export function CampaignManagerDialog({
 
                       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
                         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                          Inversión total
+                          {t.marketing.totalInvestment}
                         </p>
                         <p className="font-mono text-3xl font-bold tabular-nums">
                           {formatCurrency(dailyBudget * days)}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {formatCurrency(dailyBudget)}/día × {days} días
+                          {formatCurrency(dailyBudget)}{t.marketing.perDay} × {days} {t.marketing.daysWord}
                         </p>
                       </div>
                     </div>
@@ -578,20 +580,20 @@ export function CampaignManagerDialog({
                     <div>
                       <h3 className="flex items-center gap-2 text-base font-semibold">
                         <Camera className="h-4 w-4 text-primary" />
-                        Creativo del anuncio
+                        {t.marketing.adCreative}
                       </h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Caption y hashtags. La IA puede ayudarte.
+                        {t.marketing.adCreativeDesc}
                       </p>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                        Propiedad asociada
+                        {t.marketing.associatedProperty}
                       </Label>
                       <Select value={propertyId} onValueChange={setPropertyId}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona una propiedad" />
+                          <SelectValue placeholder={t.marketing.selectAProperty} />
                         </SelectTrigger>
                         <SelectContent>
                           {properties.map((p) => (
@@ -606,7 +608,7 @@ export function CampaignManagerDialog({
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                          Texto del anuncio
+                          {t.marketing.adText}
                         </Label>
                         <Button
                           variant="ghost"
@@ -620,14 +622,14 @@ export function CampaignManagerDialog({
                           ) : (
                             <Sparkles className="h-3 w-3 text-primary" />
                           )}
-                          Generar con IA
+                          {t.marketing.generateWithAi}
                         </Button>
                       </div>
                       <Textarea
                         rows={6}
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
-                        placeholder="Texto que aparecerá en el anuncio..."
+                        placeholder={t.marketing.adTextPlaceholder}
                         className="font-mono text-xs leading-relaxed"
                       />
                     </div>
@@ -650,13 +652,13 @@ export function CampaignManagerDialog({
                           ) : (
                             <Sparkles className="h-3 w-3 text-primary" />
                           )}
-                          Sugerir
+                          {t.marketing.suggest}
                         </Button>
                       </div>
                       <div className="flex min-h-[60px] flex-wrap items-start gap-1.5 rounded-md border border-input bg-transparent p-2">
                         {hashtags.length === 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            Click "Sugerir" para que la IA genere hashtags relevantes
+                            {t.marketing.hashtagsEmptyHint}
                           </span>
                         ) : (
                           hashtags.map((h) => (
@@ -683,10 +685,10 @@ export function CampaignManagerDialog({
           {/* Right rail: Live estimate */}
           <div className="border-t border-border bg-muted/40 px-6 py-6 lg:border-l lg:border-t-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              📊 Estimación
+              📊 {t.marketing.estimation}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Proyecciones en vivo según tu configuración
+              {t.marketing.liveProjections}
             </p>
 
             <div className="mt-5 space-y-3">
@@ -694,21 +696,21 @@ export function CampaignManagerDialog({
                 <>
                   <StatRow
                     icon={<Eye className="h-3.5 w-3.5" />}
-                    label="Alcance"
+                    label={t.marketing.reach}
                     value={formatNumber(estimate.estReach)}
-                    sub="personas"
+                    sub={t.marketing.peopleWord}
                   />
                   <StatRow
                     icon={<MousePointer className="h-3.5 w-3.5" />}
-                    label="Clicks"
+                    label={t.marketing.clicks}
                     value={formatNumber(estimate.estClicks)}
-                    sub="visitantes"
+                    sub={t.marketing.visitorsWord}
                   />
                   <StatRow
                     icon={<Target className="h-3.5 w-3.5" />}
-                    label="Leads"
+                    label={t.marketing.leads}
                     value={formatNumber(estimate.estLeads)}
-                    sub="interesados"
+                    sub={t.marketing.interestedWord}
                     highlight
                   />
                 </>
@@ -729,7 +731,7 @@ export function CampaignManagerDialog({
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span>Total a invertir</span>
+                <span>{t.marketing.totalToInvest}</span>
                 <span className="font-mono tabular-nums">
                   {formatCurrency(dailyBudget * days)}
                 </span>
@@ -737,7 +739,7 @@ export function CampaignManagerDialog({
             </div>
 
             <p className="mt-6 text-[10px] leading-relaxed text-muted-foreground">
-              * Estimaciones basadas en benchmarks 2025 del sector inmobiliario. Resultados reales pueden variar según calidad del creativo, segmentación y temporada.
+              {t.marketing.estimateDisclaimer}
             </p>
           </div>
         </div>
@@ -750,11 +752,11 @@ export function CampaignManagerDialog({
             disabled={step === 0}
           >
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            Atrás
+            {t.marketing.back}
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t.marketing.cancel}
             </Button>
             {step < steps.length - 1 ? (
               <Button
@@ -762,7 +764,7 @@ export function CampaignManagerDialog({
                 disabled={!canGoNext}
                 className="bg-gradient-to-r from-primary to-primary/85"
               >
-                Continuar
+                {t.marketing.continue}
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             ) : (
@@ -771,7 +773,7 @@ export function CampaignManagerDialog({
                 className="bg-gradient-to-r from-primary to-emerald-500"
               >
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Lanzar campaña
+                {t.marketing.launchCampaign}
               </Button>
             )}
           </div>

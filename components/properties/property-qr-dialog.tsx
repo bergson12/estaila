@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { ensurePropertySlug } from "@/lib/actions/property-share";
 import { formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type Props = {
   propertyId: string;
@@ -36,12 +37,13 @@ type Props = {
 /** Botón + diálogo de QR para una propiedad (use case: cliente frente a la
  * propiedad escanea el QR del celular del agente y abre la landing pública). */
 export function PropertyQrButton(props: Props) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         <QrCode className="mr-2 h-4 w-4 text-primary" />
-        QR
+        {t.propDialogs.qr}
       </Button>
       {open && <PropertyQrDialog open={open} onOpenChange={setOpen} {...props} />}
     </>
@@ -59,6 +61,7 @@ function PropertyQrDialog({
   agentPhone,
   agentEmail,
 }: Props & { open: boolean; onOpenChange: (b: boolean) => void }) {
+  const { t } = useT();
   const [url, setUrl] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -78,13 +81,13 @@ function PropertyQrDialog({
         setSlug(s);
         setUrl(`${origin}/propiedad/${s}?ref=${encodeURIComponent(agentId)}`);
       } catch (e) {
-        setError((e as Error).message || "No se pudo generar el enlace.");
+        setError((e as Error).message || t.propDialogs.qrLinkError);
       }
     });
   }, [propertyId, agentId]);
 
   const fileBase = `qr-${slug ?? propertyId}`;
-  const priceStr = priceUSD != null ? formatCurrency(priceUSD) : "Consultar precio";
+  const priceStr = priceUSD != null ? formatCurrency(priceUSD) : t.propDialogs.askPrice;
 
   function downloadPng() {
     const canvas = canvasRef.current;
@@ -93,7 +96,7 @@ function PropertyQrDialog({
     a.href = canvas.toDataURL("image/png");
     a.download = `${fileBase}.png`;
     a.click();
-    toast.success("QR descargado (PNG alta resolución)");
+    toast.success(t.propDialogs.qrDownloadedPng);
   }
 
   function downloadSvg() {
@@ -107,7 +110,7 @@ function PropertyQrDialog({
     a.download = `${fileBase}.svg`;
     a.click();
     URL.revokeObjectURL(objUrl);
-    toast.success("QR descargado (SVG vectorial)");
+    toast.success(t.propDialogs.qrDownloadedSvg);
   }
 
   async function copyLink() {
@@ -117,7 +120,7 @@ function PropertyQrDialog({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast.error("No se pudo copiar");
+      toast.error(t.propDialogs.copyFail);
     }
   }
 
@@ -143,7 +146,7 @@ function PropertyQrDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>QR de la propiedad</DialogTitle>
+          <DialogTitle>{t.propDialogs.qrDialogTitle}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center text-center">
@@ -174,7 +177,7 @@ function PropertyQrDialog({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Escanea para ver todos los detalles
+            {t.propDialogs.qrScanHint}
           </p>
 
           {/* Datos del agente */}
@@ -210,11 +213,11 @@ function PropertyQrDialog({
               ) : (
                 <Link2 className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {copied ? "Copiado" : "Copiar"}
+              {copied ? t.propDialogs.copied : t.propDialogs.copy}
             </Button>
             <Button variant="ink" size="sm" onClick={share} disabled={!url}>
               <Share2 className="mr-1.5 h-3.5 w-3.5" />
-              Compartir
+              {t.propDialogs.share}
             </Button>
           </div>
         </div>

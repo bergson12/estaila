@@ -7,16 +7,18 @@ import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { cn } from "@/lib/utils";
-
-const STYLES = [
-  { value: "MANICURED", label: "Manicurado", desc: "Cortado y uniforme" },
-  { value: "LUSH", label: "Frondoso", desc: "Verde exuberante" },
-  { value: "TROPICAL", label: "Tropical", desc: "Con vegetación caribeña" },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function LawnClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t } = useT();
   const [styleVar, setStyleVar] = useState<string>("LUSH");
+
+  const STYLES = [
+    { value: "MANICURED", label: t.studio.lawnManicured, desc: t.studio.lawnManicuredDesc },
+    { value: "LUSH", label: t.studio.lawnLush, desc: t.studio.lawnLushDesc },
+    { value: "TROPICAL", label: t.studio.lawnTropical, desc: t.studio.lawnTropicalDesc },
+  ] as const;
 
   return (
     <StudioShell
@@ -24,13 +26,13 @@ export function LawnClient({ plan }: { plan: string }) {
       title={
         <>
           <Trees className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Césped Verde
+          {t.studio.toolLawnTitle}
         </>
       }
-      description="Reemplaza grama seca, manchas o tierra por césped exuberante."
+      description={t.studio.lawnDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Estilo de jardín">
+          <OptionsPanel title={t.studio.gardenStyle}>
             <div className="space-y-1.5">
               {STYLES.map((s) => (
                 <button
@@ -61,17 +63,17 @@ export function LawnClient({ plan }: { plan: string }) {
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Resultado">
+          <OptionsPanel title={t.studio.result}>
             <ul className="space-y-1.5 text-xs text-muted-foreground">
-              <li>• Reemplaza tierra, manchas y grama seca</li>
-              <li>• Mantiene árboles, plantas y caminos</li>
-              <li>• Color uniforme y saludable</li>
+              <li>• {t.studio.lawnRes1}</li>
+              <li>• {t.studio.lawnRes2}</li>
+              <li>• {t.studio.lawnRes3}</li>
             </ul>
           </OptionsPanel>
 
           <GenerateButton
             onClick={() => runGenerate({ preset: styleVar })}
-            label="Verde brillante"
+            label={t.studio.lawnBtn}
           />
         </>
       }

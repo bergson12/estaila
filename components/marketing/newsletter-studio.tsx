@@ -35,6 +35,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,6 +177,7 @@ export function NewsletterStudio({
   audience: EmailAudienceContact[];
   properties: Property[];
 }) {
+  const { t } = useT();
   const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState<CampaignType | null>(null);
@@ -217,18 +219,18 @@ export function NewsletterStudio({
       {/* Header + actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-3">
-          <StatPill icon={Mail} label="Campañas" value={campaigns.length} />
-          <StatPill icon={Send} label="Enviadas" value={sent.length} />
-          <StatPill icon={Users} label="Alcance total" value={totalReach} />
+          <StatPill icon={Mail} label={t.marketing.campaigns} value={campaigns.length} />
+          <StatPill icon={Send} label={t.marketing.sent} value={sent.length} />
+          <StatPill icon={Users} label={t.marketing.totalReach} value={totalReach} />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setCreating("CAMPAIGN")}>
             <Mail className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Nueva campaña
+            {t.marketing.newCampaign}
           </Button>
           <Button size="sm" onClick={() => setCreating("NEWSLETTER")}>
             <Newspaper className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Nuevo newsletter
+            {t.marketing.newNewsletter}
           </Button>
         </div>
       </div>
@@ -239,25 +241,24 @@ export function NewsletterStudio({
             <Sparkles className="h-5 w-5" />
           </div>
           <p className="font-display text-lg font-bold tracking-tight">
-            Crea tu primer envío
+            {t.marketing.createFirstSend}
           </p>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
-            Diseña una campaña o un newsletter con bloques visuales o HTML, elige
-            tu audiencia y envíalo con tu marca.
+            {t.marketing.createFirstSendDesc}
           </p>
           <div className="mt-5 flex justify-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setCreating("CAMPAIGN")}>
-              <Mail className="mr-1.5 h-3.5 w-3.5" /> Campaña
+              <Mail className="mr-1.5 h-3.5 w-3.5" /> {t.marketing.campaignWord}
             </Button>
             <Button size="sm" onClick={() => setCreating("NEWSLETTER")}>
-              <Newspaper className="mr-1.5 h-3.5 w-3.5" /> Newsletter
+              <Newspaper className="mr-1.5 h-3.5 w-3.5" /> {t.marketing.newsletterWord}
             </Button>
           </div>
         </div>
       ) : (
         <div className="space-y-5">
           {drafts.length > 0 && (
-            <Section title="Borradores" count={drafts.length}>
+            <Section title={t.marketing.drafts} count={drafts.length}>
               {drafts.map((c) => (
                 <CampaignCard
                   key={c.id}
@@ -269,7 +270,7 @@ export function NewsletterStudio({
             </Section>
           )}
           {sent.length > 0 && (
-            <Section title="Enviadas" count={sent.length}>
+            <Section title={t.marketing.sent} count={sent.length}>
               {sent.map((c) => (
                 <CampaignCard
                   key={c.id}
@@ -341,6 +342,7 @@ function CampaignCard({
   onOpen: () => void;
   onChanged: () => Promise<void> | void;
 }) {
+  const { t } = useT();
   const [busy, setBusy] = useState(false);
   const isNewsletter = c.type === "NEWSLETTER";
   const isSent = c.status === "SENT";
@@ -350,19 +352,19 @@ function CampaignCard({
     const r = await duplicateCampaign(c.id);
     setBusy(false);
     if (r.ok) {
-      toast.success("Duplicada");
+      toast.success(t.marketing.toastDuplicated);
       await onChanged();
     } else toast.error(r.error);
   }
   async function del() {
-    if (!confirm(`¿Eliminar "${c.name}"?`)) return;
+    if (!confirm(`${t.marketing.confirmDeleteCampaign} "${c.name}"?`)) return;
     setBusy(true);
     const r = await deleteCampaign(c.id);
     setBusy(false);
     if (r.ok) {
-      toast.success("Eliminada");
+      toast.success(t.marketing.toastDeleted);
       await onChanged();
-    } else toast.error(r.error ?? "Error");
+    } else toast.error(r.error ?? t.marketing.errorWord);
   }
 
   return (
@@ -386,7 +388,7 @@ function CampaignCard({
           )}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {isNewsletter ? "Newsletter" : "Campaña"}
+          {isNewsletter ? t.marketing.newsletterWord : t.marketing.campaignWord}
         </span>
         <span
           className={cn(
@@ -396,7 +398,7 @@ function CampaignCard({
               : "bg-amber-500/10 text-amber-600"
           )}
         >
-          {isSent ? "Enviada" : "Borrador"}
+          {isSent ? t.marketing.statusSentFem : t.marketing.statusDraft}
         </span>
       </div>
 
@@ -405,29 +407,29 @@ function CampaignCard({
           {c.name}
         </p>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-          {c.subject || "Sin asunto"}
+          {c.subject || t.marketing.noSubject}
         </p>
       </button>
 
       <div className="mt-3 flex items-center gap-3 border-t border-border pt-3 text-[11px] text-muted-foreground">
         {isSent ? (
           <>
-            <span className="tabular-nums">{c.sentCount} enviados</span>
-            <span className="rounded-full bg-secondary px-1.5 py-0.5">{c.variant === "EDITORIAL" ? "Editorial" : "Minimal"}</span>
+            <span className="tabular-nums">{c.sentCount} {t.marketing.sentCountSuffix}</span>
+            <span className="rounded-full bg-secondary px-1.5 py-0.5">{c.variant === "EDITORIAL" ? t.marketing.variantEditorial : t.marketing.variantMinimal}</span>
           </>
         ) : (
           <span className="rounded-full bg-secondary px-1.5 py-0.5">
-            {c.variant === "EDITORIAL" ? "Editorial" : "Minimal"}
+            {c.variant === "EDITORIAL" ? t.marketing.variantEditorial : t.marketing.variantMinimal}
           </span>
         )}
         <div className="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <IconBtn title="Editar" onClick={onOpen}>
+          <IconBtn title={t.marketing.edit} onClick={onOpen}>
             <Eye className="h-3.5 w-3.5" />
           </IconBtn>
-          <IconBtn title="Duplicar" onClick={dup} disabled={busy}>
+          <IconBtn title={t.marketing.duplicate} onClick={dup} disabled={busy}>
             <Copy className="h-3.5 w-3.5" />
           </IconBtn>
-          <IconBtn title="Eliminar" onClick={del} disabled={busy}>
+          <IconBtn title={t.marketing.delete} onClick={del} disabled={busy}>
             <Trash2 className="h-3.5 w-3.5" />
           </IconBtn>
         </div>
@@ -477,11 +479,12 @@ function CampaignEditor({
   properties: Property[];
   onBack: () => void;
 }) {
+  const { t } = useT();
   const [ready, setReady] = useState(campaignId === null);
   const [id, setId] = useState<string | null>(campaignId);
   const [type, setType] = useState<CampaignType>(initialType);
   const [name, setName] = useState(
-    initialType === "NEWSLETTER" ? "Newsletter sin título" : "Campaña sin título"
+    initialType === "NEWSLETTER" ? t.marketing.untitledNewsletter : t.marketing.untitledCampaign
   );
   const [subject, setSubject] = useState("");
   const [variant, setVariant] = useState<Variant>("MINIMAL");
@@ -504,7 +507,7 @@ function CampaignEditor({
     (async () => {
       const c = await getCampaign(campaignId);
       if (!active || !c) {
-        if (active) toast.error("No se pudo cargar la campaña");
+        if (active) toast.error(t.marketing.toastCampaignLoadError);
         return;
       }
       setType((c.type as CampaignType) ?? "CAMPAIGN");
@@ -560,7 +563,7 @@ function CampaignEditor({
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const r = await previewCampaign({
-        subject: subject || "Asunto de ejemplo",
+        subject: subject || t.marketing.sampleSubject,
         variant,
         bodyHtml,
         propertyId: propertyId || null,
@@ -598,16 +601,16 @@ function CampaignEditor({
       return null;
     }
     setId(r.id);
-    if (!silent) toast.success("Guardado");
+    if (!silent) toast.success(t.marketing.toastSaved);
     return r.id;
   }
 
   async function doSend(test: boolean) {
-    if (!subject.trim()) return toast.error("Ponle un asunto.");
-    if (!bodyHtml.trim()) return toast.error("El contenido está vacío.");
+    if (!subject.trim()) return toast.error(t.marketing.toastNeedSubject);
+    if (!bodyHtml.trim()) return toast.error(t.marketing.toastContentEmpty);
     if (!test && recipientCount === 0)
-      return toast.error("No hay destinatarios en esta audiencia.");
-    if (!test && !confirm(`¿Enviar a ${recipientCount} destinatario(s)?`)) return;
+      return toast.error(t.marketing.toastNoRecipients);
+    if (!test && !confirm(`${t.marketing.confirmSendToPrefix} ${recipientCount} ${t.marketing.confirmSendToSuffix}`)) return;
     setSending(true);
     const savedId = await doSave(true);
     if (!savedId) {
@@ -617,9 +620,9 @@ function CampaignEditor({
     const r = await sendCampaign(savedId, { test });
     setSending(false);
     if (!r.ok) return toast.error(r.error);
-    if (test) toast.success("Email de prueba enviado a tu correo");
+    if (test) toast.success(t.marketing.toastTestSent);
     else {
-      toast.success(`Enviado a ${r.sent} · ${r.failed} fallidos`);
+      toast.success(`${t.marketing.toastSentToPrefix} ${r.sent} · ${r.failed} ${t.marketing.toastFailedSuffix}`);
       setStatus("SENT");
     }
   }
@@ -627,7 +630,7 @@ function CampaignEditor({
   if (!ready) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando…
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> {t.marketing.loading}
       </div>
     );
   }
@@ -637,27 +640,27 @@ function CampaignEditor({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2">
-          <ArrowLeft className="mr-1 h-4 w-4" /> Volver
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t.marketing.back2}
         </Button>
         <div className="min-w-0 flex-1">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full truncate border-0 bg-transparent font-display text-lg font-bold tracking-tight outline-none"
-            placeholder="Nombre interno"
+            placeholder={t.marketing.internalName}
           />
         </div>
         {status === "SENT" && (
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-            Enviada
+            {t.marketing.statusSentFem}
           </span>
         )}
         <Button variant="outline" size="sm" onClick={() => doSave()} disabled={saving}>
           {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-          Guardar
+          {t.marketing.save}
         </Button>
         <Button variant="outline" size="sm" onClick={() => doSend(true)} disabled={sending}>
-          <Eye className="mr-1.5 h-3.5 w-3.5" /> Prueba
+          <Eye className="mr-1.5 h-3.5 w-3.5" /> {t.marketing.test}
         </Button>
         <Button size="sm" onClick={() => doSend(false)} disabled={sending}>
           {sending ? (
@@ -665,38 +668,38 @@ function CampaignEditor({
           ) : (
             <Send className="mr-1.5 h-3.5 w-3.5" />
           )}
-          Enviar a {recipientCount}
+          {t.marketing.sendTo} {recipientCount}
         </Button>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr_minmax(0,380px)]">
         {/* Settings */}
         <div className="space-y-4">
-          <Field label="Asunto del email">
+          <Field label={t.marketing.emailSubject}>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Ej: 5 propiedades nuevas esta semana"
+              placeholder={t.marketing.emailSubjectPlaceholder}
             />
           </Field>
 
           <div>
             <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Plantilla
+              {t.marketing.template}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <VariantCard
                 active={variant === "MINIMAL"}
                 onClick={() => setVariant("MINIMAL")}
-                title="Minimal"
-                desc="Limpia, blanca"
+                title={t.marketing.variantMinimal}
+                desc={t.marketing.variantMinimalDesc}
                 tone="minimal"
               />
               <VariantCard
                 active={variant === "EDITORIAL"}
                 onClick={() => setVariant("EDITORIAL")}
-                title="Editorial"
-                desc="Banda de marca"
+                title={t.marketing.variantEditorial}
+                desc={t.marketing.variantEditorialDesc}
                 tone="editorial"
               />
             </div>
@@ -711,13 +714,13 @@ function CampaignEditor({
             recipientCount={recipientCount}
           />
 
-          <Field label="Propiedad destacada (opcional)">
+          <Field label={t.marketing.featuredProperty}>
             <select
               value={propertyId}
               onChange={(e) => setPropertyId(e.target.value)}
               className="h-9 w-full rounded-md border border-border bg-background px-2 text-xs outline-none focus:border-primary/40"
             >
-              <option value="">Ninguna</option>
+              <option value="">{t.marketing.none}</option>
               {properties.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.title}
@@ -726,7 +729,7 @@ function CampaignEditor({
             </select>
             {propertyId && (
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Se añade su tarjeta al final del email.
+                {t.marketing.propertyCardNote}
               </p>
             )}
           </Field>
@@ -736,7 +739,7 @@ function CampaignEditor({
         <div className="rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-1 border-b border-border p-2">
             <ModeBtn active={mode === "BLOCKS"} onClick={() => setMode("BLOCKS")} icon={LayoutTemplate}>
-              Bloques
+              {t.marketing.blocks}
             </ModeBtn>
             <ModeBtn
               active={mode === "HTML"}
@@ -761,7 +764,7 @@ function CampaignEditor({
         {/* Preview */}
         <div className="space-y-2">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <Eye className="h-3.5 w-3.5" /> Vista previa
+            <Eye className="h-3.5 w-3.5" /> {t.marketing.preview}
           </p>
           <div className="overflow-hidden rounded-2xl border border-border bg-secondary/30">
             <iframe
@@ -807,13 +810,13 @@ function ModeBtn({
   );
 }
 
-const BLOCK_PALETTE: { type: Block["type"]; label: string; icon: typeof Type }[] = [
-  { type: "heading", label: "Título", icon: Heading },
-  { type: "text", label: "Texto", icon: Type },
-  { type: "image", label: "Imagen", icon: ImageIcon },
-  { type: "button", label: "Botón", icon: MousePointerClick },
-  { type: "divider", label: "Separador", icon: Minus },
-  { type: "spacer", label: "Espacio", icon: Plus },
+const BLOCK_PALETTE: { type: Block["type"]; labelKey: string; icon: typeof Type }[] = [
+  { type: "heading", labelKey: "blockHeading", icon: Heading },
+  { type: "text", labelKey: "blockText", icon: Type },
+  { type: "image", labelKey: "blockImage", icon: ImageIcon },
+  { type: "button", labelKey: "blockButton", icon: MousePointerClick },
+  { type: "divider", labelKey: "blockDivider", icon: Minus },
+  { type: "spacer", labelKey: "blockSpacer", icon: Plus },
 ];
 
 function BlockEditor({
@@ -823,6 +826,7 @@ function BlockEditor({
   blocks: Block[];
   setBlocks: (b: Block[]) => void;
 }) {
+  const { t } = useT();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -865,7 +869,7 @@ function BlockEditor({
 
       {blocks.length === 0 && (
         <p className="rounded-xl border border-dashed border-border py-6 text-center text-xs text-muted-foreground">
-          Sin bloques todavía. Añade uno abajo.
+          {t.marketing.blocksEmpty}
         </p>
       )}
 
@@ -881,7 +885,7 @@ function BlockEditor({
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
             >
               <Icon className="h-3.5 w-3.5" strokeWidth={2} />
-              {p.label}
+              {t.marketing[p.labelKey]}
             </button>
           );
         })}
@@ -899,6 +903,7 @@ function SortableBlockRow({
   update: (id: string, patch: Partial<Block>) => void;
   onRemove: () => void;
 }) {
+  const { t } = useT();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id });
   const style: React.CSSProperties = {
@@ -920,16 +925,19 @@ function SortableBlockRow({
           type="button"
           {...attributes}
           {...listeners}
-          title="Arrastrar para reordenar"
+          title={t.marketing.dragToReorder}
           className="cursor-grab touch-none text-muted-foreground/50 transition-colors hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {BLOCK_PALETTE.find((p) => p.type === block.type)?.label ?? block.type}
+          {(() => {
+            const p = BLOCK_PALETTE.find((x) => x.type === block.type);
+            return p ? t.marketing[p.labelKey] : block.type;
+          })()}
         </span>
         <div className="ml-auto">
-          <MiniBtn title="Eliminar" onClick={onRemove}>
+          <MiniBtn title={t.marketing.delete} onClick={onRemove}>
             <Trash2 className="h-3 w-3" />
           </MiniBtn>
         </div>
@@ -946,6 +954,7 @@ function BlockFields({
   block: Block;
   update: (id: string, patch: Partial<Block>) => void;
 }) {
+  const { t } = useT();
   switch (block.type) {
     case "heading":
       return (
@@ -970,7 +979,7 @@ function BlockFields({
           <Input
             value={block.url}
             onChange={(e) => update(block.id, { url: e.target.value })}
-            placeholder="URL de la imagen (https://…)"
+            placeholder={t.marketing.imageUrlBlockPlaceholder}
             className="h-9 text-xs"
           />
           {block.url ? (
@@ -989,13 +998,13 @@ function BlockFields({
           <Input
             value={block.label}
             onChange={(e) => update(block.id, { label: e.target.value })}
-            placeholder="Texto"
+            placeholder={t.marketing.buttonTextPlaceholder}
             className="h-9 text-xs"
           />
           <Input
             value={block.url}
             onChange={(e) => update(block.id, { url: e.target.value })}
-            placeholder="Enlace"
+            placeholder={t.marketing.buttonLinkPlaceholder}
             className="h-9 text-xs"
           />
         </div>
@@ -1102,6 +1111,7 @@ function AudiencePicker({
   setCustomIds: (s: Set<string>) => void;
   recipientCount: number;
 }) {
+  const { t } = useT();
   const [q, setQ] = useState("");
   const types = useMemo(() => {
     const acc: Record<string, number> = {};
@@ -1127,10 +1137,10 @@ function AudiencePicker({
   return (
     <div>
       <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Audiencia · {recipientCount}
+        {t.marketing.audience} · {recipientCount}
       </Label>
       <div className="flex flex-wrap gap-1.5">
-        <AudChip active={audienceType === "ALL"} onClick={() => setAudienceType("ALL")} label="Todos" count={audience.length} />
+        <AudChip active={audienceType === "ALL"} onClick={() => setAudienceType("ALL")} label={t.marketing.audienceAll} count={audience.length} />
         {types.map(({ t, n }) => (
           <AudChip
             key={t}
@@ -1140,7 +1150,7 @@ function AudiencePicker({
             count={n}
           />
         ))}
-        <AudChip active={audienceType === "CUSTOM"} onClick={() => setAudienceType("CUSTOM")} label="Elegir" count={customIds.size} />
+        <AudChip active={audienceType === "CUSTOM"} onClick={() => setAudienceType("CUSTOM")} label={t.marketing.audienceCustom} count={customIds.size} />
       </div>
       {audienceType === "CUSTOM" && (
         <div className="mt-2 rounded-xl border border-border">
@@ -1148,7 +1158,7 @@ function AudiencePicker({
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar contacto…"
+              placeholder={t.marketing.searchContact}
               className="h-8 text-xs"
             />
           </div>

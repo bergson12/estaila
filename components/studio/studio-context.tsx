@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import type { AIToolName, ProcessOptions } from "@/lib/ai/types";
 import { generate } from "@/lib/actions/ai";
 import { useStudioPipeline } from "@/lib/stores/studio-pipeline";
+import { useT } from "@/lib/i18n/provider";
 
 type StudioImage = { url: string; filename?: string };
 type StudioResult = {
@@ -74,6 +75,7 @@ export function StudioProvider({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const pipeline = useStudioPipeline();
   const [hydrated, setHydrated] = useState(false);
   const [image, setImageState] = useState<StudioImage | null>(
@@ -128,12 +130,12 @@ export function StudioProvider({
   const runGenerate = useCallback(
     async (options?: ProcessOptions) => {
       if (!image) {
-        toast.error("Sube una foto primero");
+        toast.error(t.studio.toastUploadFirst);
         return;
       }
       if (credits < cost) {
         toast.error(
-          `Necesitas ${cost} crédito${cost > 1 ? "s" : ""}. Compra más en /pricing.`
+          `${t.studio.toastNeedCreditsPrefix} ${cost} ${cost > 1 ? t.studio.creditWordPlural : t.studio.creditWord}. ${t.studio.toastNeedCreditsSuffix}`
         );
         return;
       }
@@ -182,15 +184,14 @@ export function StudioProvider({
           options: options as Record<string, unknown> | undefined,
         });
         if (out.fallbackUsed === "mock") {
-          toast.warning("Preview con filtro (Modelo Pro sin cuota)", {
-            description:
-              "Activa billing en aistudio.google.com para imagen IA real. Crédito usado igual.",
+          toast.warning(t.studio.toastMockTitle, {
+            description: t.studio.toastMockDesc,
             duration: 6000,
           });
         } else {
           toast.success(
-            `Listo en ${Math.round(out.processingTimeMs / 100) / 10}s`,
-            { description: `${cost} crédito${cost > 1 ? "s" : ""} usado${cost > 1 ? "s" : ""}` }
+            `${t.studio.toastReadyIn} ${Math.round(out.processingTimeMs / 100) / 10}s`,
+            { description: `${cost} ${cost > 1 ? t.studio.creditsUsedPlural : t.studio.creditsUsed}` }
           );
         }
         router.refresh();

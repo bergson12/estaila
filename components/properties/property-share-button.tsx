@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ensurePropertySlug } from "@/lib/actions/property-share";
 import { SharePropertyDialog } from "./share-property-dialog";
 import { BrochureDialog } from "./brochure-dialog";
+import { useT } from "@/lib/i18n/provider";
 
 type Property = {
   id: string;
@@ -27,6 +28,7 @@ export function PropertyShareButton({
   property: Property;
   agentName: string;
 }) {
+  const { t } = useT();
   const [shareOpen, setShareOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -50,15 +52,15 @@ export function PropertyShareButton({
         ) : (
           <ExternalLink className="mr-2 h-4 w-4" />
         )}
-        Ver landing pública
+        {t.propDialogs.viewPublicLanding}
       </Button>
       <Button variant="outline" onClick={() => setPdfOpen(true)}>
         <FileText className="mr-2 h-4 w-4" />
-        Brochure PDF
+        {t.propDialogs.brochurePdf}
       </Button>
       <Button variant="ink" onClick={() => setShareOpen(true)}>
         <Share2 className="mr-2 h-4 w-4" />
-        Compartir
+        {t.propDialogs.share}
       </Button>
       <SharePropertyDialog
         open={shareOpen}

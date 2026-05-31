@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import {
   createMarketingPost,
   generatePostFromProperty,
@@ -89,22 +90,25 @@ const CHANNEL_META: Record<
 
 const STATUS_META: Record<
   string,
-  { label: string; icon: LucideIcon; color: string }
+  { labelKey: string; badgeKey: string; icon: LucideIcon; color: string }
 > = {
   DRAFT: {
-    label: "Borradores",
+    labelKey: "statusDrafts",
+    badgeKey: "statusDraft",
     icon: FileText,
     color:
       "border-stone-500/40 bg-stone-500/15 text-stone-500 shadow-stone-500/10",
   },
   SCHEDULED: {
-    label: "Programados",
+    labelKey: "statusScheduledPlural",
+    badgeKey: "statusScheduled",
     icon: Clock,
     color:
       "border-amber-500/40 bg-amber-500/15 text-amber-500 shadow-amber-500/10",
   },
   PUBLISHED: {
-    label: "Publicados",
+    labelKey: "statusPublishedPlural",
+    badgeKey: "statusPublished",
     icon: CheckCircle2,
     color:
       "border-emerald-500/40 bg-emerald-500/15 text-emerald-500 shadow-emerald-500/10",
@@ -118,6 +122,7 @@ export function MarketingClient({
   posts: Post[];
   properties: { id: string; title: string }[];
 }) {
+  const { t } = useT();
   const [newDialog, setNewDialog] = useState(false);
   const [campaignDialog, setCampaignDialog] = useState(false);
   const [detailPost, setDetailPost] = useState<Post | null>(null);
@@ -142,7 +147,7 @@ export function MarketingClient({
             active={filter === "ALL"}
             onClick={() => setFilter("ALL")}
             icon={Layers}
-            label="Todos"
+            label={t.marketing.filterAll}
             count={counts.ALL}
           />
           {(["DRAFT", "SCHEDULED", "PUBLISHED"] as const).map((s) => {
@@ -153,7 +158,7 @@ export function MarketingClient({
                 active={filter === s}
                 onClick={() => setFilter(s)}
                 icon={meta.icon}
-                label={meta.label}
+                label={t.marketing[meta.labelKey]}
                 count={counts[s]}
                 colorClass={meta.color}
               />
@@ -167,11 +172,11 @@ export function MarketingClient({
             className="gap-2"
           >
             <Target className="h-4 w-4 text-primary" />
-            Crear campaña
+            {t.marketing.createCampaign}
           </Button>
           <Button onClick={() => setNewDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo post
+            {t.marketing.newPost}
           </Button>
         </div>
       </div>
@@ -179,21 +184,21 @@ export function MarketingClient({
       {filtered.length === 0 ? (
         <EmptyState
           icon={Megaphone}
-          title="Sin posts todavía"
+          title={t.marketing.postsEmptyTitle}
           description={
             posts.length === 0
-              ? "Crea tu primer post o lanza una campaña publicitaria. La IA puede generar contenido desde tus propiedades."
-              : "Ningún post coincide con los filtros."
+              ? t.marketing.postsEmptyDescription
+              : t.marketing.postsNoMatch
           }
           action={
             <div className="flex gap-2">
               <Button onClick={() => setNewDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Crear post
+                {t.marketing.createPost}
               </Button>
               <Button variant="outline" onClick={() => setCampaignDialog(true)}>
                 <Target className="mr-2 h-4 w-4" />
-                Crear campaña
+                {t.marketing.createCampaign}
               </Button>
             </div>
           }
@@ -295,6 +300,7 @@ function PostCard({
   index: number;
   onClick: () => void;
 }) {
+  const { t } = useT();
   const channel = CHANNEL_META[post.channel] ?? CHANNEL_META.INSTAGRAM;
   const status = STATUS_META[post.status];
 
@@ -342,7 +348,7 @@ function PostCard({
               )}
             >
               <status.icon className="h-2.5 w-2.5" />
-              {status.label.replace(/s$/, "")}
+              {t.marketing[status.badgeKey]}
             </div>
           )}
 
@@ -354,7 +360,7 @@ function PostCard({
           <div className="absolute inset-x-0 bottom-0 translate-y-2 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
             <div className="px-4 pb-3">
               <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
-                Ver detalle →
+                {t.marketing.viewDetail}
               </span>
             </div>
           </div>
@@ -380,7 +386,7 @@ function PostCard({
                 {format(new Date(post.publishedAt), "d MMM", { locale: es })}
               </span>
             ) : (
-              <span>Sin programar</span>
+              <span>{t.marketing.notScheduled}</span>
             )}
             <span className="flex items-center gap-1">
               <Hash className="h-3 w-3" />
@@ -402,6 +408,7 @@ function NewPostDialog({
   onOpenChange: (b: boolean) => void;
   properties: { id: string; title: string }[];
 }) {
+  const { t } = useT();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -419,7 +426,7 @@ function NewPostDialog({
       setTitle(result.title);
       setContent(result.content);
       if (result.imageUrl) setImageUrl(result.imageUrl);
-      toast.success("Contenido generado desde la propiedad");
+      toast.success(t.marketing.toastGeneratedFromProperty);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -429,7 +436,7 @@ function NewPostDialog({
 
   async function onSubmit() {
     if (!title.trim() || !content.trim()) {
-      toast.error("Título y contenido son requeridos");
+      toast.error(t.marketing.toastTitleContentRequired);
       return;
     }
     setSubmitting(true);
@@ -441,7 +448,7 @@ function NewPostDialog({
         status,
         imageUrl: imageUrl || undefined,
       });
-      toast.success("Post creado");
+      toast.success(t.marketing.toastPostCreated);
       onOpenChange(false);
       setTitle("");
       setContent("");
@@ -460,18 +467,18 @@ function NewPostDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Nuevo post
+            {t.marketing.newPost}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
               <Sparkles className="h-3 w-3 text-primary" />
-              Generar desde propiedad (IA)
+              {t.marketing.generateFromProperty}
             </Label>
             <Select onValueChange={generateFromProperty}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona para auto-rellenar" />
+                <SelectValue placeholder={t.marketing.selectToAutofill} />
               </SelectTrigger>
               <SelectContent>
                 {properties.map((p) => (
@@ -483,26 +490,26 @@ function NewPostDialog({
             </Select>
             {generating && (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" /> Generando...
+                <Loader2 className="h-3 w-3 animate-spin" /> {t.marketing.generating}
               </p>
             )}
           </div>
 
-          <Field label="Título *">
+          <Field label={t.marketing.fieldTitleRequired}>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
           </Field>
 
-          <Field label="Contenido *">
+          <Field label={t.marketing.fieldContentRequired}>
             <Textarea
               rows={7}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Escribe el contenido del post..."
+              placeholder={t.marketing.postContentPlaceholder}
             />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Canal">
+            <Field label={t.marketing.fieldChannel}>
               <Select value={channel} onValueChange={setChannel}>
                 <SelectTrigger>
                   <SelectValue />
@@ -515,25 +522,25 @@ function NewPostDialog({
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Estado">
+            <Field label={t.marketing.fieldStatus}>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DRAFT">Borrador</SelectItem>
-                  <SelectItem value="SCHEDULED">Programado</SelectItem>
-                  <SelectItem value="PUBLISHED">Publicado</SelectItem>
+                  <SelectItem value="DRAFT">{t.marketing.statusDraft}</SelectItem>
+                  <SelectItem value="SCHEDULED">{t.marketing.statusScheduled}</SelectItem>
+                  <SelectItem value="PUBLISHED">{t.marketing.statusPublished}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
           </div>
 
-          <Field label="Imagen URL (opcional)">
+          <Field label={t.marketing.fieldImageUrl}>
             <Input
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="/uploads/... o URL externa"
+              placeholder={t.marketing.imageUrlPlaceholder}
             />
           </Field>
         </div>
@@ -543,11 +550,11 @@ function NewPostDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancelar
+            {t.marketing.cancel}
           </Button>
           <Button onClick={onSubmit} disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear post
+            {t.marketing.createPost}
           </Button>
         </DialogFooter>
       </DialogContent>

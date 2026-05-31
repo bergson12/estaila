@@ -17,6 +17,15 @@ import analisis from "./ns/analisis";
 import empresa from "./ns/empresa";
 import soporte from "./ns/soporte";
 import propForm from "./ns/propForm";
+import sitio from "./ns/sitio";
+import asistente from "./ns/asistente";
+import importar from "./ns/importar";
+import propHub from "./ns/propHub";
+import propRental from "./ns/propRental";
+import studio from "./ns/studio";
+import marketing from "./ns/marketing";
+import adminPanel from "./ns/adminPanel";
+import propDialogs from "./ns/propDialogs";
 
 export type Locale = "es" | "en";
 export const LOCALES: Locale[] = ["es", "en"];
@@ -178,6 +187,15 @@ const es = {
   empresa: empresa.es,
   soporte: soporte.es,
   propForm: propForm.es,
+  sitio: sitio.es,
+  asistente: asistente.es,
+  importar: importar.es,
+  propHub: propHub.es,
+  propRental: propRental.es,
+  studio: studio.es,
+  marketing: marketing.es,
+  adminPanel: adminPanel.es,
+  propDialogs: propDialogs.es,
 };
 
 const en: typeof es = {
@@ -332,6 +350,15 @@ const en: typeof es = {
   empresa: empresa.en,
   soporte: soporte.en,
   propForm: propForm.en,
+  sitio: sitio.en,
+  asistente: asistente.en,
+  importar: importar.en,
+  propHub: propHub.en,
+  propRental: propRental.en,
+  studio: studio.en,
+  marketing: marketing.en,
+  adminPanel: adminPanel.en,
+  propDialogs: propDialogs.en,
 };
 
 export const DICT: Record<Locale, typeof es> = { es, en };

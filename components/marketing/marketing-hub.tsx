@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Mail, Megaphone, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type Tab = "posts" | "digital" | "email";
 
@@ -16,26 +17,27 @@ export function MarketingHub({
   digitalView: React.ReactNode;
   emailView: React.ReactNode;
 }) {
+  const { t } = useT();
   const [tab, setTab] = useState<Tab>("digital");
 
   const TABS: { key: Tab; label: string; icon: typeof Share2; desc: string }[] = [
     {
       key: "digital",
-      label: "Tarjetas digitales",
+      label: t.marketing.tabDigitalCards,
       icon: Share2,
-      desc: "Página pública Linktree-style",
+      desc: t.marketing.tabDigitalCardsDesc,
     },
     {
       key: "email",
-      label: "Email & Newsletter",
+      label: t.marketing.tabEmailNewsletter,
       icon: Mail,
-      desc: "Campañas y newsletters",
+      desc: t.marketing.tabEmailNewsletterDesc,
     },
     {
       key: "posts",
-      label: "Posts",
+      label: t.marketing.tabPosts,
       icon: Megaphone,
-      desc: "Plantillas y calendario",
+      desc: t.marketing.tabPostsDesc,
     },
   ];
 

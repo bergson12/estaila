@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type ContactOption = {
   id: string;
@@ -45,6 +46,7 @@ export function BrochureDialog({
   propertyId: string;
   propertyTitle: string;
 }) {
+  const { t } = useT();
   const [recipientKind, setRecipientKind] = useState<RecipientKind>("none");
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -63,17 +65,17 @@ export function BrochureDialog({
       if (c) {
         const first = c.name.split(" ")[0];
         setPersonalMessage(
-          `Hola ${first},\n\nRecordé esta propiedad por nuestra conversación. Creo que encaja con lo que buscas. Adjunto los detalles para que la revises a tu ritmo. Cualquier duda me avisas.`
+          `${t.propDialogs.greetHi} ${first},\n\n${t.propDialogs.brochureMsgContact}`
         );
       }
     } else if (recipientKind === "manual" && manualName) {
       setPersonalMessage(
-        `Hola ${manualName.split(" ")[0]},\n\nTe comparto los detalles de esta propiedad. Cualquier duda me avisas y coordinamos una visita.`
+        `${t.propDialogs.greetHi} ${manualName.split(" ")[0]},\n\n${t.propDialogs.brochureMsgManual}`
       );
     } else {
       setPersonalMessage("");
     }
-  }, [open, recipientKind, selectedContactId, manualName, contacts]);
+  }, [open, recipientKind, selectedContactId, manualName, contacts, t]);
 
   // Load contacts when needed
   useEffect(() => {
@@ -82,7 +84,7 @@ export function BrochureDialog({
     fetch("/api/contacts/lite")
       .then((r) => r.json())
       .then((data: ContactOption[]) => setContacts(data))
-      .catch(() => toast.error("No pude cargar contactos"))
+      .catch(() => toast.error(t.propDialogs.contactsLoadError))
       .finally(() => setLoadingContacts(false));
   }, [open, recipientKind, contacts.length]);
 
@@ -151,8 +153,8 @@ export function BrochureDialog({
       a.remove();
       URL.revokeObjectURL(url);
 
-      toast.success("Brochure generado ✓", {
-        description: "El PDF se está descargando.",
+      toast.success(t.propDialogs.brochureGenerated, {
+        description: t.propDialogs.brochureDownloading,
       });
       onOpenChange(false);
     } catch (e) {
@@ -170,11 +172,10 @@ export function BrochureDialog({
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <FileText className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            Generar brochure PDF
+            {t.propDialogs.brochureTitle}
           </DialogTitle>
           <DialogDescription>
-            PDF 4 páginas premium con portada, detalles, galería y tu contacto.
-            Personalizable por cliente.
+            {t.propDialogs.brochureDesc}
           </DialogDescription>
         </DialogHeader>
 
@@ -182,47 +183,46 @@ export function BrochureDialog({
           {/* Recipient kind */}
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Para quién
+              {t.propDialogs.forWhom}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <RecipientButton
                 active={recipientKind === "none"}
                 onClick={() => setRecipientKind("none")}
                 icon={FileText}
-                label="Genérico"
+                label={t.propDialogs.recipientGeneric}
               />
               <RecipientButton
                 active={recipientKind === "contact"}
                 onClick={() => setRecipientKind("contact")}
                 icon={Users}
-                label="Contacto"
+                label={t.propDialogs.recipientContact}
               />
               <RecipientButton
                 active={recipientKind === "manual"}
                 onClick={() => setRecipientKind("manual")}
                 icon={UserIcon}
-                label="Nuevo"
+                label={t.propDialogs.recipientNew}
               />
             </div>
 
             <div className="mt-3">
               {recipientKind === "none" && (
                 <p className="rounded-xl border border-dashed border-border bg-background/40 p-3 text-[11px] text-muted-foreground">
-                  Brochure sin destinatario fijo. Útil para anuncios o
-                  prospección masiva.
+                  {t.propDialogs.brochureGenericHint}
                 </p>
               )}
 
               {recipientKind === "manual" && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Nombre" className="sm:col-span-2">
+                  <Field label={t.propDialogs.fieldName} className="sm:col-span-2">
                     <Input
                       placeholder="María Rodríguez"
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
                     />
                   </Field>
-                  <Field label="Email">
+                  <Field label={t.propDialogs.fieldEmail}>
                     <Input
                       type="email"
                       placeholder="cliente@email.com"
@@ -230,7 +230,7 @@ export function BrochureDialog({
                       onChange={(e) => setManualEmail(e.target.value)}
                     />
                   </Field>
-                  <Field label="WhatsApp">
+                  <Field label={t.propDialogs.fieldWhatsapp}>
                     <Input
                       placeholder="+1 555 0100"
                       value={manualPhone}
@@ -244,11 +244,11 @@ export function BrochureDialog({
                 <div>
                   {loadingContacts ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      Cargando contactos...
+                      {t.propDialogs.loadingContacts}
                     </p>
                   ) : contacts.length === 0 ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      No tienes contactos aún.
+                      {t.propDialogs.noContactsYet}
                     </p>
                   ) : (
                     <ul className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-border p-1">
@@ -296,16 +296,16 @@ export function BrochureDialog({
           {/* Personal message */}
           <div>
             <Label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Mensaje personal (aparece en el PDF)
+              {t.propDialogs.personalMessageLabel}
             </Label>
             <Textarea
               rows={5}
               value={personalMessage}
               onChange={(e) => setPersonalMessage(e.target.value)}
-              placeholder="Hola, recordé esta propiedad por nuestra conversación..."
+              placeholder={t.propDialogs.personalMessagePlaceholder}
             />
             <p className="mt-1.5 text-[10px] text-muted-foreground">
-              Opcional. Si lo dejas vacío, el PDF no incluye esta sección.
+              {t.propDialogs.personalMessageHint}
             </p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export function BrochureDialog({
         {generating && (
           <GeneratingBar
             durationMs={20000}
-            label="Generando tu brochure PDF…"
+            label={t.propDialogs.brochureGenerating}
             className="px-6 pb-1"
           />
         )}
@@ -324,7 +324,7 @@ export function BrochureDialog({
             onClick={() => onOpenChange(false)}
             disabled={generating}
           >
-            Cancelar
+            {t.propDialogs.cancel}
           </Button>
           <Button onClick={generate} disabled={generating} variant="ink">
             {generating ? (
@@ -332,7 +332,7 @@ export function BrochureDialog({
             ) : (
               <FileText className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Generar y descargar
+            {t.propDialogs.generateDownload}
           </Button>
         </DialogFooter>
       </DialogContent>

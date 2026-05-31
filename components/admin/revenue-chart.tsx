@@ -13,7 +13,15 @@ import {
 
 type Row = { day: string; subs: number; packs: number; total: number };
 
-export function RevenueChart({ data }: { data: Row[] }) {
+type ChartLabels = { day: string; subscriptions: string; packs: string };
+
+export function RevenueChart({
+  data,
+  labels,
+}: {
+  data: Row[];
+  labels: ChartLabels;
+}) {
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -47,12 +55,12 @@ export function RevenueChart({ data }: { data: Row[] }) {
               borderRadius: 8,
               fontSize: 12,
             }}
-            labelFormatter={(l) => `Día: ${l}`}
+            labelFormatter={(l) => `${labels.day}: ${l}`}
             formatter={(value, name) => {
               const v = typeof value === "number" ? value : Number(value);
               return [
                 `$${v.toFixed(2)}`,
-                name === "subs" ? "Suscripciones" : "Packs",
+                name === "subs" ? labels.subscriptions : labels.packs,
               ];
             }}
           />

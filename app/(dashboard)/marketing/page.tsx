@@ -7,11 +7,13 @@ import { listEmailAudience } from "@/lib/actions/email";
 import { listCampaigns } from "@/lib/actions/email-campaign";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketingPage() {
   const user = await requireUser();
+  const t = await getDict();
 
   const [posts, properties, digitalCards, audience, campaigns] = await Promise.all([
     prisma.marketingPost.findMany({
@@ -38,8 +40,8 @@ export default async function MarketingPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Marketing"
-        description="Tarjetas digitales, email marketing con newsletters y calendario de posts."
+        title={t.marketing.title}
+        description={t.marketing.pageDescription}
       />
       <MarketingHub
         digitalView={

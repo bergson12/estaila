@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CircleDollarSign } from "lucide-react";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 const TYPE_COLOR: Record<string, string> = {
   SUB_ACTIVATED: "bg-emerald-500/15 text-emerald-600",
@@ -16,33 +17,37 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 export default async function AdminBillingPage() {
-  const events = await listBillingEvents(80);
+  const [events, t, locale] = await Promise.all([
+    listBillingEvents(80),
+    getDict(),
+    getLocale(),
+  ]);
   const total = events.reduce((sum, e) => sum + Number(e.amount), 0);
 
   return (
     <div>
       <PageHeader
-        title="Movimientos de billing"
-        description={`Últimos ${events.length} eventos · Total mostrado: US$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        title={t.adminPanel.billingTitle}
+        description={`${t.adminPanel.billingLast} ${events.length} ${t.adminPanel.billingEvents} · ${t.adminPanel.billingTotalShown}: US$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
       />
 
       <Card className="overflow-hidden p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-2.5 font-semibold">Fecha</th>
-              <th className="px-3 py-2.5 font-semibold">Usuario</th>
-              <th className="px-3 py-2.5 font-semibold">Tipo</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Monto</th>
-              <th className="px-3 py-2.5 text-right font-semibold">Créditos</th>
-              <th className="px-3 py-2.5 font-semibold">Referencia</th>
+              <th className="px-4 py-2.5 font-semibold">{t.adminPanel.colDate}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colUser}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colType}</th>
+              <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colAmount}</th>
+              <th className="px-3 py-2.5 text-right font-semibold">{t.adminPanel.colCredits}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.adminPanel.colReference}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {events.map((e) => (
               <tr key={e.id} className="hover:bg-muted/30">
                 <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {new Date(e.createdAt).toLocaleString("es", {
+                  {new Date(e.createdAt).toLocaleString(locale === "en" ? "en-US" : "es", {
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",
@@ -79,7 +84,7 @@ export default async function AdminBillingPage() {
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   <CircleDollarSign className="mx-auto mb-2 h-5 w-5 opacity-40" />
-                  Aún no hay movimientos de billing
+                  {t.adminPanel.billingEmpty}
                 </td>
               </tr>
             )}

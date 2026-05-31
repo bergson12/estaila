@@ -4,15 +4,16 @@ import { PageHeader } from "@/components/shared/page-header";
 import { isAdmin } from "@/lib/auth-server";
 import { listAllTickets } from "@/lib/actions/support";
 import { TicketsList } from "@/components/support/tickets-list";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSoportePage() {
   if (!(await isAdmin())) redirect("/inicio");
 
-  const tickets = await listAllTickets();
-  const open = tickets.filter((t) => t.status === "OPEN").length;
-  const inProgress = tickets.filter((t) => t.status === "IN_PROGRESS").length;
+  const [tickets, t] = await Promise.all([listAllTickets(), getDict()]);
+  const open = tickets.filter((tk) => tk.status === "OPEN").length;
+  const inProgress = tickets.filter((tk) => tk.status === "IN_PROGRESS").length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -20,10 +21,10 @@ export default async function AdminSoportePage() {
         title={
           <>
             <LifeBuoy className="h-6 w-6 text-primary" />
-            Tickets de soporte
+            {t.adminPanel.supportTicketsTitle}
           </>
         }
-        description={`${open} abiertos · ${inProgress} en curso · ${tickets.length} total`}
+        description={`${open} ${t.adminPanel.ticketsOpen} · ${inProgress} ${t.adminPanel.ticketsInProgress} · ${tickets.length} ${t.adminPanel.ticketsTotal}`}
       />
       {tickets.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card/40 p-12 text-center">
@@ -31,9 +32,9 @@ export default async function AdminSoportePage() {
             className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40"
             strokeWidth={1.5}
           />
-          <p className="text-sm font-medium">Sin tickets</p>
+          <p className="text-sm font-medium">{t.adminPanel.noTickets}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cuando un usuario abra un ticket, aparecerá aquí.
+            {t.adminPanel.noTicketsHint}
           </p>
         </div>
       ) : (

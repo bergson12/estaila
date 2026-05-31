@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, X, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export function PropertyGallery({
   photos,
@@ -12,6 +13,7 @@ export function PropertyGallery({
   photos: string[];
   title: string;
 }) {
+  const { t } = useT();
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
 
@@ -20,7 +22,7 @@ export function PropertyGallery({
       <div className="flex aspect-[16/10] items-center justify-center rounded-xl border border-border bg-card/30">
         <div className="text-center">
           <Building2 className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="mt-2 text-sm text-muted-foreground">Sin fotos aún</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t.propDialogs.galleryNoPhotos}</p>
         </div>
       </div>
     );

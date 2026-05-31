@@ -52,6 +52,7 @@ import { RentalTab } from "@/components/properties/rental-tab";
 import { MapTab } from "@/components/properties/map/map-tab";
 import type { POIData } from "@/components/properties/map/property-map";
 import { KitSection } from "@/components/marketing-kit/kit-section";
+import { useT } from "@/lib/i18n/provider";
 
 type PropertyForHub = {
   id: string;
@@ -90,14 +91,14 @@ const ZERO_ENRICHED: EnrichedAnalytics = {
   topCities: [],
 };
 
-const TABS: { value: string; label: string; icon: LucideIcon; soon?: boolean; rentalOnly?: boolean }[] = [
-  { value: "overview", label: "Vista general", icon: Info },
-  { value: "map", label: "Mapa & POIs", icon: MapPin },
-  { value: "social", label: "Social Kit", icon: Sparkles },
-  { value: "landing", label: "Landing", icon: Home },
-  { value: "analytics", label: "Analytics", icon: Activity },
-  { value: "documents", label: "Documentos", icon: FileText },
-  { value: "rental", label: "Gestión Alquiler", icon: Key, rentalOnly: true },
+const TABS: { value: string; labelKey: string; icon: LucideIcon; soon?: boolean; rentalOnly?: boolean }[] = [
+  { value: "overview", labelKey: "tabOverview", icon: Info },
+  { value: "map", labelKey: "tabMap", icon: MapPin },
+  { value: "social", labelKey: "tabSocial", icon: Sparkles },
+  { value: "landing", labelKey: "tabLanding", icon: Home },
+  { value: "analytics", labelKey: "tabAnalytics", icon: Activity },
+  { value: "documents", labelKey: "tabDocuments", icon: FileText },
+  { value: "rental", labelKey: "tabRental", icon: Key, rentalOnly: true },
 ];
 
 type MarketingKitRow = {
@@ -144,23 +145,25 @@ export function PropertyHubTabs({
   /** Overview content rendered by parent (existing sections) */
   children: React.ReactNode;
 }) {
+  const { t } = useT();
   const [tab, setTab] = useState("overview");
   const isRental = property.operation === "EN_ALQUILER" || property.operation === "ALQUILADA";
-  const visibleTabs = TABS.filter((t) => !t.rentalOnly || isRental);
+  const visibleTabs = TABS.filter((tb) => !tb.rentalOnly || isRental);
 
   return (
     <div>
       {/* Tab nav — compact, no scroll on desktop, icons-only on small screens */}
       <div className="mb-6 sticky top-16 z-10 -mx-6 border-b border-border bg-background/80 px-6 backdrop-blur-xl">
         <div className="hide-scrollbar flex items-center gap-0.5 overflow-x-auto sm:flex-wrap sm:overflow-visible">
-          {visibleTabs.map((t) => {
-            const active = tab === t.value;
-            const Icon = t.icon;
+          {visibleTabs.map((tb) => {
+            const active = tab === tb.value;
+            const Icon = tb.icon;
+            const label = t.propHub[tb.labelKey as keyof typeof t.propHub];
             return (
               <button
-                key={t.value}
-                onClick={() => setTab(t.value)}
-                title={t.label}
+                key={tb.value}
+                onClick={() => setTab(tb.value)}
+                title={label}
                 className={cn(
                   "group relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2.5 text-[13px] transition-colors",
                   active
@@ -175,13 +178,13 @@ export function PropertyHubTabs({
                   )}
                   strokeWidth={1.75}
                 />
-                <span className="hidden font-medium md:inline">{t.label}</span>
+                <span className="hidden font-medium md:inline">{label}</span>
                 <span className="font-medium md:hidden">
-                  {t.label.length > 8 ? t.label.slice(0, 8) : t.label}
+                  {label.length > 8 ? label.slice(0, 8) : label}
                 </span>
-                {t.soon && (
+                {tb.soon && (
                   <span className="hidden rounded bg-muted px-1 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground lg:inline">
-                    Pronto
+                    {t.propHub.soon}
                   </span>
                 )}
                 {active && (
@@ -231,10 +234,10 @@ export function PropertyHubTabs({
 // SOCIAL KIT TAB
 // ============================================================
 
-const SOCIAL_FORMATS = [
-  { value: "1:1", label: "Feed (1:1)", ratio: "aspect-square" },
-  { value: "4:5", label: "Vertical (4:5)", ratio: "aspect-[4/5]" },
-  { value: "9:16", label: "Stories / Reels (9:16)", ratio: "aspect-[9/16]" },
+const SOCIAL_FORMATS: { value: string; labelKey: string; ratio: string }[] = [
+  { value: "1:1", labelKey: "formatFeed", ratio: "aspect-square" },
+  { value: "4:5", labelKey: "formatVertical", ratio: "aspect-[4/5]" },
+  { value: "9:16", labelKey: "formatStories", ratio: "aspect-[9/16]" },
 ];
 
 type DesignSettings = {
@@ -254,6 +257,7 @@ function SocialKitTab({
   property: PropertyForHub;
   marketingKits?: MarketingKitRow[];
 }) {
+  const { t } = useT();
   const [format, setFormat] = useState("4:5");
   const [photo, setPhoto] = useState<string | null>(property.featuredPhoto);
   const [uploading, setUploading] = useState(false);
@@ -286,7 +290,7 @@ function SocialKitTab({
         const r = await generateBioForProperty(property.id);
         setBios(r.bios);
       }
-      toast.success("Generado con IA");
+      toast.success(t.propHub.toastGeneratedAI);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -310,8 +314,8 @@ function SocialKitTab({
       setCaption(cap.captions);
       setHashtags(hash.hashtags);
       setBios(bio.bios);
-      toast.success("Kit listo ✨", {
-        description: `${cap.captions.length} captions · ${hash.hashtags.length} hashtags · ${bio.bios.length} bios`,
+      toast.success(t.propHub.toastKitReady, {
+        description: `${cap.captions.length} ${t.propHub.kitCaptions} · ${hash.hashtags.length} ${t.propHub.kitHashtags} · ${bio.bios.length} ${t.propHub.kitBios}`,
       });
     } catch (e) {
       toast.error((e as Error).message);
@@ -322,12 +326,12 @@ function SocialKitTab({
 
   function copyText(text: string) {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado");
+    toast.success(t.propHub.toastCopied);
   }
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
-      toast.error("Solo imágenes");
+      toast.error(t.propHub.toastImagesOnly);
       return;
     }
     setUploading(true);
@@ -336,9 +340,9 @@ function SocialKitTab({
       form.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: form });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al subir");
+      if (!res.ok) throw new Error(data.error ?? t.propHub.toastUploadError);
       setPhoto(data.url);
-      toast.success("Foto cambiada");
+      toast.success(t.propHub.toastPhotoChanged);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -348,7 +352,7 @@ function SocialKitTab({
 
   function resetPhoto() {
     setPhoto(property.featuredPhoto);
-    toast.success("Foto restaurada");
+    toast.success(t.propHub.toastPhotoRestored);
   }
 
   const selectedFormat = SOCIAL_FORMATS.find((f) => f.value === format)!;
@@ -388,7 +392,7 @@ function SocialKitTab({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <Camera className="h-4 w-4 text-primary" />
-              Multi-formato
+              {t.propHub.multiFormat}
             </h3>
             <div className="flex items-center gap-1">
               {SOCIAL_FORMATS.map((f) => (
@@ -402,7 +406,7 @@ function SocialKitTab({
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {f.label}
+                  {t.propHub[f.labelKey as keyof typeof t.propHub]}
                 </button>
               ))}
             </div>
@@ -499,18 +503,18 @@ function SocialKitTab({
                 ) : (
                   <ImagePlus className="h-3.5 w-3.5" />
                 )}
-                {uploading ? "Subiendo..." : "Cambiar foto"}
+                {uploading ? t.propHub.uploading : t.propHub.changePhoto}
               </span>
             </label>
             {photo !== property.featuredPhoto && (
               <Button size="sm" variant="ghost" onClick={resetPhoto}>
                 <Trash2 className="mr-1.5 h-3 w-3" />
-                Original
+                {t.propHub.original}
               </Button>
             )}
             <Button size="sm" className="bg-gradient-to-r from-primary to-primary/85">
               <Share2 className="mr-1.5 h-3.5 w-3.5" />
-              Exportar
+              {t.propHub.export}
             </Button>
           </div>
         </Card>
@@ -519,30 +523,30 @@ function SocialKitTab({
         <Card className="p-5">
           <div className="mb-3 flex items-center gap-2">
             <Settings2 className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">Personalizar diseño</h3>
+            <h3 className="text-sm font-semibold">{t.propHub.customizeDesign}</h3>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <ToggleChip
               icon={Eye}
-              label="Precio"
+              label={t.propHub.price}
               active={design.showPrice}
               onClick={() => updateDesign("showPrice", !design.showPrice)}
             />
             <ToggleChip
               icon={Eye}
-              label="Título"
+              label={t.propHub.title}
               active={design.showTitle}
               onClick={() => updateDesign("showTitle", !design.showTitle)}
             />
             <ToggleChip
               icon={MapPin}
-              label="Ubicación"
+              label={t.propHub.locationLabel}
               active={design.showLocation}
               onClick={() => updateDesign("showLocation", !design.showLocation)}
             />
             <ToggleChip
               icon={Sparkles}
-              label="Watermark"
+              label={t.propHub.watermark}
               active={design.showWatermark}
               onClick={() => updateDesign("showWatermark", !design.showWatermark)}
             />
@@ -550,7 +554,7 @@ function SocialKitTab({
 
           <div className="mt-3">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Posición del overlay
+              {t.propHub.overlayPosition}
             </label>
             <div className="mt-1 grid grid-cols-3 gap-1.5">
               {(["top", "center", "bottom"] as const).map((p) => (
@@ -564,7 +568,7 @@ function SocialKitTab({
                       : "border-border bg-card hover:border-foreground/20"
                   )}
                 >
-                  {p === "top" ? "Arriba" : p === "center" ? "Centro" : "Abajo"}
+                  {p === "top" ? t.propHub.posTop : p === "center" ? t.propHub.posCenter : t.propHub.posBottom}
                 </button>
               ))}
             </div>
@@ -572,7 +576,7 @@ function SocialKitTab({
 
           <div className="mt-3">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Color del texto
+              {t.propHub.textColor}
             </label>
             <div className="mt-1 grid grid-cols-2 gap-1.5">
               {(["white", "dark"] as const).map((c) => (
@@ -592,7 +596,7 @@ function SocialKitTab({
                       c === "white" ? "bg-white" : "bg-stone-900"
                     )}
                   />
-                  {c === "white" ? "Blanco" : "Oscuro"}
+                  {c === "white" ? t.propHub.colorWhite : t.propHub.colorDark}
                 </button>
               ))}
             </div>
@@ -600,7 +604,7 @@ function SocialKitTab({
 
           <div className="mt-3">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Texto del watermark
+              {t.propHub.watermarkText}
             </label>
             <input
               type="text"
@@ -619,19 +623,21 @@ function SocialKitTab({
       {/* RIGHT: AI tools — bounded scroll so hashtags don't push other widgets off-screen */}
       <div className="lg:sticky lg:top-32 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto hide-scrollbar space-y-4 lg:pb-6">
         <AIWidget
-          title="Caption con IA"
-          description="Texto del post listo para Instagram"
+          title={t.propHub.captionTitle}
+          description={t.propHub.captionDesc}
           icon={Send}
           loading={loading === "caption"}
           onGenerate={() => gen("caption")}
           hasResults={caption.length > 0}
+          generateLabel={t.propHub.generate}
+          regenerateLabel={t.propHub.regenerate}
         >
           {caption.map((text, i) => (
             <pre
               key={i}
               className="cursor-pointer whitespace-pre-wrap rounded-md bg-muted/50 p-2 font-sans text-[11px] leading-relaxed transition-colors hover:bg-muted"
               onClick={() => copyText(text)}
-              title="Click para copiar"
+              title={t.propHub.clickToCopy}
             >
               {text}
             </pre>
@@ -639,12 +645,14 @@ function SocialKitTab({
         </AIWidget>
 
         <AIWidget
-          title="Hashtags relevantes"
-          description="Etiquetas optimizadas por categoría + ubicación"
+          title={t.propHub.hashtagsTitle}
+          description={t.propHub.hashtagsDesc}
           icon={Hash}
           loading={loading === "hashtags"}
           onGenerate={() => gen("hashtags")}
           hasResults={hashtags.length > 0}
+          generateLabel={t.propHub.generate}
+          regenerateLabel={t.propHub.regenerate}
         >
           {hashtags.length > 0 && (
             <>
@@ -668,26 +676,28 @@ function SocialKitTab({
                 onClick={() => copyText(hashtags.join(" "))}
               >
                 <Copy className="mr-1.5 h-3 w-3" />
-                Copiar todos ({hashtags.length})
+                {t.propHub.copyAll} ({hashtags.length})
               </Button>
             </>
           )}
         </AIWidget>
 
         <AIWidget
-          title="Bio para Instagram"
-          description="Variaciones para tu perfil o landing"
+          title={t.propHub.bioTitle}
+          description={t.propHub.bioDesc}
           icon={Users}
           loading={loading === "bios"}
           onGenerate={() => gen("bios")}
           hasResults={bios.length > 0}
+          generateLabel={t.propHub.generate}
+          regenerateLabel={t.propHub.regenerate}
         >
           {bios.map((text, i) => (
             <pre
               key={i}
               className="cursor-pointer whitespace-pre-wrap rounded-md bg-muted/50 p-2 font-sans text-[11px] leading-relaxed transition-colors hover:bg-muted"
               onClick={() => copyText(text)}
-              title="Click para copiar"
+              title={t.propHub.clickToCopy}
             >
               {text}
             </pre>
@@ -736,6 +746,8 @@ function AIWidget({
   loading,
   onGenerate,
   hasResults,
+  generateLabel,
+  regenerateLabel,
   children,
 }: {
   title: string;
@@ -744,6 +756,8 @@ function AIWidget({
   loading: boolean;
   onGenerate: () => void;
   hasResults: boolean;
+  generateLabel: string;
+  regenerateLabel: string;
   children?: React.ReactNode;
 }) {
   return (
@@ -769,7 +783,7 @@ function AIWidget({
         ) : (
           <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" />
         )}
-        {hasResults ? "Regenerar" : "Generar"}
+        {hasResults ? regenerateLabel : generateLabel}
       </Button>
       {hasResults && <div className="mt-3 space-y-2">{children}</div>}
     </Card>
@@ -789,6 +803,7 @@ function LandingTab({
   hasSite: boolean;
   siteSlug: string | null;
 }) {
+  const { t } = useT();
   const publicUrl = hasSite && siteSlug
     ? `/p/${siteSlug}/${property.id}`
     : null;
@@ -800,14 +815,14 @@ function LandingTab({
           <p className="flex items-center gap-2 text-xs font-mono">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
             <span className="text-muted-foreground">
-              {publicUrl ? `realestate-x.app${publicUrl}` : "Sin publicar"}
+              {publicUrl ? `realestate-x.app${publicUrl}` : t.propHub.notPublished}
             </span>
           </p>
           {publicUrl && (
             <Button asChild variant="outline" size="sm">
               <Link href={publicUrl} target="_blank">
                 <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                Abrir landing
+                {t.propHub.openLanding}
               </Link>
             </Button>
           )}
@@ -839,14 +854,14 @@ function LandingTab({
               <div className="text-center">
                 <Home className="mx-auto h-10 w-10 text-white/70" />
                 <p className="mt-3 text-base font-semibold text-white">
-                  Crea tu sitio público
+                  {t.propHub.createPublicSite}
                 </p>
                 <p className="mt-1 max-w-sm text-sm text-white/70">
-                  Activa tu portal inmobiliario y cada propiedad tendrá su landing page automática.
+                  {t.propHub.createPublicSiteDesc}
                 </p>
                 <Button asChild className="mt-4">
                   <Link href="/sitio">
-                    Configurar sitio
+                    {t.propHub.configureSite}
                     <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Link>
                 </Button>
@@ -860,17 +875,17 @@ function LandingTab({
         <Card className="p-5">
           <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Sparkles className="h-3 w-3 text-primary" />
-            Incluye automáticamente
+            {t.propHub.includesAuto}
           </h3>
           <ul className="space-y-2 text-xs">
             {[
-              "Galería premium con lightbox",
-              "Datos completos + amenidades",
-              "Botón WhatsApp directo",
-              "Formulario de contacto inteligente",
-              "Mapa interactivo",
-              "Compartir en redes sociales",
-              "Mobile-first + SEO friendly",
+              t.propHub.featGallery,
+              t.propHub.featData,
+              t.propHub.featWhatsApp,
+              t.propHub.featContactForm,
+              t.propHub.featMap,
+              t.propHub.featSocialShare,
+              t.propHub.featMobileSeo,
             ].map((f) => (
               <li key={f} className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
@@ -882,11 +897,11 @@ function LandingTab({
 
         <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-5">
           <div className="mb-2 inline-block rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-            Próximamente
+            {t.propHub.comingSoon}
           </div>
-          <h3 className="text-sm font-semibold">Promesa de venta digital</h3>
+          <h3 className="text-sm font-semibold">{t.propHub.digitalSalePromise}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Reserva online · firma digital · PDF automático · notificación al agente.
+            {t.propHub.digitalSalePromiseDesc}
           </p>
         </Card>
       </div>
@@ -907,6 +922,7 @@ function AnalyticsTab({
   hasSite: boolean;
   enriched: EnrichedAnalytics;
 }) {
+  const { t } = useT();
   const { views, shares, clicks, leads } = analytics;
   const hasData = views > 0 || shares > 0 || clicks > 0 || leads > 0;
 
@@ -918,10 +934,10 @@ function AnalyticsTab({
     <div className="space-y-6">
       {/* KPIs reales de esta propiedad */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricCard icon={Eye} label="Visitas" value={views} accent="primary" />
-        <MetricCard icon={Share2} label="Compartidos" value={shares} accent="emerald" />
-        <MetricCard icon={MousePointer} label="Clics en enlaces" value={clicks} accent="amber" />
-        <MetricCard icon={Users} label="Leads" value={leads} accent="rose" />
+        <MetricCard icon={Eye} label={t.propHub.visits} value={views} accent="primary" />
+        <MetricCard icon={Share2} label={t.propHub.shared} value={shares} accent="emerald" />
+        <MetricCard icon={MousePointer} label={t.propHub.linkClicks} value={clicks} accent="amber" />
+        <MetricCard icon={Users} label={t.propHub.leads} value={leads} accent="rose" />
       </div>
 
       {!hasData ? (
@@ -930,12 +946,11 @@ function AnalyticsTab({
             <Activity className="h-5 w-5" strokeWidth={1.75} />
           </div>
           <div className="max-w-sm">
-            <h3 className="text-sm font-semibold">Aún sin datos de esta propiedad</h3>
+            <h3 className="text-sm font-semibold">{t.propHub.noDataYet}</h3>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Comparte la propiedad con el botón Compartir de arriba
-              {hasSite ? " o publícala en tu sitio" : ""}. En cuanto reciba
-              visitas y clics reales, las métricas aparecerán aquí
-              automáticamente.
+              {t.propHub.noDataShare}
+              {hasSite ? t.propHub.noDataPublish : ""}
+              {t.propHub.noDataMetrics}
             </p>
           </div>
         </Card>
@@ -943,33 +958,33 @@ function AnalyticsTab({
         <Card className="p-5">
           <h3 className="flex items-center gap-2 text-sm font-semibold">
             <Activity className="h-4 w-4 text-primary" strokeWidth={1.75} />
-            Embudo de conversión
+            {t.propHub.conversionFunnel}
           </h3>
           <p className="mb-5 mt-1 text-xs text-muted-foreground">
-            Recorrido real desde la visita pública hasta el lead captado.
+            {t.propHub.conversionFunnelDesc}
           </p>
           <div className="space-y-4">
             <FunnelRow
               icon={Eye}
-              label="Visitas a la página pública"
+              label={t.propHub.publicPageVisits}
               value={views}
               pct={100}
               accent="primary"
             />
             <FunnelRow
               icon={Users}
-              label="Leads generados"
+              label={t.propHub.leadsGenerated}
               value={leads}
               pct={convRate}
               accent="rose"
-              hint={views > 0 ? `${convRate.toFixed(1)}% de conversión` : undefined}
+              hint={views > 0 ? `${convRate.toFixed(1)}% ${t.propHub.conversionSuffix}` : undefined}
             />
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-5">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Veces compartida
+                {t.propHub.timesShared}
               </p>
               <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
                 {formatNumber(shares)}
@@ -977,7 +992,7 @@ function AnalyticsTab({
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Clics en enlaces compartidos
+                {t.propHub.clicksOnSharedLinks}
               </p>
               <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
                 {formatNumber(clicks)}
@@ -998,7 +1013,7 @@ function AnalyticsTab({
           <Card className="p-5">
             <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
               <Activity className="h-4 w-4 text-primary" strokeWidth={1.75} />
-              Visitas · últimos 14 días
+              {t.propHub.visitsLast14Days}
             </h3>
             <div className="flex h-32 items-end gap-1">
               {(() => {
@@ -1010,7 +1025,7 @@ function AnalyticsTab({
                     animate={{ height: `${Math.max((d.count / maxDay) * 100, d.count > 0 ? 6 : 2)}%` }}
                     transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     className="flex-1 rounded-sm bg-primary/70 transition-colors hover:bg-primary"
-                    title={`${d.day}: ${d.count} visita${d.count === 1 ? "" : "s"}`}
+                    title={`${d.day}: ${d.count} ${d.count === 1 ? t.propHub.visitSingular : t.propHub.visitPlural}`}
                   />
                 ));
               })()}
@@ -1020,22 +1035,22 @@ function AnalyticsTab({
           <Card className="space-y-4 p-5">
             <div>
               <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Dispositivos
+                {t.propHub.devices}
               </h3>
               {(() => {
-                const t = enriched.devices.mobile + enriched.devices.desktop;
-                const mpct = t > 0 ? Math.round((enriched.devices.mobile / t) * 100) : 0;
+                const total = enriched.devices.mobile + enriched.devices.desktop;
+                const mpct = total > 0 ? Math.round((enriched.devices.mobile / total) * 100) : 0;
                 return (
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span>Móvil</span>
+                      <span>{t.propHub.mobile}</span>
                       <span className="font-mono tabular-nums text-muted-foreground">{mpct}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${mpct}%` }} />
                     </div>
                     <div className="flex items-center justify-between pt-1">
-                      <span>Escritorio</span>
+                      <span>{t.propHub.desktop}</span>
                       <span className="font-mono tabular-nums text-muted-foreground">{100 - mpct}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -1048,7 +1063,7 @@ function AnalyticsTab({
             {enriched.topCities.length > 0 && (
               <div className="border-t border-border pt-3">
                 <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Top ciudades
+                  {t.propHub.topCities}
                 </h3>
                 <ul className="space-y-1.5 text-xs">
                   {enriched.topCities.map((c) => (
@@ -1067,12 +1082,11 @@ function AnalyticsTab({
       ) : (
         <Card className="border-dashed p-5">
           <div className="mb-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Tendencias
+            {t.propHub.trends}
           </div>
-          <h3 className="text-sm font-semibold">Aún sin eventos de tráfico</h3>
+          <h3 className="text-sm font-semibold">{t.propHub.noTrafficYet}</h3>
           <p className="mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
-            Cuando tu landing pública reciba visitas, aquí verás visitas por día,
-            dispositivos (móvil / escritorio) y ciudades de los visitantes.
+            {t.propHub.noTrafficDesc}
           </p>
         </Card>
       )}
@@ -1161,32 +1175,33 @@ function MetricCard({
 // ============================================================
 
 function DocumentsTab({ property }: { property: PropertyForHub }) {
+  const { t } = useT();
   const [openKind, setOpenKind] = useState<DocKind | null>(null);
   const [openManager, setOpenManager] = useState(false);
 
   const docs: { kind: DocKind; name: string; description: string; icon: LucideIcon }[] = [
     {
       kind: "CONTRACT_SALE",
-      name: "Contrato de compra venta",
-      description: "Múltiples plantillas con cláusulas legales personalizables.",
+      name: t.propHub.docContractSaleName,
+      description: t.propHub.docContractSaleDesc,
       icon: FileText,
     },
     {
       kind: "SALE_PROMISE",
-      name: "Promesa de venta",
-      description: "Reserva con exclusividad, penalidades bilaterales y plazos.",
+      name: t.propHub.docSalePromiseName,
+      description: t.propHub.docSalePromiseDesc,
       icon: CheckCircle2,
     },
     {
       kind: "RENTAL_CONTRACT",
-      name: "Contrato de alquiler",
-      description: "12 cláusulas Ley 4314: depósito, mora, mantenimiento.",
+      name: t.propHub.docRentalContractName,
+      description: t.propHub.docRentalContractDesc,
       icon: Key,
     },
     {
       kind: "PAYMENT_RECEIPT",
-      name: "Recibo de pago",
-      description: "Reservas, comisiones, mensualidades. Monto en letras.",
+      name: t.propHub.docPaymentReceiptName,
+      description: t.propHub.docPaymentReceiptDesc,
       icon: Wallet,
     },
   ];
@@ -1210,12 +1225,11 @@ function DocumentsTab({ property }: { property: PropertyForHub }) {
           </div>
           <div className="flex-1">
             <Badge className="mb-2 bg-emerald-500/15 text-[10px] text-emerald-600 hover:bg-emerald-500/15">
-              Disponible
+              {t.propHub.available}
             </Badge>
-            <h3 className="text-lg font-bold">Generador de documentos legales</h3>
+            <h3 className="text-lg font-bold">{t.propHub.legalDocGenerator}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Plantillas profundas personalizables por jurisdicción. Crea las tuyas, súbelas
-              en DOCX o edita las del sistema. Exporta a PDF vía impresión del navegador.
+              {t.propHub.legalDocGeneratorDesc}
             </p>
           </div>
           <Button
@@ -1224,7 +1238,7 @@ function DocumentsTab({ property }: { property: PropertyForHub }) {
             onClick={() => setOpenManager(true)}
             className="shrink-0"
           >
-            <Settings2 className="mr-1.5 h-3.5 w-3.5" /> Gestionar plantillas
+            <Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t.propHub.manageTemplates}
           </Button>
         </div>
       </Card>

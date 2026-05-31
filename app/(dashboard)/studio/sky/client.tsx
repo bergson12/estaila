@@ -7,37 +7,39 @@ import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { cn } from "@/lib/utils";
-
-const MODES = [
-  {
-    value: "CLEAR",
-    label: "Día Claro",
-    description: "Cielo azul nítido sin nubes",
-    icon: Sun,
-  },
-  {
-    value: "TROPICAL",
-    label: "Tropical",
-    description: "Azul caribeño con nubes blancas suaves",
-    icon: Palmtree,
-  },
-  {
-    value: "SUNSET",
-    label: "Atardecer",
-    description: "Tonos dorados y rosados",
-    icon: CloudSun,
-  },
-  {
-    value: "DRAMATIC",
-    label: "Dramático",
-    description: "Cielo con contraste y volumen",
-    icon: CloudRain,
-  },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function SkyClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t } = useT();
   const [mode, setMode] = useState<string>("CLEAR");
+
+  const MODES = [
+    {
+      value: "CLEAR",
+      label: t.studio.skyClear,
+      description: t.studio.skyClearDesc,
+      icon: Sun,
+    },
+    {
+      value: "TROPICAL",
+      label: t.studio.skyTropical,
+      description: t.studio.skyTropicalDesc,
+      icon: Palmtree,
+    },
+    {
+      value: "SUNSET",
+      label: t.studio.skySunset,
+      description: t.studio.skySunsetDesc,
+      icon: CloudSun,
+    },
+    {
+      value: "DRAMATIC",
+      label: t.studio.skyDramatic,
+      description: t.studio.skyDramaticDesc,
+      icon: CloudRain,
+    },
+  ] as const;
 
   return (
     <StudioShell
@@ -45,13 +47,13 @@ export function SkyClient({ plan }: { plan: string }) {
       title={
         <>
           <Sun className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Cielo Despejado
+          {t.studio.toolSkyTitle}
         </>
       }
-      description="Reemplaza el cielo en fotos exteriores. Ideal para días nublados."
+      description={t.studio.skyDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Tipo de cielo">
+          <OptionsPanel title={t.studio.skyType}>
             <div className="grid grid-cols-2 gap-2">
               {MODES.map((m) => {
                 const Icon = m.icon;
@@ -93,16 +95,15 @@ export function SkyClient({ plan }: { plan: string }) {
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Tip">
+          <OptionsPanel title={t.studio.tip}>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Funciona mejor con fotos exteriores donde el cielo es visible y
-              ocupa al menos 20% de la imagen.
+              {t.studio.skyTip}
             </p>
           </OptionsPanel>
 
           <GenerateButton
             onClick={() => runGenerate({ skyMode: mode as "CLEAR" | "SUNSET" | "DRAMATIC" | "TROPICAL" })}
-            label="Cambiar cielo"
+            label={t.studio.changeSkyBtn}
           />
         </>
       }

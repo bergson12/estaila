@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/compress-image";
 import { saveSite, suggestSlug, togglePublished } from "@/lib/actions/site";
 import { SocialIcon } from "@/components/shared/social-icons";
+import { useT } from "@/lib/i18n/provider";
 
 type Initial = {
   slug: string;
@@ -54,29 +55,21 @@ type Initial = {
 export const FONT_PAIRS = [
   {
     value: "ELEGANT",
-    label: "Elegante",
-    description: "Cormorant Garamond + Inter",
     sample: "Aa",
     style: { fontFamily: "var(--font-cormorant), serif" },
   },
   {
     value: "EDITORIAL",
-    label: "Editorial",
-    description: "Playfair Display + Inter",
     sample: "Aa",
     style: { fontFamily: "var(--font-playfair), serif" },
   },
   {
     value: "MODERN",
-    label: "Moderno",
-    description: "Inter sans-serif minimal",
     sample: "Aa",
     style: { fontFamily: "var(--font-inter), sans-serif", fontWeight: 600 },
   },
   {
     value: "MINIMAL",
-    label: "Minimal",
-    description: "Inter ligero + tracking amplio",
     sample: "Aa",
     style: {
       fontFamily: "var(--font-inter), sans-serif",
@@ -87,56 +80,64 @@ export const FONT_PAIRS = [
 ] as const;
 
 export const LANGUAGES = [
-  { value: "es", label: "Español", flag: "🌐" },
-  { value: "en", label: "English", flag: "🌐" },
+  { value: "es", labelKey: "langSpanish", flag: "🌐" },
+  { value: "en", labelKey: "langEnglish", flag: "🌐" },
 ] as const;
+
+// Claves i18n por tipografía (label + descripción) — el texto vive en ns/sitio.
+const FONT_LABEL_KEYS: Record<string, { label: string; desc: string }> = {
+  ELEGANT: { label: "fontElegantLabel", desc: "fontElegantDesc" },
+  EDITORIAL: { label: "fontEditorialLabel", desc: "fontEditorialDesc" },
+  MODERN: { label: "fontModernLabel", desc: "fontModernDesc" },
+  MINIMAL: { label: "fontMinimalLabel", desc: "fontMinimalDesc" },
+};
 
 /** Plantillas del portal público. El render por plantilla ya vive en /p/[slug]. */
 const TEMPLATES = [
   {
     value: "LUXURY_DARK",
-    label: "Luxury Dark",
-    description: "Editorial y sofisticado sobre fondo oscuro. Para propiedades premium.",
+    labelKey: "tplLuxuryLabel",
+    descKey: "tplLuxuryDesc",
     swatch: "linear-gradient(135deg,#18181b,#3f3f46)",
     dot: "#C9A227",
   },
   {
     value: "TROPICAL_BRIGHT",
-    label: "Tropical",
-    description: "Cálido y luminoso, colores caribeños. Ideal playa / RD.",
+    labelKey: "tplTropicalLabel",
+    descKey: "tplTropicalDesc",
     swatch: "linear-gradient(135deg,#0EA5A4,#FBBF24)",
     dot: "#0EA5A4",
   },
   {
     value: "MINIMAL_CLASSIC",
-    label: "Minimal",
-    description: "Limpio y neutro, tipo Notion / Linear. Profesional sobrio.",
+    labelKey: "tplMinimalLabel",
+    descKey: "tplMinimalDesc",
     swatch: "linear-gradient(135deg,#e4e4e7,#ffffff)",
     dot: "#111827",
   },
   {
     value: "MODERN_BOLD",
-    label: "Bold",
-    description: "Dinámico, contrastes fuertes, orientado a conversión.",
+    labelKey: "tplBoldLabel",
+    descKey: "tplBoldDesc",
     swatch: "linear-gradient(135deg,#7C3AED,#EC4899)",
     dot: "#7C3AED",
   },
 ] as const;
 
 const TABS = [
-  { id: "general", label: "General" },
-  { id: "plantilla", label: "Plantilla" },
-  { id: "branding", label: "Branding" },
-  { id: "contacto", label: "Contacto" },
-  { id: "seo", label: "SEO" },
+  { id: "general", labelKey: "tabGeneral" },
+  { id: "plantilla", labelKey: "tabTemplate" },
+  { id: "branding", labelKey: "tabBranding" },
+  { id: "contacto", labelKey: "tabContact" },
+  { id: "seo", labelKey: "tabSeo" },
 ] as const;
 
 const TOGGLEABLE_SECTIONS = [
-  { key: "AMENITIES", label: "Amenidades", description: "Sección hotel boutique con servicios" },
-  { key: "FLOOR_PLANS", label: "Planos / Distribución", description: "Tipos de unidad disponibles" },
-  { key: "NEIGHBORHOOD", label: "Vecindario + Mapa", description: "POIs cercanos con Mapbox" },
-  { key: "IMMERSIVE", label: "Sección inmersiva", description: "Parallax cinematográfico" },
-  { key: "FINISHES", label: "Acabados", description: "Lista de materiales premium" },
+  { key: "AMENITIES", labelKey: "secAmenitiesLabel", descKey: "secAmenitiesDesc" },
+  { key: "FLOOR_PLANS", labelKey: "secFloorPlansLabel", descKey: "secFloorPlansDesc" },
+  { key: "NEIGHBORHOOD", labelKey: "secNeighborhoodLabel", descKey: "secNeighborhoodDesc" },
+  { key: "IMMERSIVE", labelKey: "secImmersiveLabel", descKey: "secImmersiveDesc" },
+  { key: "FINISHES", labelKey: "secFinishesLabel", descKey: "secFinishesDesc" },
 ] as const;
 
 const COLORS = [
@@ -162,6 +163,7 @@ export function SiteSettingsClient({
   defaultUserName: string;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("general");
   const [submitting, setSubmitting] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -222,14 +224,14 @@ export function SiteSettingsClient({
 
   async function onSave() {
     if (!form.slug.trim()) {
-      toast.error("Necesitas una URL — usa el botón sugerir");
+      toast.error(t.sitio.toastNeedUrl);
       setTab("general");
       return;
     }
     setSubmitting(true);
     try {
       await saveSite(form);
-      toast.success("Sitio guardado");
+      toast.success(t.sitio.toastSiteSaved);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -243,7 +245,7 @@ export function SiteSettingsClient({
     try {
       const r = await togglePublished();
       set("published", r.published);
-      toast.success(r.published ? "Sitio publicado" : "Sitio despublicado");
+      toast.success(r.published ? t.sitio.toastPublished : t.sitio.toastUnpublished);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -254,7 +256,7 @@ export function SiteSettingsClient({
   function copyUrl() {
     if (!publicUrl) return;
     navigator.clipboard.writeText(publicUrl);
-    toast.success("URL copiada");
+    toast.success(t.sitio.toastUrlCopied);
   }
 
   async function uploadImageField(
@@ -269,9 +271,9 @@ export function SiteSettingsClient({
       fd.append("file", compressed);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al subir");
+      if (!res.ok) throw new Error(data.error ?? t.sitio.toastUploadError);
       set(key, data.url as string);
-      toast.success("Imagen subida");
+      toast.success(t.sitio.toastImageUploaded);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -300,7 +302,7 @@ export function SiteSettingsClient({
           </div>
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
-              {form.published ? "Publicado · visible para todos" : "Privado"}
+              {form.published ? t.sitio.publishedLabel : t.sitio.privateLabel}
             </p>
             <p className="mt-0.5 truncate font-mono text-sm tabular-nums">
               {publicUrl ?? "—"}
@@ -312,12 +314,12 @@ export function SiteSettingsClient({
             <>
               <Button variant="outline" size="sm" onClick={copyUrl}>
                 <Copy className="mr-1.5 h-3.5 w-3.5" />
-                Copiar
+                {t.sitio.copy}
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link href={publicUrl} target="_blank">
                   <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                  Abrir
+                  {t.sitio.open}
                 </Link>
               </Button>
             </>
@@ -336,7 +338,7 @@ export function SiteSettingsClient({
               ) : (
                 <Eye className="mr-1.5 h-3.5 w-3.5" />
               )}
-              {form.published ? "Despublicar" : "Publicar"}
+              {form.published ? t.sitio.unpublish : t.sitio.publish}
             </Button>
           )}
         </div>
@@ -344,13 +346,13 @@ export function SiteSettingsClient({
 
       {/* Tab nav */}
       <div className="hide-scrollbar -mx-1 flex items-center gap-0.5 overflow-x-auto border-b border-border px-1">
-        {TABS.map((t) => {
-          const active = tab === t.id;
+        {TABS.map((tabItem) => {
+          const active = tab === tabItem.id;
           return (
             <button
-              key={t.id}
+              key={tabItem.id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(tabItem.id)}
               className={cn(
                 "relative shrink-0 rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
                 active
@@ -358,7 +360,7 @@ export function SiteSettingsClient({
                   : "text-muted-foreground hover:bg-card/50 hover:text-foreground"
               )}
             >
-              {t.label}
+              {t.sitio[tabItem.labelKey]}
               {active && (
                 <motion.span
                   layoutId="site-tab-underline"
@@ -374,7 +376,7 @@ export function SiteSettingsClient({
       {tab === "general" && (
         <Card className="p-6">
           <div className="space-y-4">
-            <Field label="URL del sitio">
+            <Field label={t.sitio.urlLabel}>
               <div className="flex items-stretch gap-1.5">
                 <div className="flex items-center rounded-md border border-border bg-muted px-3 text-xs text-muted-foreground">
                   {baseHost}/p/
@@ -387,7 +389,7 @@ export function SiteSettingsClient({
                       e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
                     )
                   }
-                  placeholder="tu-nombre"
+                  placeholder={t.sitio.slugPlaceholder}
                   className="flex-1 font-mono tabular-nums"
                 />
                 <Button
@@ -396,7 +398,7 @@ export function SiteSettingsClient({
                   size="sm"
                   onClick={autoSuggestSlug}
                 >
-                  Sugerir
+                  {t.sitio.suggest}
                 </Button>
               </div>
               {/* Preview de la URL con validación */}
@@ -408,48 +410,47 @@ export function SiteSettingsClient({
                   </span>
                   {slugValid ? (
                     <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Válida
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {t.sitio.slugValid}
                     </span>
                   ) : (
                     <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                      <AlertCircle className="h-3.5 w-3.5" /> 3-40, sin guion al
-                      borde
+                      <AlertCircle className="h-3.5 w-3.5" /> {t.sitio.slugInvalid}
                     </span>
                   )}
                 </div>
               ) : (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Solo letras, números y guiones. No espacios.
+                  {t.sitio.slugHint}
                 </p>
               )}
             </Field>
 
-            <Field label="Nombre / Título">
+            <Field label={t.sitio.nameLabel}>
               <Input
                 value={form.title}
                 onChange={(e) => set("title", e.target.value)}
-                placeholder="Tu nombre o marca"
+                placeholder={t.sitio.namePlaceholder}
               />
             </Field>
 
-            <Field label="Tagline (hero)">
+            <Field label={t.sitio.taglineLabel}>
               <Input
                 value={form.tagline}
                 onChange={(e) => set("tagline", e.target.value)}
-                placeholder="Ej: Tu próximo hogar te está esperando"
+                placeholder={t.sitio.taglinePlaceholder}
               />
             </Field>
 
-            <Field label="Sobre ti / bio">
+            <Field label={t.sitio.aboutLabel}>
               <Textarea
                 value={form.about}
                 onChange={(e) => set("about", e.target.value)}
                 rows={4}
-                placeholder="Cuéntale a tus visitantes quién eres y por qué confiarte sus inmuebles."
+                placeholder={t.sitio.aboutPlaceholder}
               />
             </Field>
 
-            <Field label="Color de marca">
+            <Field label={t.sitio.brandColorLabel}>
               <div className="flex flex-wrap items-center gap-2">
                 {COLORS.map((c) => (
                   <button
@@ -481,19 +482,18 @@ export function SiteSettingsClient({
       {tab === "plantilla" && (
         <div className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-sm font-semibold">Plantilla del portal</h2>
+            <h2 className="text-sm font-semibold">{t.sitio.templateTitle}</h2>
             <p className="mb-4 mt-1 text-xs text-muted-foreground">
-              Define la estructura y el estilo de tu sitio público. Cámbiala
-              cuando quieras.
+              {t.sitio.templateDesc}
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {TEMPLATES.map((t) => {
-                const active = form.template === t.value;
+              {TEMPLATES.map((tpl) => {
+                const active = form.template === tpl.value;
                 return (
                   <button
-                    key={t.value}
+                    key={tpl.value}
                     type="button"
-                    onClick={() => set("template", t.value)}
+                    onClick={() => set("template", tpl.value)}
                     className={cn(
                       "group overflow-hidden rounded-xl border text-left transition-all",
                       active
@@ -504,12 +504,12 @@ export function SiteSettingsClient({
                     {/* Mini preview del estilo */}
                     <div
                       className="relative h-24 w-full"
-                      style={{ background: t.swatch }}
+                      style={{ background: tpl.swatch }}
                     >
                       <div className="absolute inset-0 flex flex-col justify-end p-3">
                         <div
                           className="h-1.5 w-16 rounded-full"
-                          style={{ backgroundColor: t.dot }}
+                          style={{ backgroundColor: tpl.dot }}
                         />
                         <div className="mt-1.5 h-2 w-24 rounded-full bg-white/70" />
                         <div className="mt-1 h-2 w-14 rounded-full bg-white/40" />
@@ -527,10 +527,10 @@ export function SiteSettingsClient({
                           active && "text-primary"
                         )}
                       >
-                        {t.label}
+                        {t.sitio[tpl.labelKey]}
                       </p>
                       <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                        {t.description}
+                        {t.sitio[tpl.descKey]}
                       </p>
                     </div>
                   </button>
@@ -543,15 +543,15 @@ export function SiteSettingsClient({
           <Card className="p-6">
             <div className="mb-4 flex items-center gap-2">
               <span className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                Premium
+                {t.sitio.premiumBadge}
               </span>
-              <h2 className="text-sm font-semibold">Personalización</h2>
+              <h2 className="text-sm font-semibold">{t.sitio.customizationTitle}</h2>
             </div>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Font pair */}
               <div>
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Tipografía
+                  {t.sitio.typographyLabel}
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {FONT_PAIRS.map((f) => {
@@ -581,7 +581,7 @@ export function SiteSettingsClient({
                                   }
                             }
                           >
-                            En venta · Casa
+                            {t.sitio.fontSampleForSale}
                           </p>
                           <p
                             className={cn(
@@ -621,10 +621,10 @@ export function SiteSettingsClient({
                                 active && "text-primary"
                               )}
                             >
-                              {f.label}
+                              {t.sitio[FONT_LABEL_KEYS[f.value].label]}
                             </p>
                             <p className="mt-0.5 text-[10px] text-muted-foreground">
-                              {f.description}
+                              {t.sitio[FONT_LABEL_KEYS[f.value].desc]}
                             </p>
                           </div>
                           {active && (
@@ -642,7 +642,7 @@ export function SiteSettingsClient({
               {/* Language */}
               <div>
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Idioma del portal
+                  {t.sitio.portalLanguageLabel}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {LANGUAGES.map((l) => {
@@ -666,14 +666,14 @@ export function SiteSettingsClient({
                             active ? "text-primary" : ""
                           )}
                         >
-                          {l.label}
+                          {t.sitio[l.labelKey]}
                         </span>
                       </button>
                     );
                   })}
                 </div>
                 <p className="mt-2 text-[10px] text-muted-foreground">
-                  Cambia los textos del portal público. El CRM siempre en español.
+                  {t.sitio.portalLanguageHint}
                 </p>
               </div>
             </div>
@@ -681,11 +681,10 @@ export function SiteSettingsClient({
             {/* Section toggles */}
             <div className="mt-6 border-t border-border pt-6">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Secciones visibles en landing
+                {t.sitio.sectionsTitle}
               </p>
               <p className="mb-4 text-[11px] text-muted-foreground">
-                Aplica a todas las propiedades. Desactiva las que no tengas datos
-                completos.
+                {t.sitio.sectionsDesc}
               </p>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {TOGGLEABLE_SECTIONS.map((s) => {
@@ -711,10 +710,10 @@ export function SiteSettingsClient({
                             active && "text-primary"
                           )}
                         >
-                          {s.label}
+                          {t.sitio[s.labelKey]}
                         </p>
                         <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground">
-                          {s.description}
+                          {t.sitio[s.descKey]}
                         </p>
                       </div>
                     </label>
@@ -729,17 +728,17 @@ export function SiteSettingsClient({
       {/* ===================== BRANDING ===================== */}
       {tab === "branding" && (
         <Card className="p-6">
-          <h2 className="text-sm font-semibold">Branding</h2>
+          <h2 className="text-sm font-semibold">{t.sitio.brandingTitle}</h2>
           <p className="mb-4 mt-1 text-xs text-muted-foreground">
-            Tu identidad visual en el portal: logo y portada (hero).
+            {t.sitio.brandingDesc}
           </p>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Logo">
+            <Field label={t.sitio.logoLabel}>
               <div className="flex items-stretch gap-1.5">
                 <Input
                   value={form.logoUrl}
                   onChange={(e) => set("logoUrl", e.target.value)}
-                  placeholder="https://… o sube una imagen"
+                  placeholder={t.sitio.uploadImagePlaceholder}
                   className="flex-1"
                 />
                 <Button
@@ -772,15 +771,15 @@ export function SiteSettingsClient({
                 </Button>
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Recomendado: mínimo 400×400px, fondo transparente. SVG o PNG.
+                {t.sitio.logoHint}
               </p>
             </Field>
-            <Field label="Portada / Cover">
+            <Field label={t.sitio.coverLabel}>
               <div className="flex items-stretch gap-1.5">
                 <Input
                   value={form.coverUrl}
                   onChange={(e) => set("coverUrl", e.target.value)}
-                  placeholder="https://… o sube una imagen"
+                  placeholder={t.sitio.uploadImagePlaceholder}
                   className="flex-1"
                 />
                 <Button
@@ -813,7 +812,7 @@ export function SiteSettingsClient({
                 </Button>
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Recomendado: 1920×600px (16:5). Para redes: 1200×630px.
+                {t.sitio.coverHint}
               </p>
             </Field>
           </div>
@@ -821,7 +820,7 @@ export function SiteSettingsClient({
           {/* Preview del cover */}
           <div className="mt-5">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Vista previa de la portada
+              {t.sitio.coverPreviewLabel}
             </p>
             <div className="overflow-hidden rounded-xl border border-border">
               <div
@@ -834,7 +833,7 @@ export function SiteSettingsClient({
               >
                 {!form.coverUrl && (
                   <span className="text-xs text-muted-foreground">
-                    Sin portada
+                    {t.sitio.noCover}
                   </span>
                 )}
               </div>
@@ -847,15 +846,15 @@ export function SiteSettingsClient({
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">¿No tienes logo o portada?</p>
+              <p className="text-sm font-medium">{t.sitio.studioCtaTitle}</p>
               <p className="text-xs text-muted-foreground">
-                Créalos en minutos con Studio IA y pega la URL aquí.
+                {t.sitio.studioCtaBody}
               </p>
             </div>
             <Button asChild variant="outline" size="sm">
               <Link href="/studio">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" />
-                Abrir Studio IA
+                {t.sitio.openStudio}
               </Link>
             </Button>
           </div>
@@ -865,12 +864,12 @@ export function SiteSettingsClient({
       {/* ===================== CONTACTO ===================== */}
       {tab === "contacto" && (
         <Card className="p-6">
-          <h2 className="text-sm font-semibold">Contacto y redes</h2>
+          <h2 className="text-sm font-semibold">{t.sitio.contactTitle}</h2>
           <p className="mb-4 mt-1 text-xs text-muted-foreground">
-            Cómo te contactan los visitantes desde el portal.
+            {t.sitio.contactDesc}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Teléfono">
+            <Field label={t.sitio.phoneLabel}>
               <Input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
@@ -893,19 +892,19 @@ export function SiteSettingsClient({
                 className="font-mono tabular-nums"
               />
             </Field>
-            <Field label="Email público">
+            <Field label={t.sitio.publicEmailLabel}>
               <Input
                 type="email"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
-                placeholder="contacto@…"
+                placeholder={t.sitio.publicEmailPlaceholder}
               />
             </Field>
             <Field
               label={
                 <span className="flex items-center gap-1.5">
                   <SocialIcon network="instagram" className="h-3.5 w-3.5" />
-                  Instagram (URL)
+                  {t.sitio.instagramLabel}
                 </span>
               }
             >
@@ -919,7 +918,7 @@ export function SiteSettingsClient({
               label={
                 <span className="flex items-center gap-1.5">
                   <SocialIcon network="facebook" className="h-3.5 w-3.5" />
-                  Facebook (URL)
+                  {t.sitio.facebookLabel}
                 </span>
               }
             >
@@ -933,7 +932,7 @@ export function SiteSettingsClient({
               label={
                 <span className="flex items-center gap-1.5">
                   <SocialIcon network="tiktok" className="h-3.5 w-3.5" />
-                  TikTok (URL)
+                  {t.sitio.tiktokLabel}
                 </span>
               }
             >
@@ -945,7 +944,7 @@ export function SiteSettingsClient({
             </Field>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Más redes (LinkedIn, X, YouTube) llegarán en una próxima actualización.
+            {t.sitio.moreNetworksHint}
           </p>
         </Card>
       )}
@@ -954,30 +953,27 @@ export function SiteSettingsClient({
       {tab === "seo" && (
         <Card className="space-y-6 p-6">
           <div>
-            <h2 className="text-sm font-semibold">Vista previa en Google</h2>
+            <h2 className="text-sm font-semibold">{t.sitio.googlePreviewTitle}</h2>
             <p className="mb-3 mt-1 text-xs text-muted-foreground">
-              Así aparece tu sitio en resultados de búsqueda (se genera de tu
-              nombre y tagline).
+              {t.sitio.googlePreviewDesc}
             </p>
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="truncate text-xs text-emerald-600 dark:text-emerald-400">
-                {publicUrl ?? `${baseHost}/p/tu-nombre`}
+                {publicUrl ?? `${baseHost}/p/${t.sitio.slugPlaceholder}`}
               </p>
               <p className="mt-0.5 text-base text-primary">
-                {form.title || "Tu nombre"} · Inmobiliaria
+                {form.title || t.sitio.yourNameFallback} · {t.sitio.realtorSuffix}
               </p>
               <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                {form.tagline ||
-                  form.about ||
-                  "Agrega un tagline o bio para tu descripción en buscadores."}
+                {form.tagline || form.about || t.sitio.seoDescFallback}
               </p>
             </div>
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold">Vista previa al compartir</h2>
+            <h2 className="text-sm font-semibold">{t.sitio.sharePreviewTitle}</h2>
             <p className="mb-3 mt-1 text-xs text-muted-foreground">
-              Cómo se ve el enlace en WhatsApp, Instagram y Facebook.
+              {t.sitio.sharePreviewDesc}
             </p>
             <div className="max-w-md overflow-hidden rounded-xl border border-border">
               <div
@@ -990,7 +986,7 @@ export function SiteSettingsClient({
               >
                 {!form.coverUrl && (
                   <span className="text-xs text-muted-foreground">
-                    Sin imagen — usa una portada en Branding
+                    {t.sitio.noImageUseCover}
                   </span>
                 )}
               </div>
@@ -999,18 +995,17 @@ export function SiteSettingsClient({
                   {baseHost}
                 </p>
                 <p className="mt-0.5 truncate text-sm font-semibold">
-                  {form.title || "Tu nombre"}
+                  {form.title || t.sitio.yourNameFallback}
                 </p>
                 <p className="line-clamp-1 text-xs text-muted-foreground">
-                  {form.tagline || "Tu tagline aparecerá aquí"}
+                  {form.tagline || t.sitio.taglineFallback}
                 </p>
               </div>
             </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            Pronto: meta título, meta descripción y palabras clave dedicadas
-            (sugeridas con IA a partir de tu bio).
+            {t.sitio.seoSoonHint}
           </p>
         </Card>
       )}
@@ -1018,11 +1013,11 @@ export function SiteSettingsClient({
       {/* Bottom save bar — siempre visible */}
       <div className="sticky bottom-4 flex items-center justify-end gap-2 rounded-xl border border-border bg-card/80 p-3 backdrop-blur-md">
         <span className="mr-auto text-xs text-muted-foreground">
-          {initial ? "Editando sitio existente" : "Creando tu sitio"}
+          {initial ? t.sitio.editingExisting : t.sitio.creatingSite}
         </span>
         <Button onClick={onSave} disabled={submitting} size="lg">
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Guardar
+          {t.sitio.save}
         </Button>
       </div>
     </div>

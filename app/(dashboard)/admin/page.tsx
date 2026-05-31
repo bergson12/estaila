@@ -25,8 +25,10 @@ import {
 import { PlanDonut } from "@/components/admin/plan-donut";
 import { Sparkline } from "@/components/admin/sparkline";
 import { ActivityFeed } from "@/components/admin/activity-feed";
+import { getDict } from "@/lib/i18n/server";
 
 export default async function AdminDashboard() {
+  const t = await getDict();
   const [m, rev, feed, top, health] = await Promise.all([
     getMetrics(),
     getRevenueAnalytics(),
@@ -69,14 +71,14 @@ export default async function AdminDashboard() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <DollarSign className="h-3.5 w-3.5" />
                 <span className="text-[10px] font-semibold uppercase tracking-wider">
-                  Monthly Recurring Revenue
+                  {t.adminPanel.mrrLabel}
                 </span>
               </div>
               <p className="mt-2 font-mono text-4xl font-bold tabular-nums">
                 ${rev.mrr.toLocaleString()}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                ARR proyectado:{" "}
+                {t.adminPanel.arrProjected}:{" "}
                 <span className="font-mono font-semibold tabular-nums text-foreground">
                   ${rev.arr.toLocaleString()}
                 </span>
@@ -87,7 +89,7 @@ export default async function AdminDashboard() {
                 href="/admin/revenue"
                 className="text-[10px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                Ver gráfico →
+                {t.adminPanel.viewChart} →
               </Link>
               <div className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
                 <ArrowUpRight className="h-3 w-3" />
@@ -105,7 +107,7 @@ export default async function AdminDashboard() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <TrendingUp className="h-3.5 w-3.5" />
             <span className="text-[10px] font-semibold uppercase tracking-wider">
-              Revenue 14 días
+              {t.adminPanel.revenue14d}
             </span>
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums">
@@ -126,7 +128,7 @@ export default async function AdminDashboard() {
               <ArrowDownRight className="h-3 w-3" />
             ) : null}
             {revDelta > 0 ? "+" : ""}
-            {revDelta}% vs período anterior
+            {revDelta}% {t.adminPanel.vsPrevPeriod}
           </p>
           <div className="mt-2">
             <Sparkline data={last14Revenue} color="#10b981" />
@@ -138,7 +140,7 @@ export default async function AdminDashboard() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <UserPlus className="h-3.5 w-3.5" />
             <span className="text-[10px] font-semibold uppercase tracking-wider">
-              Signups 14 días
+              {t.adminPanel.signups14d}
             </span>
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums">
@@ -159,7 +161,7 @@ export default async function AdminDashboard() {
               <ArrowDownRight className="h-3 w-3" />
             ) : null}
             {signupDelta > 0 ? "+" : ""}
-            {signupDelta}% vs período anterior
+            {signupDelta}% {t.adminPanel.vsPrevPeriod}
           </p>
           <div className="mt-2">
             <Sparkline data={last14Signups} color="#3b82f6" />
@@ -171,17 +173,17 @@ export default async function AdminDashboard() {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
         <Card className="p-4 lg:col-span-2">
           <div className="grid grid-cols-2 gap-3">
-            <MiniStat icon={Users} label="Usuarios" value={m.users.toLocaleString()} />
-            <MiniStat icon={Sparkles} label="Generaciones IA" value={m.gens.toLocaleString()} />
-            <MiniStat icon={Wallet} label="Créditos en circulación" value={m.totalCreditsOutstanding.toLocaleString()} />
-            <MiniStat icon={Zap} label="Sitios publicados" value={m.sitesPublished.toLocaleString()} />
+            <MiniStat icon={Users} label={t.adminPanel.statUsers} value={m.users.toLocaleString()} />
+            <MiniStat icon={Sparkles} label={t.adminPanel.statAiGenerations} value={m.gens.toLocaleString()} />
+            <MiniStat icon={Wallet} label={t.adminPanel.statCreditsOutstanding} value={m.totalCreditsOutstanding.toLocaleString()} />
+            <MiniStat icon={Zap} label={t.adminPanel.statSitesPublished} value={m.sitesPublished.toLocaleString()} />
           </div>
         </Card>
 
         {/* Plan distribution */}
         <Card className="p-5">
           <h3 className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Distribución por plan
+            {t.adminPanel.planDistribution}
           </h3>
           <PlanDonut data={planData} />
           <div className="mt-2 flex flex-wrap justify-center gap-3 text-[10px]">
@@ -209,21 +211,21 @@ export default async function AdminDashboard() {
         {/* System health */}
         <Card className="p-5">
           <h3 className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Estado del sistema
+            {t.adminPanel.systemStatus}
           </h3>
           <div className="space-y-1.5">
-            <HealthRow label="Gemini AI" ok={health.geminiConfigured} />
-            <HealthRow label="PayPal" ok={health.paypalConfigured} />
-            <HealthRow label="Mapbox" ok={health.mapboxConfigured} />
+            <HealthRow label="Gemini AI" ok={health.geminiConfigured} okLabel={t.adminPanel.healthOk} offLabel={t.adminPanel.healthNotConfigured} />
+            <HealthRow label="PayPal" ok={health.paypalConfigured} okLabel={t.adminPanel.healthOk} offLabel={t.adminPanel.healthNotConfigured} />
+            <HealthRow label="Mapbox" ok={health.mapboxConfigured} okLabel={t.adminPanel.healthOk} offLabel={t.adminPanel.healthNotConfigured} />
             <div className="my-2 h-px bg-border" />
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Gens 24h</span>
+              <span className="text-muted-foreground">{t.adminPanel.gens24h}</span>
               <span className="font-mono font-semibold tabular-nums">
                 {health.totalGens24h}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Fallas 24h</span>
+              <span className="text-muted-foreground">{t.adminPanel.failures24h}</span>
               <span
                 className={`font-mono font-semibold tabular-nums ${
                   health.failureRate24h > 10
@@ -237,7 +239,7 @@ export default async function AdminDashboard() {
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Signups 24h</span>
+              <span className="text-muted-foreground">{t.adminPanel.signups24h}</span>
               <span className="font-mono font-semibold tabular-nums">
                 {health.signups24h}
                 {health.signupsDelta !== 0 && (
@@ -259,13 +261,13 @@ export default async function AdminDashboard() {
         <Card className="p-5 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Actividad reciente
+              {t.adminPanel.recentActivity}
             </h3>
             <Link
               href="/admin/audit"
               className="inline-flex items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Ver auditoría
+              {t.adminPanel.viewAudit}
               <ExternalLink className="h-2.5 w-2.5" />
             </Link>
           </div>
@@ -281,36 +283,36 @@ export default async function AdminDashboard() {
 
         <Card className="p-5">
           <h3 className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Top usuarios (gens)
+            {t.adminPanel.topUsersGens}
           </h3>
           {top.topByActivity.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Aún sin actividad
+              {t.adminPanel.noActivityYet}
             </p>
           ) : (
             <ul className="space-y-2">
-              {top.topByActivity.map((t, i) => (
-                <li key={t.user.id}>
+              {top.topByActivity.map((u, i) => (
+                <li key={u.user.id}>
                   <Link
-                    href={`/admin/users/${t.user.id}`}
+                    href={`/admin/users/${u.user.id}`}
                     className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-muted/50"
                   >
                     <span className="w-4 text-center font-mono text-[10px] font-bold text-muted-foreground">
                       {i + 1}
                     </span>
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
-                      {t.user.name.slice(0, 2).toUpperCase()}
+                      {u.user.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium">
-                        {t.user.name}
+                        {u.user.name}
                       </p>
                       <p className="truncate text-[10px] text-muted-foreground">
-                        {t.user.plan} · {t.user.credits} créditos
+                        {u.user.plan} · {u.user.credits} {t.adminPanel.creditsWord}
                       </p>
                     </div>
                     <Badge variant="outline" className="text-[10px]">
-                      {t.gens}
+                      {u.gens}
                     </Badge>
                   </Link>
                 </li>
@@ -320,18 +322,18 @@ export default async function AdminDashboard() {
           {top.topByRevenue.length > 0 && (
             <>
               <h3 className="mb-2 mt-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Top por revenue
+                {t.adminPanel.topByRevenue}
               </h3>
               <ul className="space-y-1">
-                {top.topByRevenue.slice(0, 5).map((t) => (
-                  <li key={t.user.id}>
+                {top.topByRevenue.slice(0, 5).map((u) => (
+                  <li key={u.user.id}>
                     <Link
-                      href={`/admin/users/${t.user.id}`}
+                      href={`/admin/users/${u.user.id}`}
                       className="flex items-center justify-between gap-2 rounded-md p-1.5 text-xs transition-colors hover:bg-muted/50"
                     >
-                      <span className="truncate">{t.user.name}</span>
+                      <span className="truncate">{u.user.name}</span>
                       <span className="font-mono font-semibold tabular-nums text-emerald-600">
-                        ${t.revenue.toFixed(0)}
+                        ${u.revenue.toFixed(0)}
                       </span>
                     </Link>
                   </li>
@@ -345,31 +347,31 @@ export default async function AdminDashboard() {
       {/* Quick actions */}
       <Card className="p-5">
         <h3 className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Acciones rápidas
+          {t.adminPanel.quickActions}
         </h3>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           <QuickActionLink
             href="/admin/users"
-            title="Gestionar usuarios"
-            sub={`${m.users} cuentas activas`}
+            title={t.adminPanel.qaManageUsers}
+            sub={`${m.users} ${t.adminPanel.qaActiveAccounts}`}
             icon={Users}
           />
           <QuickActionLink
             href="/admin/revenue"
-            title="Ver revenue"
-            sub="Charts MRR/ARR"
+            title={t.adminPanel.qaViewRevenue}
+            sub={t.adminPanel.qaChartsMrrArr}
             icon={TrendingUp}
           />
           <QuickActionLink
             href="/admin/settings"
-            title="Configurar plataforma"
-            sub="Flags + banner"
+            title={t.adminPanel.qaConfigurePlatform}
+            sub={t.adminPanel.qaFlagsBanner}
             icon={Zap}
           />
           <QuickActionLink
             href="/admin/generations"
-            title="Log generaciones"
-            sub={`${health.failureRate24h}% errores 24h`}
+            title={t.adminPanel.qaGenerationsLog}
+            sub={`${health.failureRate24h}% ${t.adminPanel.qaErrors24h}`}
             icon={Sparkles}
           />
         </div>
@@ -400,19 +402,29 @@ function MiniStat({
   );
 }
 
-function HealthRow({ label, ok }: { label: string; ok: boolean }) {
+function HealthRow({
+  label,
+  ok,
+  okLabel,
+  offLabel,
+}: {
+  label: string;
+  ok: boolean;
+  okLabel: string;
+  offLabel: string;
+}) {
   return (
     <div className="flex items-center justify-between text-xs">
       <span className="text-muted-foreground">{label}</span>
       {ok ? (
         <span className="inline-flex items-center gap-1 text-emerald-600">
           <CheckCircle2 className="h-3 w-3" />
-          OK
+          {okLabel}
         </span>
       ) : (
         <span className="inline-flex items-center gap-1 text-amber-600">
           <CircleAlert className="h-3 w-3" />
-          Sin config
+          {offLabel}
         </span>
       )}
     </div>

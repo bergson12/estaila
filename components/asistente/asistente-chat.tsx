@@ -30,6 +30,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import {
   realEstateChat,
   chatCreateContact,
@@ -78,19 +79,10 @@ const CHAR_LIMITS: Record<string, number> = {
   AGENCY: 8000,
 };
 
-const SUGGESTED = [
-  "Dame el número de mi último contacto agregado",
-  "¿Cuál fue mi última foto editada en Studio?",
-  "Comparte el link de mi tarjeta digital",
-  "Plan de marketing 30 días para un listado nuevo",
-  "Redacta una descripción MLS para una casa de playa",
-  "¿Qué citas tengo esta semana?",
-];
-
-const WIZARDS: { kind: WizardKind; icon: typeof User; label: string; msg: string }[] = [
-  { kind: "CONTACT", icon: User, label: "Agregar contacto", msg: "Quiero agregar un contacto nuevo. Hazme las preguntas una a una." },
-  { kind: "PROPERTY", icon: Building2, label: "Crear propiedad", msg: "Quiero crear una propiedad nueva. Pregúntame paso a paso." },
-  { kind: "APPOINTMENT", icon: Calendar, label: "Agendar cita", msg: "Quiero agendar una cita. Pregúntame fecha y detalles paso a paso." },
+const WIZARDS: { kind: WizardKind; icon: typeof User; labelKey: string; msg: string }[] = [
+  { kind: "CONTACT", icon: User, labelKey: "wizardContact", msg: "Quiero agregar un contacto nuevo. Hazme las preguntas una a una." },
+  { kind: "PROPERTY", icon: Building2, labelKey: "wizardProperty", msg: "Quiero crear una propiedad nueva. Pregúntame paso a paso." },
+  { kind: "APPOINTMENT", icon: Calendar, labelKey: "wizardAppointment", msg: "Quiero agendar una cita. Pregúntame fecha y detalles paso a paso." },
 ];
 
 export function AsistenteChat({
@@ -103,6 +95,7 @@ export function AsistenteChat({
   initialConversations: ConversationSummary[];
 }) {
   const router = useRouter();
+  const { t } = useT();
   const maxChars = CHAR_LIMITS[plan.toUpperCase()] ?? CHAR_LIMITS.FREE;
 
   const [input, setInput] = useState("");
@@ -239,28 +232,28 @@ export function AsistenteChat({
         router.push(action.href);
       } else if (action.type === "copy") {
         await navigator.clipboard.writeText(action.value);
-        toast.success("Copiado", { description: action.value.slice(0, 60) });
+        toast.success(t.asistente.toastCopied, { description: action.value.slice(0, 60) });
       } else if (action.type === "external") {
         window.open(action.href, "_blank", "noopener,noreferrer");
       } else if (action.type === "create_contact") {
         const r = await chatCreateContact(action.data as Parameters<typeof chatCreateContact>[0]);
-        toast.success("Contacto creado", {
+        toast.success(t.asistente.toastContactCreated, {
           description: action.data.name,
-          action: { label: "Ver", onClick: () => router.push(`/contactos/${r.id}`) },
+          action: { label: t.asistente.viewAction, onClick: () => router.push(`/contactos/${r.id}`) },
         });
         if (wizard === "CONTACT") { setWizard(null); if (convoId) setConversationWizard({ id: convoId, wizard: null }); }
       } else if (action.type === "create_property") {
         const r = await chatCreateProperty(action.data as Parameters<typeof chatCreateProperty>[0]);
-        toast.success("Propiedad creada", {
+        toast.success(t.asistente.toastPropertyCreated, {
           description: String(action.data.title ?? ""),
-          action: { label: "Ver", onClick: () => router.push(`/propiedades/${r.id}`) },
+          action: { label: t.asistente.viewAction, onClick: () => router.push(`/propiedades/${r.id}`) },
         });
         if (wizard === "PROPERTY") { setWizard(null); if (convoId) setConversationWizard({ id: convoId, wizard: null }); }
       } else if (action.type === "create_appointment") {
         const r = await chatCreateAppointment(action.data as Parameters<typeof chatCreateAppointment>[0]);
-        toast.success("Cita agendada", {
+        toast.success(t.asistente.toastAppointmentScheduled, {
           description: String(action.data.title ?? ""),
-          action: { label: "Ver", onClick: () => router.push(`/agenda?focus=${r.id}`) },
+          action: { label: t.asistente.viewAction, onClick: () => router.push(`/agenda?focus=${r.id}`) },
         });
         if (wizard === "APPOINTMENT") { setWizard(null); if (convoId) setConversationWizard({ id: convoId, wizard: null }); }
       }
@@ -272,7 +265,7 @@ export function AsistenteChat({
   }
 
   async function delConvo(id: string) {
-    if (!confirm("¿Eliminar esta conversación?")) return;
+    if (!confirm(t.asistente.confirmDeleteConvo)) return;
     try {
       await deleteConversation(id);
       setConversations((c) => c.filter((x) => x.id !== id));
@@ -289,9 +282,11 @@ export function AsistenteChat({
         role: "assistant",
         content:
           (r.fallbackUsed === "mock"
-            ? `Preview con filtro (Modelo Pro sin cuota). `
-            : `Listo · ${r.toolLabel}. `) +
-          `Te quedan ${r.remaining} crédito${r.remaining === 1 ? "" : "s"}.`,
+            ? `${t.asistente.genPreviewFallback} `
+            : `${t.asistente.genDone} · ${r.toolLabel}. `) +
+          (r.remaining === 1
+            ? t.asistente.genCreditsLeftOne
+            : t.asistente.genCreditsLeftMany.replace("{n}", String(r.remaining))),
         image: {
           beforeUrl: r.beforeUrl,
           afterUrl: r.afterUrl,
@@ -328,7 +323,7 @@ export function AsistenteChat({
           <button
             onClick={() => setRailOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted md:hidden"
-            title="Conversaciones"
+            title={t.asistente.conversationsTitle}
           >
             <PanelLeft className="h-4 w-4" />
           </button>
@@ -338,7 +333,7 @@ export function AsistenteChat({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold leading-tight">Estaila Assistant</p>
             <p className="text-[11px] text-muted-foreground">
-              {wizard ? "Modo guiado activo" : "Pregunta o pide algo de tu CRM"}
+              {wizard ? t.asistente.guidedModeActive : t.asistente.headerSubtitle}
             </p>
           </div>
           <button
@@ -346,7 +341,7 @@ export function AsistenteChat({
             className="hidden items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground sm:flex"
           >
             <MessageSquarePlus className="h-3.5 w-3.5" />
-            Nueva
+            {t.asistente.newShort}
           </button>
         </div>
 
@@ -396,17 +391,17 @@ export function AsistenteChat({
                     <div className="flex flex-wrap gap-1.5">
                       <ImgChip
                         icon={Download}
-                        label="Descargar"
+                        label={t.asistente.imgDownload}
                         onClick={() => setDownloadFor({ url: m.image!.afterUrl })}
                       />
                       <ImgChip
                         icon={Building2}
-                        label="Guardar en propiedad"
+                        label={t.asistente.imgSaveToProperty}
                         onClick={() => setSaveFor({ id: m.image!.generationId })}
                       />
                       <ImgChip
                         icon={MessageSquareText}
-                        label="Compartir"
+                        label={t.asistente.imgShare}
                         onClick={() =>
                           setShareFor({
                             id: m.image!.generationId,
@@ -437,7 +432,7 @@ export function AsistenteChat({
             <div className="flex justify-start">
               <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-border bg-card px-4 py-2.5 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                Pensando...
+                {t.asistente.thinking}
               </div>
             </div>
           )}
@@ -455,7 +450,7 @@ export function AsistenteChat({
             <button
               type="button"
               onClick={() => setGenOpen(true)}
-              title="Generar con Studio IA"
+              title={t.asistente.generateWithStudio}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-primary transition-colors hover:bg-primary/10"
             >
               <ImagePlus className="h-4 w-4" />
@@ -475,7 +470,7 @@ export function AsistenteChat({
               }}
               maxLength={maxChars}
               rows={1}
-              placeholder={wizard ? "Responde una pregunta a la vez..." : "Escribe un mensaje... (Enter para enviar, Shift+Enter salto de línea)"}
+              placeholder={wizard ? t.asistente.composerWizardPlaceholder : t.asistente.composerPlaceholder}
               className="max-h-40 min-h-[2.25rem] flex-1 resize-none bg-transparent px-1.5 py-1.5 text-sm outline-none"
             />
             <button
@@ -555,14 +550,23 @@ function EmptyState({
   onSuggest: (s: string) => void;
   onWizard: (w: WizardKind) => void;
 }) {
+  const { t } = useT();
+  const suggested = [
+    t.asistente.suggestLastContact,
+    t.asistente.suggestLastStudioPhoto,
+    t.asistente.suggestCardLink,
+    t.asistente.suggestMarketingPlan,
+    t.asistente.suggestMlsDescription,
+    t.asistente.suggestThisWeekAppts,
+  ];
   return (
     <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center py-8 text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
         <Sparkles className="h-6 w-6" strokeWidth={2} />
       </div>
-      <h2 className="mt-4 text-xl font-semibold">Hola, {userName.split(" ")[0]}</h2>
+      <h2 className="mt-4 text-xl font-semibold">{t.asistente.greeting}, {userName.split(" ")[0]}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Tu asistente del CRM: consulta tus datos, crea contactos/propiedades/citas y genera contenido.
+        {t.asistente.emptyDescription}
       </p>
 
       <div className="mt-6 flex w-full flex-wrap justify-center gap-2">
@@ -573,13 +577,13 @@ function EmptyState({
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <w.icon className="h-3.5 w-3.5 text-primary" />
-            {w.label}
+            {t.asistente[w.labelKey as keyof typeof t.asistente]}
           </button>
         ))}
       </div>
 
       <div className="mt-6 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-        {SUGGESTED.map((s, i) => (
+        {suggested.map((s, i) => (
           <button
             key={i}
             onClick={() => onSuggest(s)}
@@ -610,6 +614,7 @@ function ConversationRail({
   railOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useT();
   return (
     <>
       {/* Mobile overlay */}
@@ -629,7 +634,7 @@ function ConversationRail({
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
           >
             <MessageSquarePlus className="h-3.5 w-3.5" />
-            Nueva conversación
+            {t.asistente.newConversation}
           </button>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted md:hidden">
             <X className="h-4 w-4" />
@@ -638,7 +643,7 @@ function ConversationRail({
         <div className="flex-1 space-y-1 overflow-y-auto p-2">
           {conversations.length === 0 && (
             <p className="px-2 py-6 text-center text-[11px] text-muted-foreground">
-              Sin conversaciones aún.
+              {t.asistente.noConversationsYet}
             </p>
           )}
           {conversations.map((c) => (
@@ -660,7 +665,7 @@ function ConversationRail({
                   onDelete(c.id);
                 }}
                 className="hidden shrink-0 rounded p-1 text-muted-foreground hover:text-destructive group-hover:block"
-                title="Eliminar"
+                title={t.asistente.deleteAction}
               >
                 <Trash2 className="h-3 w-3" />
               </button>

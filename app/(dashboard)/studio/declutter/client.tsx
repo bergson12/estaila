@@ -8,40 +8,42 @@ import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { MaskBrush } from "@/components/studio/mask-brush";
 import { cn } from "@/lib/utils";
-
-const MODES = [
-  {
-    value: "AUTO",
-    label: "Vaciar todo",
-    description: "Quita todos los muebles y objetos automáticamente",
-    icon: Eraser,
-  },
-  {
-    value: "FURNITURE",
-    label: "Solo muebles",
-    description: "Mantiene plantas, cuadros y elementos decorativos",
-    icon: Trash2,
-  },
-  {
-    value: "PEOPLE",
-    label: "Solo personas",
-    description: "Útil para fotos con personas que no deberían estar",
-    icon: User,
-  },
-  {
-    value: "PERSONAL",
-    label: "Objetos personales",
-    description: "Quita papeles, juguetes, ropa y desorden",
-    icon: Briefcase,
-  },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function DeclutterClient({ plan }: { plan: string }) {
   const { runGenerate, image, maskDataUrl, setMaskDataUrl } = useStudio();
+  const { t } = useT();
   const [mode, setMode] = useState<"AUTO" | "FURNITURE" | "PEOPLE" | "PERSONAL">(
     "AUTO"
   );
   const [brushOpen, setBrushOpen] = useState(false);
+
+  const MODES = [
+    {
+      value: "AUTO",
+      label: t.studio.declutterAuto,
+      description: t.studio.declutterAutoDesc,
+      icon: Eraser,
+    },
+    {
+      value: "FURNITURE",
+      label: t.studio.declutterFurniture,
+      description: t.studio.declutterFurnitureDesc,
+      icon: Trash2,
+    },
+    {
+      value: "PEOPLE",
+      label: t.studio.declutterPeople,
+      description: t.studio.declutterPeopleDesc,
+      icon: User,
+    },
+    {
+      value: "PERSONAL",
+      label: t.studio.declutterPersonal,
+      description: t.studio.declutterPersonalDesc,
+      icon: Briefcase,
+    },
+  ] as const;
 
   return (
     <>
@@ -50,13 +52,13 @@ export function DeclutterClient({ plan }: { plan: string }) {
         title={
           <>
             <Eraser className="h-5 w-5 text-primary" strokeWidth={1.75} />
-            Eliminar Objetos
+            {t.studio.toolDeclutterTitle}
           </>
         }
-        description="Limpia la habitación dejándola lista para amueblar o mostrar vacía."
+        description={t.studio.declutterDescription}
         optionsPanel={
           <>
-            <OptionsPanel title="¿Qué quitar?">
+            <OptionsPanel title={t.studio.whatToRemove}>
               <div className="space-y-2">
                 {MODES.map((m) => {
                   const Icon = m.icon;
@@ -101,10 +103,11 @@ export function DeclutterClient({ plan }: { plan: string }) {
               </div>
             </OptionsPanel>
 
-            <OptionsPanel title="Selección precisa (opcional)">
+            <OptionsPanel title={t.studio.preciseSelectionOptional}>
               <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-                Pinta sobre el objeto que quieres eliminar. La IA modificará{" "}
-                <strong>solo esa zona</strong> sin tocar el resto de la imagen.
+                {t.studio.preciseSelectionHintBefore}{" "}
+                <strong>{t.studio.preciseSelectionHintStrong}</strong>{" "}
+                {t.studio.preciseSelectionHintAfter}
               </p>
               <button
                 type="button"
@@ -124,10 +127,10 @@ export function DeclutterClient({ plan }: { plan: string }) {
                   ) : (
                     <Brush className="h-4 w-4 text-primary" strokeWidth={1.75} />
                   )}
-                  {maskDataUrl ? "Selección activa · Editar" : "Pincel mágico"}
+                  {maskDataUrl ? t.studio.selectionActiveEdit : t.studio.magicBrush}
                 </span>
                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {maskDataUrl ? "Tap para ajustar" : "Tap para abrir"}
+                  {maskDataUrl ? t.studio.tapToAdjust : t.studio.tapToOpen}
                 </span>
               </button>
               {maskDataUrl && (
@@ -136,21 +139,20 @@ export function DeclutterClient({ plan }: { plan: string }) {
                   onClick={() => setMaskDataUrl(null)}
                   className="mt-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Limpiar selección
+                  {t.studio.clearSelection}
                 </button>
               )}
             </OptionsPanel>
 
-            <OptionsPanel title="Tip">
+            <OptionsPanel title={t.studio.tip}>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Para resultados óptimos, las fotos deben tener buena iluminación
-                y los objetos a eliminar visibles claramente.
+                {t.studio.declutterTip}
               </p>
             </OptionsPanel>
 
             <GenerateButton
               onClick={() => runGenerate({ declutterMode: mode })}
-              label="Limpiar"
+              label={t.studio.cleanBtn}
             />
           </>
         }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * BeforeAfter — draggable slider comparing two images.
@@ -21,6 +22,7 @@ export function BeforeAfter({
   className?: string;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { t } = useT();
   const [pos, setPos] = useState(50); // 0..100
   const [dragging, setDragging] = useState(false);
 
@@ -122,10 +124,10 @@ export function BeforeAfter({
 
       {/* Labels */}
       <span className="absolute left-3 top-3 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
-        Antes
+        {t.studio.before}
       </span>
       <span className="absolute right-3 top-3 rounded-md bg-primary/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
-        Después
+        {t.studio.after}
       </span>
     </div>
   );

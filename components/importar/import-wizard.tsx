@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import {
   commitImport,
   previewCSV,
@@ -37,6 +38,7 @@ type Step = "type" | "upload" | "map" | "done";
 
 export function ImportWizard({ initialType }: { initialType?: ImportType } = {}) {
   const router = useRouter();
+  const { t } = useT();
   const [step, setStep] = useState<Step>(initialType ? "upload" : "type");
   const [type, setType] = useState<ImportType | null>(initialType ?? null);
   const [csvText, setCsvText] = useState("");
@@ -85,36 +87,36 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
     <div>
       {/* Stepper */}
       <div className="mb-8 flex items-center gap-2 text-sm">
-        <StepDot active={step === "type"} done={step !== "type"} n={1} label="Tipo" />
+        <StepDot active={step === "type"} done={step !== "type"} n={1} label={t.importar.stepType} />
         <StepLine />
         <StepDot
           active={step === "upload"}
           done={step === "map" || step === "done"}
           n={2}
-          label="Subir archivo"
+          label={t.importar.stepUpload}
         />
         <StepLine />
         <StepDot
           active={step === "map"}
           done={step === "done"}
           n={3}
-          label="Mapear columnas"
+          label={t.importar.stepMap}
         />
         <StepLine />
-        <StepDot active={step === "done"} done={false} n={4} label="Resultado" />
+        <StepDot active={step === "done"} done={false} n={4} label={t.importar.stepResult} />
       </div>
 
       {step === "type" && (
         <Card className="p-7">
-          <h2 className="text-lg font-semibold">¿Qué quieres importar?</h2>
+          <h2 className="text-lg font-semibold">{t.importar.typeHeading}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Soporta CSV (UTF-8), Excel exportado como CSV. Comma o semicolon auto-detectado.
+            {t.importar.typeSubtitle}
           </p>
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TypeOption
               icon={Users}
-              title="Contactos"
-              desc="Clientes, propietarios, inquilinos, colegas. Compatible con HubSpot, Sherlock, Excel."
+              title={t.importar.contactsTitle}
+              desc={t.importar.contactsDesc}
               selected={type === "CONTACTS"}
               onClick={() => {
                 setType("CONTACTS");
@@ -123,8 +125,8 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
             />
             <TypeOption
               icon={Building2}
-              title="Propiedades"
-              desc="Listings con precio, habitaciones, baños, ubicación. Categorización automática."
+              title={t.importar.propertiesTitle}
+              desc={t.importar.propertiesDesc}
               selected={type === "PROPERTIES"}
               onClick={() => {
                 setType("PROPERTIES");
@@ -140,16 +142,17 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">
-                Sube el archivo CSV de{" "}
-                {type === "CONTACTS" ? "contactos" : "propiedades"}
+                {type === "CONTACTS"
+                  ? t.importar.uploadHeadingContacts
+                  : t.importar.uploadHeadingProperties}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Drag & drop o click para seleccionar.
+                {t.importar.uploadSubtitle}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setStep("type")}>
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Atrás
+              {t.importar.back}
             </Button>
           </div>
 
@@ -182,15 +185,15 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
               <Upload className="h-6 w-6" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-medium">
-              {pending ? "Procesando…" : "Arrastra tu CSV aquí o click para seleccionar"}
+              {pending ? t.importar.processing : t.importar.dropzone}
             </p>
             <p className="text-xs text-muted-foreground">
-              CSV, máximo ~10MB · comma o semicolon · UTF-8
+              {t.importar.dropzoneHint}
             </p>
           </button>
 
           <div className="mt-6 rounded-lg border bg-muted/20 p-4 text-xs">
-            <p className="font-semibold">💡 Tip — Si exportas desde:</p>
+            <p className="font-semibold">{t.importar.tipTitle}</p>
             <ul className="mt-2 space-y-1 text-muted-foreground">
               <li>
                 <strong className="text-foreground">HubSpot:</strong> Settings → Properties →
@@ -216,23 +219,23 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
                 <FileSpreadsheet className="h-4 w-4 text-primary" />
                 <span className="font-semibold">{filename}</span>
                 <Badge variant="outline" className="text-[10px]">
-                  {preview.totalRows} filas
+                  {preview.totalRows} {t.importar.rows}
                 </Badge>
                 <Badge variant="outline" className="text-[10px]">
-                  separator {preview.separator === ";" ? "(;)" : "(,)"}
+                  {t.importar.separator} {preview.separator === ";" ? "(;)" : "(,)"}
                 </Badge>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setStep("upload")}>
                 <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                Cambiar archivo
+                {t.importar.changeFile}
               </Button>
             </div>
           </Card>
 
           <Card className="p-7">
-            <h2 className="text-lg font-semibold">Mapea las columnas</h2>
+            <h2 className="text-lg font-semibold">{t.importar.mapHeading}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Asociamos automáticamente las columnas detectadas. Ajusta si algo no calza.
+              {t.importar.mapSubtitle}
             </p>
 
             <div className="mt-5 space-y-2.5">
@@ -251,7 +254,7 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
                     )}
                   >
                     <div className="text-sm font-medium">
-                      {f.label}
+                      {fieldLabel(t, f.key, f.label)}
                       {f.required && (
                         <span className="ml-1 text-rose-500">*</span>
                       )}
@@ -269,10 +272,10 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sin asignar" />
+                        <SelectValue placeholder={t.importar.unassigned} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">— Sin asignar —</SelectItem>
+                        <SelectItem value="__none__">{t.importar.unassignedItem}</SelectItem>
                         {preview.headers.map((h) => (
                           <SelectItem key={h} value={h}>
                             {h}
@@ -290,7 +293,7 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
           <Card className="overflow-hidden p-0">
             <div className="border-b bg-muted/30 px-5 py-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Preview · primeras 8 filas
+                {t.importar.previewLabel}
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -324,14 +327,14 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
 
           <div className="flex items-center justify-between rounded-lg border bg-card p-4">
             <p className="text-sm text-muted-foreground">
-              Listo para importar{" "}
+              {t.importar.readyToImportBefore}{" "}
               <span className="font-mono font-semibold text-foreground">
                 {preview.totalRows}
               </span>{" "}
-              filas
+              {t.importar.readyToImportAfter}
             </p>
             <Button onClick={commit} disabled={pending} size="lg">
-              {pending ? "Importando…" : "Importar ahora"}
+              {pending ? t.importar.importing : t.importar.importNow}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </div>
@@ -343,28 +346,30 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
             <CheckCircle2 className="h-7 w-7" strokeWidth={1.75} />
           </div>
-          <h2 className="text-2xl font-semibold">Importación completada</h2>
+          <h2 className="text-2xl font-semibold">{t.importar.doneHeading}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {result.imported} registros importados
-            {result.skipped > 0 && ` · ${result.skipped} omitidos (vacíos)`}
-            {result.errors.length > 0 && ` · ${result.errors.length} errores`}
+            {t.importar.doneImported.replace("{n}", String(result.imported))}
+            {result.skipped > 0 &&
+              ` · ${t.importar.doneSkipped.replace("{n}", String(result.skipped))}`}
+            {result.errors.length > 0 &&
+              ` · ${t.importar.doneErrors.replace("{n}", String(result.errors.length))}`}
           </p>
 
           {result.errors.length > 0 && (
             <div className="mx-auto mt-5 max-w-md rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-left text-xs">
               <p className="font-semibold text-amber-600">
-                Errores en algunas filas:
+                {t.importar.errorsTitle}
               </p>
               <ul className="mt-2 space-y-1 text-muted-foreground">
                 {result.errors.slice(0, 5).map((e, i) => (
                   <li key={i}>
-                    <span className="font-mono">Fila {e.row}</span>:{" "}
+                    <span className="font-mono">{t.importar.rowLabel} {e.row}</span>:{" "}
                     {e.reason.slice(0, 80)}
                   </li>
                 ))}
                 {result.errors.length > 5 && (
                   <li className="italic">
-                    + {result.errors.length - 5} errores más
+                    {t.importar.moreErrors.replace("{n}", String(result.errors.length - 5))}
                   </li>
                 )}
               </ul>
@@ -383,14 +388,14 @@ export function ImportWizard({ initialType }: { initialType?: ImportType } = {})
                 setResult(null);
               }}
             >
-              Importar otro archivo
+              {t.importar.importAnother}
             </Button>
             <Button
               onClick={() =>
                 router.push(type === "CONTACTS" ? "/contactos" : "/propiedades")
               }
             >
-              Ver {type === "CONTACTS" ? "contactos" : "propiedades"}
+              {type === "CONTACTS" ? t.importar.viewContacts : t.importar.viewProperties}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </div>
@@ -439,6 +444,17 @@ function StepDot({
 
 function StepLine() {
   return <div className="h-px flex-1 bg-border" />;
+}
+
+// Traduce las etiquetas de campo del CSV (definidas en import-schema) usando
+// el namespace `importar`. Cae al label original (español) si no hay clave.
+function fieldLabel(
+  t: ReturnType<typeof useT>["t"],
+  key: string,
+  fallback: string
+): string {
+  const dict = t.importar as Record<string, string>;
+  return dict[`field_${key}`] ?? fallback;
 }
 
 function TypeOption({

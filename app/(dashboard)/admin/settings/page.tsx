@@ -1,14 +1,15 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { getAppSettings } from "@/lib/app-settings";
 import { SettingsForm } from "@/components/admin/settings-form";
+import { getDict } from "@/lib/i18n/server";
 
 export default async function AdminSettingsPage() {
-  const settings = await getAppSettings();
+  const [settings, t] = await Promise.all([getAppSettings(), getDict()]);
   return (
     <div>
       <PageHeader
-        title="Configuración de plataforma"
-        description="Feature flags, anuncios, comportamiento global. Cambios se aplican a todos los usuarios al instante."
+        title={t.adminPanel.platformSettingsTitle}
+        description={t.adminPanel.platformSettingsDescription}
       />
       <SettingsForm initial={settings} />
     </div>

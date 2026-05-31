@@ -40,6 +40,27 @@ export const POI_TYPE_META: Record<
   OTHER: { label: "Otro", icon: MapPin, color: "#64748B" },
 };
 
+/** English labels for POI types (VALUE → English). Spanish source lives in POI_TYPE_META. */
+const POI_TYPE_LABEL_EN: Record<PoiTypeKey, string> = {
+  RESTAURANT: "Restaurant",
+  SCHOOL: "School",
+  HOSPITAL: "Hospital",
+  GYM: "Gym",
+  PARK: "Park",
+  BEACH: "Beach",
+  MALL: "Mall",
+  TRANSPORT: "Transport",
+  CULTURE: "Culture",
+  OTHER: "Other",
+};
+
+/** Locale-aware label for a POI type key. Falls back to OTHER for unknown keys. */
+export function poiLabel(type: string, locale?: "es" | "en"): string {
+  const key = (type as PoiTypeKey) in POI_TYPE_META ? (type as PoiTypeKey) : "OTHER";
+  if (locale === "en") return POI_TYPE_LABEL_EN[key];
+  return POI_TYPE_META[key].label;
+}
+
 export function formatDistance(m?: number | null): string {
   if (m == null) return "—";
   if (m < 1000) return `${m} m`;

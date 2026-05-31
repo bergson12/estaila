@@ -10,10 +10,12 @@ import { useApplySuggestion } from "@/components/studio/use-apply-suggestion";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { STAGING_STYLES } from "@/lib/constants";
+import { STAGING_STYLES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 
 export function StyleClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t, locale } = useT();
   const [style, setStyle] = useState<string>("MODERN");
   const [customPrompt, setCustomPrompt] = useState("");
 
@@ -25,13 +27,13 @@ export function StyleClient({ plan }: { plan: string }) {
       title={
         <>
           <Palette className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Cambiar Estilo
+          {t.studio.toolStyleTitle}
         </>
       }
-      description="Mantiene el layout de la habitación y cambia el estilo decorativo."
+      description={t.studio.styleDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Nuevo estilo">
+          <OptionsPanel title={t.studio.newStyle}>
             <div className="grid grid-cols-2 gap-1.5">
               {STAGING_STYLES.map((s) => (
                 <button
@@ -44,28 +46,28 @@ export function StyleClient({ plan }: { plan: string }) {
                       : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
                   )}
                 >
-                  {s.label}
+                  {labelFor(STAGING_STYLES, s.value, locale)}
                 </button>
               ))}
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Prompt personalizado (opcional)">
+          <OptionsPanel title={t.studio.customPromptOptional}>
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Añade detalles específicos
+              {t.studio.addSpecificDetails}
             </Label>
             <Textarea
               rows={3}
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder="Ej: tonos cálidos, plantas tropicales, lámparas vintage..."
+              placeholder={t.studio.styleCustomPlaceholder}
               className="mt-2"
             />
           </OptionsPanel>
 
           <GenerateButton
             onClick={() => runGenerate({ style })}
-            label="Cambiar estilo"
+            label={t.studio.changeStyleBtn}
           />
         </>
       }

@@ -25,8 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { bulkCreatePOIs, suggestNearbyPlaces } from "@/lib/actions/poi";
 import type { PoiType } from "@/lib/places/poi-types";
-import { POI_TYPE_META, formatDistance, type PoiTypeKey } from "./poi-icons";
+import { POI_TYPE_META, formatDistance, poiLabel, type PoiTypeKey } from "./poi-icons";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import type { Dict, Locale } from "@/lib/i18n/dictionary";
 
 type Suggestion = {
   externalId: string;
@@ -58,6 +60,7 @@ export function SuggestNearbyDialog({
   propertyHasCoords: boolean;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -153,14 +156,14 @@ export function SuggestNearbyDialog({
         url: s.website ?? undefined,
       }));
     if (items.length === 0) {
-      toast.error("Selecciona al menos un lugar.");
+      toast.error(t.propDialogs.selectAtLeastOne);
       return;
     }
     startSave(async () => {
       try {
         const res = await bulkCreatePOIs(propertyId, items);
         toast.success(
-          `${res.created} ${res.created === 1 ? "lugar agregado" : "lugares agregados"} al mapa`
+          `${res.created} ${res.created === 1 ? t.propDialogs.placeAddedToMap : t.propDialogs.placesAddedToMap}`
         );
         onOpenChange(false);
         router.refresh();
@@ -178,12 +181,10 @@ export function SuggestNearbyDialog({
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
                 <Wand2 className="h-3.5 w-3.5" strokeWidth={1.75} />
               </span>
-              Detectar lugares cercanos
+              {t.propDialogs.detectNearby}
             </DialogTitle>
             <DialogDescription>
-              Buscamos en OpenStreetMap restaurantes, escuelas, hospitales, gyms,
-              parques, malls, transporte y más cerca de la propiedad. Escoge los
-              que quieres agregar al mapa.
+              {t.propDialogs.detectNearbyDesc}
             </DialogDescription>
           </DialogHeader>
 
@@ -192,17 +193,16 @@ export function SuggestNearbyDialog({
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
                 <Sparkles className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-sm font-semibold">Necesitas ubicar la propiedad</p>
+              <p className="text-sm font-semibold">{t.propDialogs.needLocateProperty}</p>
               <p className="max-w-[40ch] text-xs text-muted-foreground">
-                Para buscar lugares cercanos, primero fija la ubicación de la
-                propiedad en el mapa (botón &quot;Fijar ubicación&quot;).
+                {t.propDialogs.needLocateHint}
               </p>
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="mt-2 rounded-full"
               >
-                Entendido
+                {t.propDialogs.gotIt}
               </Button>
             </div>
           ) : (
@@ -210,7 +210,7 @@ export function SuggestNearbyDialog({
               {/* Radius + actions toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-3">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Radio:</span>
+                  <span className="text-muted-foreground">{t.propDialogs.radius}</span>
                   <div className="inline-flex overflow-hidden rounded-full border border-border bg-card">
                     {RADIUS_OPTIONS.map((r) => (
                       <button
@@ -241,7 +241,7 @@ export function SuggestNearbyDialog({
                     disabled={loading || suggestions.length === 0}
                     className="text-primary hover:underline disabled:opacity-50"
                   >
-                    Todos
+                    {t.propDialogs.all}
                   </button>
                   <span className="text-muted-foreground/40">·</span>
                   <button
@@ -250,7 +250,7 @@ export function SuggestNearbyDialog({
                     disabled={loading || selected.size === 0}
                     className="text-muted-foreground hover:underline disabled:opacity-50"
                   >
-                    Ninguno
+                    {t.propDialogs.none}
                   </button>
                 </div>
               </div>
@@ -258,16 +258,15 @@ export function SuggestNearbyDialog({
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 {loading ? (
-                  <LoadingSkeleton />
+                  <LoadingSkeleton label={t.propDialogs.queryingOSM} />
                 ) : !touched ? null : suggestions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
                       <XIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <p className="text-sm font-semibold">Sin resultados</p>
+                    <p className="text-sm font-semibold">{t.propDialogs.noResults}</p>
                     <p className="max-w-[36ch] text-xs text-muted-foreground">
-                      No encontramos lugares interesantes en este radio. Prueba
-                      con un radio mayor.
+                      {t.propDialogs.noResultsHint}
                     </p>
                   </div>
                 ) : (
@@ -295,7 +294,7 @@ export function SuggestNearbyDialog({
                                 <Icon className="h-3 w-3" strokeWidth={2} />
                               </span>
                               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                {meta.label} · {items.length}
+                                {poiLabel(type, locale)} · {items.length}
                               </span>
                             </div>
                             <button
@@ -306,7 +305,7 @@ export function SuggestNearbyDialog({
                               disabled={selectableCount === 0}
                               className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-40"
                             >
-                              {allSelected ? "Quitar categoría" : "Todos"}
+                              {allSelected ? t.propDialogs.removeCategory : t.propDialogs.all}
                             </button>
                           </div>
                           <ul className="space-y-1.5">
@@ -316,6 +315,7 @@ export function SuggestNearbyDialog({
                                 suggestion={s}
                                 checked={selected.has(s.externalId)}
                                 onToggle={() => toggle(s.externalId)}
+                                t={t}
                               />
                             ))}
                           </ul>
@@ -329,19 +329,19 @@ export function SuggestNearbyDialog({
               <DialogFooter className="border-t border-border bg-card/40 px-6 py-3">
                 <div className="mr-auto text-xs text-muted-foreground">
                   {selected.size > 0
-                    ? `${selected.size} ${selected.size === 1 ? "seleccionado" : "seleccionados"}`
-                    : "Selecciona lugares para agregarlos"}
+                    ? `${selected.size} ${selected.size === 1 ? t.propDialogs.selectedSingular : t.propDialogs.selectedPlural}`
+                    : t.propDialogs.selectPlacesToAdd}
                 </div>
                 <Button
                   variant="ghost"
                   onClick={() => onOpenChange(false)}
                   disabled={saving}
                 >
-                  Cancelar
+                  {t.propDialogs.cancel}
                 </Button>
                 <Button onClick={save} disabled={saving || selected.size === 0}>
                   {saving && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                  Agregar {selected.size > 0 ? `(${selected.size})` : ""}
+                  {t.propDialogs.add} {selected.size > 0 ? `(${selected.size})` : ""}
                 </Button>
               </DialogFooter>
             </>
@@ -359,10 +359,12 @@ function SuggestionRow({
   suggestion: s,
   checked,
   onToggle,
+  t,
 }: {
   suggestion: Suggestion;
   checked: boolean;
   onToggle: () => void;
+  t: Dict;
 }) {
   const meta = POI_TYPE_META[s.type as PoiTypeKey] ?? POI_TYPE_META.OTHER;
   const Icon = meta.icon;
@@ -381,7 +383,7 @@ function SuggestionRow({
           checked={checked}
           onChange={disabled ? undefined : onToggle}
           disabled={disabled}
-          aria-label={`Seleccionar ${s.name}`}
+          aria-label={`${t.propDialogs.selectVerb} ${s.name}`}
           className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-primary"
         />
         <span
@@ -396,7 +398,7 @@ function SuggestionRow({
             {disabled && (
               <Badge className="rounded-full bg-emerald-500/15 px-1.5 py-0 text-[9px] text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400">
                 <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" />
-                Ya está
+                {t.propDialogs.alreadyAdded}
               </Badge>
             )}
           </div>
@@ -418,7 +420,7 @@ function SuggestionRow({
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-0.5 text-primary hover:underline"
               >
-                Web
+                {t.propDialogs.web}
                 <ExternalLink className="h-2.5 w-2.5" />
               </a>
             )}
@@ -433,13 +435,13 @@ function SuggestionRow({
 // LOADING SKELETON
 // ============================================================
 
-function LoadingSkeleton() {
+function LoadingSkeleton({ label }: { label: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 rounded-xl border border-border bg-card/40 p-3">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
         <p className="text-xs text-muted-foreground">
-          Consultando OpenStreetMap...
+          {label}
         </p>
       </div>
       {[0, 1, 2].map((i) => (

@@ -30,6 +30,7 @@ import {
   OPERATIONS,
   PROPERTY_STATUSES,
 } from "@/lib/constants";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,8 @@ export default async function PropertyDetailPage({
 }) {
   const { id } = await params;
   const user = await requireUser();
+  const t = await getDict();
+  const locale = await getLocale();
   const [property, site, agent] = await Promise.all([
     prisma.property.findFirst({
       where: { id, userId: user.id },
@@ -134,14 +137,14 @@ export default async function PropertyDetailPage({
         <Card className="p-6">
           <div className="mb-5 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
-              {labelFor(CATEGORIES, property.category)}
+              {labelFor(CATEGORIES, property.category, locale)}
             </Badge>
             <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
-              {labelFor(OPERATIONS, property.operation)}
+              {labelFor(OPERATIONS, property.operation, locale)}
             </Badge>
             {property.status && property.status !== "NUEVO" && (
               <Badge variant="outline">
-                {labelFor(PROPERTY_STATUSES, property.status)}
+                {labelFor(PROPERTY_STATUSES, property.status, locale)}
               </Badge>
             )}
           </div>
@@ -161,28 +164,28 @@ export default async function PropertyDetailPage({
             {property.bedrooms != null && (
               <SpecBlock
                 icon={<Bed className="h-4 w-4" />}
-                label="Habitaciones"
+                label={t.propHub.bedrooms}
                 value={String(property.bedrooms)}
               />
             )}
             {property.bathrooms != null && (
               <SpecBlock
                 icon={<Bath className="h-4 w-4" />}
-                label="Baños"
+                label={t.propHub.bathrooms}
                 value={property.bathrooms.toString()}
               />
             )}
             {property.parking != null && (
               <SpecBlock
                 icon={<Car className="h-4 w-4" />}
-                label="Parqueos"
+                label={t.propHub.parking}
                 value={String(property.parking)}
               />
             )}
             {property.metersSquared != null && (
               <SpecBlock
                 icon={<Maximize2 className="h-4 w-4" />}
-                label="Metros²"
+                label={t.propHub.area}
                 value={`${property.metersSquared} m²`}
               />
             )}
@@ -191,7 +194,7 @@ export default async function PropertyDetailPage({
           {property.description && (
             <>
               <div className="my-6 h-px bg-border" />
-              <h3 className="mb-2 text-sm font-semibold">Descripción</h3>
+              <h3 className="mb-2 text-sm font-semibold">{t.propHub.description}</h3>
               <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
                 {property.description}
               </p>
@@ -201,7 +204,7 @@ export default async function PropertyDetailPage({
           {(property.location || property.address || property.mapsUrl) && (
             <>
               <div className="my-6 h-px bg-border" />
-              <h3 className="mb-2 text-sm font-semibold">Ubicación</h3>
+              <h3 className="mb-2 text-sm font-semibold">{t.propHub.location}</h3>
               <div className="space-y-1.5 text-sm">
                 {property.location && (
                   <p className="flex items-center gap-2">
@@ -219,7 +222,7 @@ export default async function PropertyDetailPage({
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   >
-                    Ver en Google Maps
+                    {t.propHub.viewOnGoogleMaps}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
@@ -233,7 +236,7 @@ export default async function PropertyDetailPage({
         {property.owner && (
           <Card className="p-5">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Propietario
+              {t.propHub.owner}
             </h3>
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -256,7 +259,7 @@ export default async function PropertyDetailPage({
         {property.pipelineCards.length > 0 && (
           <Card className="p-5">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Pipeline ({property.pipelineCards.length})
+              {t.propHub.pipeline} ({property.pipelineCards.length})
             </h3>
             <ul className="space-y-2">
               {property.pipelineCards.map((c) => (
@@ -277,7 +280,7 @@ export default async function PropertyDetailPage({
         {property.transactions.length > 0 && (
           <Card className="p-5">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Transacciones recientes
+              {t.propHub.recentTransactions}
             </h3>
             <ul className="space-y-2.5 text-sm">
               {property.transactions.map((t) => (
@@ -307,7 +310,7 @@ export default async function PropertyDetailPage({
         {property.appointments.length > 0 && (
           <Card className="p-5">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Citas
+              {t.propHub.appointments}
             </h3>
             <ul className="space-y-2.5 text-sm">
               {property.appointments.map((a) => (
@@ -332,7 +335,7 @@ export default async function PropertyDetailPage({
         className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" />
-        Volver a propiedades
+        {t.propHub.backToProperties}
       </Link>
 
       <PageHeader
@@ -374,13 +377,13 @@ export default async function PropertyDetailPage({
                 }
               >
                 <Sparkles className="mr-2 h-4 w-4 text-primary" />
-                Editar con Studio IA
+                {t.propHub.editWithStudioAI}
               </Link>
             </Button>
             <Button asChild>
               <Link href={`/propiedades/${property.id}/edit`}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Editar
+                {t.propHub.edit}
               </Link>
             </Button>
           </>

@@ -7,18 +7,20 @@ import { OptionsPanel } from "@/components/studio/options-panel";
 import { GenerateButton } from "@/components/studio/generate-button";
 import { useStudio } from "@/components/studio/studio-context";
 import { cn } from "@/lib/utils";
-
-const PRESETS = [
-  { value: "AUTO", label: "Auto mejora", desc: "Un click, IA decide" },
-  { value: "INTERIOR_DARK", label: "Interior oscuro", desc: "Sube luz, claridad" },
-  { value: "YELLOW_TONES", label: "Tonos amarillos", desc: "Corrige tono cálido" },
-  { value: "PHONE_PHOTO", label: "Foto de celular", desc: "Saturación + nitidez" },
-  { value: "CLOUDY", label: "Día nublado", desc: "Más viveza y luz" },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function EnhanceClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t } = useT();
   const [preset, setPreset] = useState<string>("AUTO");
+
+  const PRESETS = [
+    { value: "AUTO", label: t.studio.enhanceAuto, desc: t.studio.enhanceAutoDesc },
+    { value: "INTERIOR_DARK", label: t.studio.enhanceInteriorDark, desc: t.studio.enhanceInteriorDarkDesc },
+    { value: "YELLOW_TONES", label: t.studio.enhanceYellowTones, desc: t.studio.enhanceYellowTonesDesc },
+    { value: "PHONE_PHOTO", label: t.studio.enhancePhonePhoto, desc: t.studio.enhancePhonePhotoDesc },
+    { value: "CLOUDY", label: t.studio.enhanceCloudy, desc: t.studio.enhanceCloudyDesc },
+  ] as const;
   const [advanced, setAdvanced] = useState(false);
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(0);
@@ -43,13 +45,13 @@ export function EnhanceClient({ plan }: { plan: string }) {
       title={
         <>
           <Wand2 className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Mejorar Calidad
+          {t.studio.toolEnhanceTitle}
         </>
       }
-      description="Auto-mejora la foto: brillo, color, nitidez y balance de blancos."
+      description={t.studio.enhanceDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Preset">
+          <OptionsPanel title={t.studio.preset}>
             <div className="space-y-1.5">
               {PRESETS.map((p) => {
                 const active = preset === p.value;
@@ -91,36 +93,36 @@ export function EnhanceClient({ plan }: { plan: string }) {
               onClick={() => setAdvanced((a) => !a)}
               className="flex w-full items-center justify-between text-sm font-medium"
             >
-              <span>Ajustes avanzados</span>
+              <span>{t.studio.advancedAdjustments}</span>
               <span className="text-xs text-muted-foreground">
-                {advanced ? "Ocultar" : "Mostrar"}
+                {advanced ? t.studio.hide : t.studio.show}
               </span>
             </button>
 
             {advanced && (
               <div className="mt-4 space-y-3">
                 <Slider
-                  label="Brillo"
+                  label={t.studio.brightness}
                   value={brightness}
                   onChange={setBrightness}
                 />
                 <Slider
-                  label="Contraste"
+                  label={t.studio.contrast}
                   value={contrast}
                   onChange={setContrast}
                 />
                 <Slider
-                  label="Saturación"
+                  label={t.studio.saturation}
                   value={saturation}
                   onChange={setSaturation}
                 />
                 <Slider
-                  label="Nitidez"
+                  label={t.studio.sharpness}
                   value={sharpness}
                   onChange={setSharpness}
                 />
                 <Slider
-                  label="Balance blancos"
+                  label={t.studio.whiteBalance}
                   value={whiteBalance}
                   onChange={setWhiteBalance}
                 />
@@ -128,7 +130,7 @@ export function EnhanceClient({ plan }: { plan: string }) {
             )}
           </OptionsPanel>
 
-          <GenerateButton onClick={handleGenerate} label="Mejorar" />
+          <GenerateButton onClick={handleGenerate} label={t.studio.enhanceBtn} />
         </>
       }
     />

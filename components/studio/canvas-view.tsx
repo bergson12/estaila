@@ -12,6 +12,7 @@ import { PhotoAnalysis } from "./photo-analysis";
 import { PostActions } from "./post-actions";
 import { useStudio } from "./studio-context";
 import { GeneratingBar } from "@/components/shared/generating-bar";
+import { useT } from "@/lib/i18n/provider";
 
 export function CanvasView({
   onRegenerate,
@@ -19,6 +20,7 @@ export function CanvasView({
   onRegenerate?: () => void;
 }) {
   const { image, result, isGenerating, reset } = useStudio();
+  const { t } = useT();
 
   if (!image) {
     return (
@@ -97,12 +99,12 @@ export function CanvasView({
               className="inline-flex items-center gap-1.5"
             >
               <Sparkles className="h-3 w-3 text-primary" />
-              Listo · {(result.processingTimeMs / 1000).toFixed(1)}s
+              {t.studio.ready} · {(result.processingTimeMs / 1000).toFixed(1)}s
             </motion.span>
           ) : isGenerating ? (
-            "Procesando..."
+            t.studio.processing
           ) : (
-            "Lista para generar"
+            t.studio.readyToGenerate
           )}
         </div>
 
@@ -127,6 +129,7 @@ export function CanvasView({
 }
 
 function ProcessingAnimation() {
+  const { t } = useT();
   return (
     <>
       <motion.div
@@ -142,9 +145,9 @@ function ProcessingAnimation() {
         transition={{ duration: 1.8, repeat: Infinity }}
         className="space-y-1 text-center"
       >
-        <p className="text-sm font-medium">Generando...</p>
+        <p className="text-sm font-medium">{t.studio.generating}</p>
         <p className="text-xs text-muted-foreground">
-          La IA está trabajando en tu foto
+          {t.studio.aiWorkingOnPhoto}
         </p>
       </motion.div>
       <GeneratingBar className="mt-1 w-48 max-w-[70vw]" />

@@ -37,8 +37,9 @@ import {
   looksLikeGoogleMapsUrl,
   parseGoogleMapsUrl,
 } from "@/lib/maps-url-parser";
-import { POI_TYPE_META, type PoiTypeKey } from "./poi-icons";
+import { POI_TYPE_META, poiLabel, type PoiTypeKey } from "./poi-icons";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import type { POIData } from "./property-map";
 
 type Mode =
@@ -54,6 +55,7 @@ export function POIDialog({
   onOpenChange: (b: boolean) => void;
   mode: Mode;
 }) {
+  const { t, locale } = useT();
   const isEdit = mode.kind === "edit";
   const [pending, startTransition] = useTransition();
 
@@ -111,7 +113,7 @@ export function POIDialog({
       setLat(String(local.lat));
       setLng(String(local.lng));
       setExtractStatus("ok");
-      toast.success("Coordenadas extraídas del link");
+      toast.success(t.propDialogs.coordsExtracted);
       return;
     }
     // 2) Short link → server action follows redirect
@@ -122,10 +124,10 @@ export function POIDialog({
         setLat(String(coords.lat));
         setLng(String(coords.lng));
         setExtractStatus("ok");
-        toast.success("Coordenadas extraídas del link");
+        toast.success(t.propDialogs.coordsExtracted);
       } else {
         setExtractStatus("fail");
-        toast.error("No pude extraer coordenadas de ese link");
+        toast.error(t.propDialogs.coordsExtractFail);
       }
     } catch (e) {
       setExtractStatus("fail");
@@ -169,13 +171,13 @@ export function POIDialog({
 
   function submit() {
     if (!name.trim()) {
-      toast.error("Ponle un nombre al lugar.");
+      toast.error(t.propDialogs.nameRequired);
       return;
     }
     const latNum = parseFloat(lat);
     const lngNum = parseFloat(lng);
     if (!isFinite(latNum) || !isFinite(lngNum)) {
-      toast.error("Coordenadas inválidas.");
+      toast.error(t.propDialogs.invalidCoords);
       return;
     }
     const payload = {
@@ -196,10 +198,10 @@ export function POIDialog({
       try {
         if (isEdit) {
           await updatePOI(mode.poi.id, payload);
-          toast.success("Lugar actualizado");
+          toast.success(t.propDialogs.placeUpdated);
         } else {
           await createPOI(mode.propertyId, payload);
-          toast.success("Lugar agregado");
+          toast.success(t.propDialogs.placeAdded);
         }
         onOpenChange(false);
       } catch (e) {
@@ -218,10 +220,10 @@ export function POIDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" />
-            {isEdit ? "Editar lugar" : "Agregar lugar cercano"}
+            {isEdit ? t.propDialogs.editPlace : t.propDialogs.addNearbyPlace}
           </DialogTitle>
           <DialogDescription>
-            Pin con icono y datos. Aparece en el mapa de la propiedad.
+            {t.propDialogs.poiDialogDesc}
           </DialogDescription>
         </DialogHeader>
 
@@ -235,22 +237,22 @@ export function POIDialog({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">
-              {name || "Nuevo lugar"}
+              {name || t.propDialogs.newPlace}
             </p>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              {meta.label}
+              {poiLabel(type, locale)}
             </p>
           </div>
           {pinned && (
             <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
               <Pin className="h-3 w-3" />
-              Destacado
+              {t.propDialogs.featuredSingular}
             </span>
           )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Nombre *" className="sm:col-span-2">
+          <Field label={t.propDialogs.poiNameLabel} className="sm:col-span-2">
             <Input
               placeholder="Ej. Bvlgari Hotel"
               value={name}
@@ -260,7 +262,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="Tipo">
+          <Field label={t.propDialogs.poiType}>
             <Select value={type} onValueChange={(v) => setType(v as PoiTypeKey)}>
               <SelectTrigger>
                 <SelectValue />
@@ -273,7 +275,7 @@ export function POIDialog({
                     <SelectItem key={k} value={k}>
                       <span className="flex items-center gap-2">
                         <I className="h-3.5 w-3.5" style={{ color: m.color }} />
-                        {m.label}
+                        {poiLabel(k, locale)}
                       </span>
                     </SelectItem>
                   );
@@ -282,7 +284,7 @@ export function POIDialog({
             </Select>
           </Field>
 
-          <Field label="Color (opcional)">
+          <Field label={t.propDialogs.poiColor}>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -299,12 +301,12 @@ export function POIDialog({
             </div>
           </Field>
 
-          <Field label="Link Google Maps (autorelleno)" className="sm:col-span-2">
+          <Field label={t.propDialogs.mapsLinkLabel} className="sm:col-span-2">
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <LinkIcon className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Pega aquí el link de Google Maps..."
+                  placeholder={t.propDialogs.mapsLinkPlaceholder}
                   value={mapsUrl}
                   onChange={(e) => setMapsUrl(e.target.value)}
                   onPaste={(e) => {
@@ -331,24 +333,23 @@ export function POIDialog({
                 ) : extractStatus === "ok" ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 ) : (
-                  "Extraer"
+                  t.propDialogs.extract
                 )}
               </Button>
             </div>
             {extractStatus === "fail" && (
               <p className="text-[11px] text-destructive">
-                Link no reconocido. Acepta google.com/maps, goo.gl/maps,
-                maps.app.goo.gl
+                {t.propDialogs.mapsLinkFail}
               </p>
             )}
             {extractStatus === "ok" && (
               <p className="text-[11px] text-success">
-                ✓ Coordenadas detectadas. Puedes ajustar abajo si quieres.
+                {t.propDialogs.coordsDetectedHint}
               </p>
             )}
           </Field>
 
-          <Field label="Latitud *">
+          <Field label={t.propDialogs.poiLatitude}>
             <Input
               type="number"
               step="any"
@@ -359,7 +360,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="Longitud *">
+          <Field label={t.propDialogs.poiLongitude}>
             <Input
               type="number"
               step="any"
@@ -370,7 +371,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="A pie (min)">
+          <Field label={t.propDialogs.poiWalkMin}>
             <Input
               type="number"
               inputMode="numeric"
@@ -380,7 +381,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="En auto (min)">
+          <Field label={t.propDialogs.poiCarMin}>
             <Input
               type="number"
               inputMode="numeric"
@@ -390,7 +391,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="URL (opcional)" className="sm:col-span-2">
+          <Field label={t.propDialogs.poiUrl} className="sm:col-span-2">
             <Input
               type="url"
               placeholder="https://..."
@@ -399,7 +400,7 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="Imagen (URL, opcional)" className="sm:col-span-2">
+          <Field label={t.propDialogs.poiImageUrl} className="sm:col-span-2">
             <Input
               type="url"
               placeholder="https://..."
@@ -408,9 +409,9 @@ export function POIDialog({
             />
           </Field>
 
-          <Field label="Descripción (opcional)" className="sm:col-span-2">
+          <Field label={t.propDialogs.poiDescription} className="sm:col-span-2">
             <Textarea
-              placeholder="Hotel 5 estrellas con beach club…"
+              placeholder={t.propDialogs.poiDescriptionPlaceholder}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={800}
@@ -437,9 +438,9 @@ export function POIDialog({
                   <Pin className="h-4 w-4" strokeWidth={2} />
                 </span>
                 <div>
-                  <p className="text-sm font-medium">Destacado</p>
+                  <p className="text-sm font-medium">{t.propDialogs.featuredSingular}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Aparece más grande en el mapa y en el resumen
+                    {t.propDialogs.featuredHint}
                   </p>
                 </div>
               </div>
@@ -455,11 +456,11 @@ export function POIDialog({
 
         <DialogFooter className="mt-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancelar
+            {t.propDialogs.cancel}
           </Button>
           <Button onClick={submit} disabled={pending}>
             {pending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-            {isEdit ? "Guardar cambios" : "Agregar lugar"}
+            {isEdit ? t.propDialogs.saveChanges : t.propDialogs.addPlace}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -15,20 +15,22 @@ import {
   Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const TOOLS = [
-  { href: "/studio/staging", label: "Virtual Staging", icon: Sofa, cost: 2, featured: true },
-  { href: "/studio/declutter", label: "Eliminar Objetos", icon: Eraser, cost: 1 },
-  { href: "/studio/enhance", label: "Mejorar Calidad", icon: Wand2, cost: 1 },
-  { href: "/studio/style", label: "Cambiar Estilo", icon: Palette, cost: 2 },
-  { href: "/studio/sky", label: "Cielo Despejado", icon: Sun, cost: 1 },
-  { href: "/studio/twilight", label: "Atardecer", icon: Sunset, cost: 1 },
-  { href: "/studio/pool", label: "Piscina", icon: Waves, cost: 1 },
-  { href: "/studio/lawn", label: "Césped", icon: Trees, cost: 1 },
-];
+import { useT } from "@/lib/i18n/provider";
 
 export function ToolNav() {
   const pathname = usePathname();
+  const { t } = useT();
+
+  const TOOLS = [
+    { href: "/studio/staging", label: t.studio.toolStagingTitle, icon: Sofa, cost: 2, featured: true },
+    { href: "/studio/declutter", label: t.studio.toolDeclutterTitle, icon: Eraser, cost: 1 },
+    { href: "/studio/enhance", label: t.studio.toolEnhanceTitle, icon: Wand2, cost: 1 },
+    { href: "/studio/style", label: t.studio.toolStyleTitle, icon: Palette, cost: 2 },
+    { href: "/studio/sky", label: t.studio.toolSkyTitle, icon: Sun, cost: 1 },
+    { href: "/studio/twilight", label: t.studio.toolTwilightShort, icon: Sunset, cost: 1 },
+    { href: "/studio/pool", label: t.studio.toolPoolShort, icon: Waves, cost: 1 },
+    { href: "/studio/lawn", label: t.studio.toolLawnShort, icon: Trees, cost: 1 },
+  ];
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-px">
@@ -37,7 +39,7 @@ export function ToolNav() {
         className="mb-1.5 flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
       >
         <Sparkles className="h-3 w-3 text-primary" />
-        Studio IA
+        {t.studio.studioIA}
       </Link>
       {TOOLS.map((t) => {
         const active = pathname === t.href;
@@ -86,7 +88,7 @@ export function ToolNav() {
           )}
           strokeWidth={1.75}
         />
-        <span className="flex-1 truncate">Galería</span>
+        <span className="flex-1 truncate">{t.studio.gallery}</span>
       </Link>
     </aside>
   );

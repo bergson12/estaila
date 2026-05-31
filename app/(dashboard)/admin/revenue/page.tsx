@@ -3,9 +3,14 @@ import { Card } from "@/components/ui/card";
 import { DollarSign, TrendingUp, Calendar, UserPlus } from "lucide-react";
 import { getRevenueAnalytics, getMetrics } from "@/lib/actions/admin";
 import { RevenueChart } from "@/components/admin/revenue-chart";
+import { getDict } from "@/lib/i18n/server";
 
 export default async function AdminRevenuePage() {
-  const [data, m] = await Promise.all([getRevenueAnalytics(), getMetrics()]);
+  const [data, m, t] = await Promise.all([
+    getRevenueAnalytics(),
+    getMetrics(),
+    getDict(),
+  ]);
   const totalRevenue90 = data.daily.reduce((sum, d) => sum + d.total, 0);
   const avgDaily = totalRevenue90 / 90;
   const totalSignups90 = data.signups.reduce((s, d) => s + d.count, 0);
@@ -13,34 +18,34 @@ export default async function AdminRevenuePage() {
   return (
     <div>
       <PageHeader
-        title="Revenue & cohortes"
-        description="Vista financiera de los últimos 90 días"
+        title={t.adminPanel.revenueTitle}
+        description={t.adminPanel.revenueDescription}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <KpiCard
           icon={DollarSign}
-          label="MRR actual"
+          label={t.adminPanel.kpiCurrentMrr}
           value={`$${data.mrr.toLocaleString()}`}
           sub={`${m.plans.PRO ?? 0} Pro + ${m.plans.TEAM ?? 0} Team`}
         />
         <KpiCard
           icon={TrendingUp}
-          label="ARR proyectado"
+          label={t.adminPanel.kpiProjectedArr}
           value={`$${data.arr.toLocaleString()}`}
           sub="MRR × 12"
         />
         <KpiCard
           icon={Calendar}
-          label="Revenue 90 días"
+          label={t.adminPanel.kpiRevenue90d}
           value={`$${totalRevenue90.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          sub={`Promedio diario $${avgDaily.toFixed(2)}`}
+          sub={`${t.adminPanel.kpiDailyAvg} $${avgDaily.toFixed(2)}`}
         />
         <KpiCard
           icon={UserPlus}
-          label="Signups 90 días"
+          label={t.adminPanel.kpiSignups90d}
           value={totalSignups90.toLocaleString()}
-          sub={`Promedio ${(totalSignups90 / 90).toFixed(1)}/día`}
+          sub={`${t.adminPanel.kpiAvgWord} ${(totalSignups90 / 90).toFixed(1)}${t.adminPanel.kpiPerDay}`}
         />
       </div>
 
@@ -49,28 +54,35 @@ export default async function AdminRevenuePage() {
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
-              Revenue diario (90 días)
+              {t.adminPanel.dailyRevenue90d}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Suscripciones recurrentes + paquetes de créditos one-time
+              {t.adminPanel.dailyRevenueSub}
             </p>
           </div>
           <div className="flex gap-3 text-xs">
-            <Legend color="#10b981" label="Suscripciones" />
-            <Legend color="#8b5cf6" label="Packs de créditos" />
+            <Legend color="#10b981" label={t.adminPanel.legendSubscriptions} />
+            <Legend color="#8b5cf6" label={t.adminPanel.legendCreditPacks} />
           </div>
         </div>
-        <RevenueChart data={data.daily} />
+        <RevenueChart
+          data={data.daily}
+          labels={{
+            day: t.adminPanel.chartDay,
+            subscriptions: t.adminPanel.legendSubscriptions,
+            packs: t.adminPanel.chartPacks,
+          }}
+        />
       </Card>
 
       <Card className="mt-4 p-5">
         <div className="mb-4">
           <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <UserPlus className="h-3.5 w-3.5" />
-            Signups por día
+            {t.adminPanel.signupsPerDay}
           </h3>
         </div>
-        <SignupChart data={data.signups} />
+        <SignupChart data={data.signups} signupsWord={t.adminPanel.signupsWord} />
       </Card>
     </div>
   );
@@ -113,7 +125,13 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-function SignupChart({ data }: { data: { day: string; count: number }[] }) {
+function SignupChart({
+  data,
+  signupsWord,
+}: {
+  data: { day: string; count: number }[];
+  signupsWord: string;
+}) {
   const max = Math.max(1, ...data.map((d) => d.count));
   return (
     <div className="flex h-32 items-end gap-px">
@@ -123,7 +141,7 @@ function SignupChart({ data }: { data: { day: string; count: number }[] }) {
           <div
             key={d.day}
             className="group relative flex-1 transition-colors"
-            title={`${d.day}: ${d.count} signups`}
+            title={`${d.day}: ${d.count} ${signupsWord}`}
           >
             <div
               className="w-full rounded-sm bg-primary/60 transition-all hover:bg-primary"

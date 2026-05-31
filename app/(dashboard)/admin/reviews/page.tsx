@@ -1,10 +1,11 @@
 import { listTesterReviews } from "@/lib/actions/tester-review";
 import { AdminReviews, type AdminReviewRow } from "@/components/admin/admin-reviews";
+import { getDict } from "@/lib/i18n/server";
 
 export const metadata = { title: "Reseñas de testers" };
 
 export default async function AdminReviewsPage() {
-  const reviews = await listTesterReviews(); // requireAdmin dentro
+  const [reviews, t] = await Promise.all([listTesterReviews(), getDict()]); // requireAdmin dentro
 
   const rows: AdminReviewRow[] = reviews.map((r) => ({
     id: r.id,
@@ -34,10 +35,10 @@ export default async function AdminReviewsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reseñas de testers</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t.adminPanel.testerReviewsTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Feedback de las cuentas tester · {rows.length} en total
-          {newCount ? ` · ${newCount} nuevas` : ""}
+          {t.adminPanel.testerReviewsLead} · {rows.length} {t.adminPanel.inTotal}
+          {newCount ? ` · ${newCount} ${t.adminPanel.newFem}` : ""}
         </p>
       </header>
       <AdminReviews reviews={rows} />

@@ -2,11 +2,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SiteSettingsClient } from "@/components/site/site-settings-client";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function MiSitioPage() {
   const user = await requireUser();
+  const t = await getDict();
   const site = await prisma.site.findUnique({
     where: { userId: user.id },
   });
@@ -14,8 +16,8 @@ export default async function MiSitioPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Mi Sitio"
-        description="Tu portal inmobiliario público. Comparte el link con clientes."
+        title={t.sitio.pageTitle}
+        description={t.sitio.pageDescription}
       />
       <SiteSettingsClient
         defaultUserName={user.name}

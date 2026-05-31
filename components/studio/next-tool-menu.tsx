@@ -23,20 +23,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const TOOLS = [
-  { href: "/studio/staging", label: "Virtual Staging", icon: Sofa, cost: 2 },
-  { href: "/studio/declutter", label: "Eliminar Objetos", icon: Eraser, cost: 1 },
-  { href: "/studio/enhance", label: "Mejorar Calidad", icon: Wand2, cost: 1 },
-  { href: "/studio/style", label: "Cambiar Estilo", icon: Palette, cost: 2 },
-  { href: "/studio/sky", label: "Cielo Despejado", icon: Sun, cost: 1 },
-  { href: "/studio/twilight", label: "Atardecer", icon: Sunset, cost: 1 },
-  { href: "/studio/pool", label: "Piscina", icon: Waves, cost: 1 },
-  { href: "/studio/lawn", label: "Césped", icon: Trees, cost: 1 },
-];
+import { useT } from "@/lib/i18n/provider";
 
 export function NextToolMenu() {
   const pathname = usePathname();
+  const { t } = useT();
+
+  const TOOLS = [
+    { href: "/studio/staging", label: t.studio.toolStagingTitle, icon: Sofa, cost: 2 },
+    { href: "/studio/declutter", label: t.studio.toolDeclutterTitle, icon: Eraser, cost: 1 },
+    { href: "/studio/enhance", label: t.studio.toolEnhanceTitle, icon: Wand2, cost: 1 },
+    { href: "/studio/style", label: t.studio.toolStyleTitle, icon: Palette, cost: 2 },
+    { href: "/studio/sky", label: t.studio.toolSkyTitle, icon: Sun, cost: 1 },
+    { href: "/studio/twilight", label: t.studio.toolTwilightShort, icon: Sunset, cost: 1 },
+    { href: "/studio/pool", label: t.studio.toolPoolShort, icon: Waves, cost: 1 },
+    { href: "/studio/lawn", label: t.studio.toolLawnShort, icon: Trees, cost: 1 },
+  ];
 
   return (
     <DropdownMenu>
@@ -55,12 +57,12 @@ export function NextToolMenu() {
             }}
           />
           <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
-          Pasar a otra herramienta
+          {t.studio.passToAnotherTool}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          Continúa con la imagen actual...
+          {t.studio.continueWithCurrentImage}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {TOOLS.map((t) => {

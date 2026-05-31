@@ -17,23 +17,26 @@ import {
   ROOM_TYPES,
   LIGHT_MOODS,
   BUYER_TARGETS,
+  labelFor,
 } from "@/lib/constants";
-
-const DENSITIES = [
-  { value: "MINIMAL", label: "Mínimo", desc: "Pocos muebles esenciales" },
-  { value: "BALANCED", label: "Equilibrado", desc: "Lo justo y necesario" },
-  { value: "FULL", label: "Lleno", desc: "Habitación completamente equipada" },
-] as const;
-
-const LUXURY_LEVELS = [
-  { value: "ECONOMY", label: "Económico", price: "$" },
-  { value: "MID", label: "Mid-range", price: "$$" },
-  { value: "PREMIUM", label: "Premium", price: "$$$" },
-  { value: "LUXURY", label: "Luxury", price: "$$$$" },
-] as const;
+import { useT } from "@/lib/i18n/provider";
 
 export function StagingClient({ plan }: { plan: string }) {
   const { runGenerate } = useStudio();
+  const { t, locale } = useT();
+
+  const DENSITIES = [
+    { value: "MINIMAL", label: t.studio.densityMinimal, desc: t.studio.densityMinimalDesc },
+    { value: "BALANCED", label: t.studio.densityBalanced, desc: t.studio.densityBalancedDesc },
+    { value: "FULL", label: t.studio.densityFull, desc: t.studio.densityFullDesc },
+  ] as const;
+
+  const LUXURY_LEVELS = [
+    { value: "ECONOMY", label: t.studio.luxuryEconomy, price: "$" },
+    { value: "MID", label: t.studio.luxuryMid, price: "$$" },
+    { value: "PREMIUM", label: t.studio.luxuryPremium, price: "$$$" },
+    { value: "LUXURY", label: t.studio.luxuryLuxury, price: "$$$$" },
+  ] as const;
   const [style, setStyle] = useState<string>("MODERN");
   const [roomType, setRoomType] = useState<string>("LIVING");
   const [removeFirst, setRemoveFirst] = useState(false);
@@ -66,13 +69,13 @@ export function StagingClient({ plan }: { plan: string }) {
       title={
         <>
           <Sofa className="h-5 w-5 text-primary" strokeWidth={1.75} />
-          Virtual Staging
+          {t.studio.toolStagingTitle}
         </>
       }
-      description="Amuebla la habitación con muebles fotorrealistas según el estilo y comprador objetivo."
+      description={t.studio.stagingDescription}
       optionsPanel={
         <>
-          <OptionsPanel title="Tipo de habitación">
+          <OptionsPanel title={t.studio.roomType}>
             <div className="grid grid-cols-2 gap-1.5">
               {ROOM_TYPES.map((r) => (
                 <ChipButton
@@ -80,13 +83,13 @@ export function StagingClient({ plan }: { plan: string }) {
                   active={roomType === r.value}
                   onClick={() => setRoomType(r.value)}
                   icon={r.icon}
-                  label={r.label}
+                  label={labelFor(ROOM_TYPES, r.value, locale)}
                 />
               ))}
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Estilo de decoración">
+          <OptionsPanel title={t.studio.decorStyle}>
             <div className="grid grid-cols-2 gap-1.5">
               {STAGING_STYLES.map((s) => (
                 <ChipButton
@@ -94,13 +97,13 @@ export function StagingClient({ plan }: { plan: string }) {
                   active={style === s.value}
                   onClick={() => setStyle(s.value)}
                   icon={s.icon}
-                  label={s.label}
+                  label={labelFor(STAGING_STYLES, s.value, locale)}
                 />
               ))}
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Nivel de lujo">
+          <OptionsPanel title={t.studio.luxuryLevel}>
             <div className="grid grid-cols-4 gap-1.5">
               {LUXURY_LEVELS.map((l) => (
                 <button
@@ -121,7 +124,7 @@ export function StagingClient({ plan }: { plan: string }) {
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Iluminación">
+          <OptionsPanel title={t.studio.lighting}>
             <div className="grid grid-cols-1 gap-1">
               {LIGHT_MOODS.map((m) => (
                 <button
@@ -134,14 +137,16 @@ export function StagingClient({ plan }: { plan: string }) {
                       : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
                   )}
                 >
-                  <span>{m.label}</span>
-                  <span className="text-[10px] opacity-70">{m.desc}</span>
+                  <span>{labelFor(LIGHT_MOODS, m.value, locale)}</span>
+                  <span className="text-[10px] opacity-70">
+                    {(t.studio as Record<string, string>)[`lightDesc_${m.value}`] ?? m.desc}
+                  </span>
                 </button>
               ))}
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Cantidad de muebles">
+          <OptionsPanel title={t.studio.furnitureAmount}>
             <div className="grid grid-cols-3 gap-1.5">
               {DENSITIES.map((d) => (
                 <button
@@ -161,9 +166,9 @@ export function StagingClient({ plan }: { plan: string }) {
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Buyer objetivo (opcional)">
+          <OptionsPanel title={t.studio.buyerTargetOptional}>
             <p className="mb-2 text-[10px] text-muted-foreground">
-              Optimiza el staging para el comprador que más buscas.
+              {t.studio.buyerTargetHint}
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {BUYER_TARGETS.map((b) => (
@@ -174,17 +179,17 @@ export function StagingClient({ plan }: { plan: string }) {
                     setBuyerTarget(buyerTarget === b.value ? "" : b.value)
                   }
                   icon={b.icon}
-                  label={b.label}
+                  label={labelFor(BUYER_TARGETS, b.value, locale)}
                 />
               ))}
             </div>
           </OptionsPanel>
 
-          <OptionsPanel title="Detalles extra (opcional)">
+          <OptionsPanel title={t.studio.extraDetailsOptional}>
             <Textarea
               value={extraPrompt}
               onChange={(e) => setExtraPrompt(e.target.value)}
-              placeholder="Ej: agregar plantas tropicales, lámpara dorada de techo, tono terracota en cojines..."
+              placeholder={t.studio.stagingExtraPlaceholder}
               rows={3}
               maxLength={400}
               className="text-xs"
@@ -198,17 +203,17 @@ export function StagingClient({ plan }: { plan: string }) {
             <label className="flex items-start justify-between gap-3">
               <div>
                 <Label className="text-sm font-medium">
-                  Vaciar antes
+                  {t.studio.emptyFirst}
                 </Label>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Quita muebles existentes antes de amueblar
+                  {t.studio.emptyFirstDesc}
                 </p>
               </div>
               <Switch checked={removeFirst} onCheckedChange={setRemoveFirst} />
             </label>
           </OptionsPanel>
 
-          <GenerateButton onClick={handleGenerate} label="Amueblar" />
+          <GenerateButton onClick={handleGenerate} label={t.studio.furnishBtn} />
         </>
       }
     />

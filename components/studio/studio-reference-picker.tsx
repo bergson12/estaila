@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useStudio } from "./studio-context";
 import { listActivePresets } from "@/lib/actions/style-preset";
+import { useT } from "@/lib/i18n/provider";
 
 type P = { id: string; label: string; imageUrl: string };
 
@@ -14,6 +15,7 @@ type P = { id: string; label: string; imageUrl: string };
  */
 export function StudioReferencePicker() {
   const { referenceId, setReferenceId } = useStudio();
+  const { t } = useT();
   const [presets, setPresets] = useState<P[]>([]);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function StudioReferencePicker() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-2.5">
-      <p className="mb-1.5 text-[11px] font-semibold text-foreground">Referencia de estilo (opcional)</p>
+      <p className="mb-1.5 text-[11px] font-semibold text-foreground">{t.studio.styleReferenceOptional}</p>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         <button
           type="button"
@@ -44,7 +46,7 @@ export function StudioReferencePicker() {
               : "border-border bg-card/50 text-muted-foreground hover:border-foreground/20"
           )}
         >
-          Ninguna
+          {t.studio.none}
         </button>
         {presets.map((p) => (
           <button

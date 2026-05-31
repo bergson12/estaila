@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { POI_TYPE_META, formatDistance, type PoiTypeKey } from "./poi-icons";
+import { useT } from "@/lib/i18n/provider";
+import type { Dict, Locale } from "@/lib/i18n/dictionary";
+import { POI_TYPE_META, formatDistance, poiLabel, type PoiTypeKey } from "./poi-icons";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -65,6 +67,7 @@ export function PropertyMap({
   variant = "full",
   className,
 }: PropertyMapProps) {
+  const { t, locale } = useT();
   const [selectedPoi, setSelectedPoi] = useState<POIData | null>(null);
   const mapRef = useRef<MapRef | null>(null);
 
@@ -128,9 +131,9 @@ export function PropertyMap({
       >
         <div>
           <MapPin className="mx-auto h-8 w-8 text-muted-foreground/60" />
-          <p className="mt-3 text-sm font-medium">Mapbox token no configurado</p>
+          <p className="mt-3 text-sm font-medium">{t.propDialogs.mapboxTokenMissing}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Define <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> en tu .env.local
+            {t.propDialogs.mapboxTokenHintPre} <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> {t.propDialogs.mapboxTokenHintPost}
           </p>
         </div>
       </div>
@@ -242,7 +245,7 @@ export function PropertyMap({
             maxWidth="320px"
             offset={28}
           >
-            <PoiPopupContent poi={selectedPoi} />
+            <PoiPopupContent poi={selectedPoi} t={t} locale={locale} />
           </Popup>
         )}
       </Map>
@@ -254,11 +257,11 @@ export function PropertyMap({
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
               <MapPin className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-sm font-semibold">Sin ubicación</p>
+            <p className="mt-3 text-sm font-semibold">{t.propDialogs.noLocation}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {editMode
-                ? "Haz click en el mapa para fijar la ubicación de esta propiedad."
-                : "Esta propiedad aún no tiene coordenadas en el mapa."}
+                ? t.propDialogs.clickMapToSetLocation
+                : t.propDialogs.noCoordsYet}
             </p>
           </div>
         </div>
@@ -272,7 +275,7 @@ export function PropertyMap({
           className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-2 text-xs font-medium shadow-lg ring-1 ring-border transition-colors hover:bg-secondary"
         >
           <Building2 className="h-3.5 w-3.5 text-primary" />
-          Centrar propiedad
+          {t.propDialogs.centerProperty}
         </button>
       )}
     </div>
@@ -283,7 +286,15 @@ export function PropertyMap({
 // POI POPUP CONTENT
 // ============================================================
 
-function PoiPopupContent({ poi }: { poi: POIData }) {
+function PoiPopupContent({
+  poi,
+  t,
+  locale,
+}: {
+  poi: POIData;
+  t: Dict;
+  locale: Locale;
+}) {
   const meta = POI_TYPE_META[poi.type as PoiTypeKey] ?? POI_TYPE_META.OTHER;
   const Icon = meta.icon;
   const color = poi.color || meta.color;
@@ -308,7 +319,7 @@ function PoiPopupContent({ poi }: { poi: POIData }) {
         <div className="min-w-0">
           <p className="text-sm font-semibold leading-tight">{poi.name}</p>
           <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-            {meta.label}
+            {poiLabel(poi.type, locale)}
           </p>
         </div>
       </div>
@@ -341,7 +352,7 @@ function PoiPopupContent({ poi }: { poi: POIData }) {
           rel="noopener noreferrer"
           className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
         >
-          Ver más
+          {t.propDialogs.seeMore}
           <ExternalLink className="h-3 w-3" />
         </a>
       )}
