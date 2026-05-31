@@ -19,6 +19,7 @@ async function fetchData(slug: string, propertyId: string) {
     where: { id: propertyId, userId: site.userId },
     include: {
       photos: { orderBy: { order: "asc" } },
+      pois: { orderBy: [{ pinned: "desc" }, { order: "asc" }] },
     },
   });
   if (!property) return null;
@@ -120,9 +121,28 @@ export default async function PortalPropertyPage({
     photos: photoUrls,
   };
 
+  // POIs reales (con coordenadas) para el mapa Mapbox de la landing.
+  const pois = data.property.pois
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      description: p.description,
+      url: p.url,
+      imageUrl: p.imageUrl,
+      lat: Number(p.lat),
+      lng: Number(p.lng),
+      distanceM: p.distanceM,
+      walkMinutes: p.walkMinutes,
+      carMinutes: p.carMinutes,
+      pinned: p.pinned,
+      color: p.color,
+    }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
   // Premium landing → heavy Cinematic (no mobile variant; cinematic is already responsive).
   if (data.property.premiumLanding) {
-    return <CinematicShowcase {...showcaseProps} />;
+    return <CinematicShowcase {...showcaseProps} pois={pois} />;
   }
   return (
     <>

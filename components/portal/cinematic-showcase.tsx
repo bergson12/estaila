@@ -38,6 +38,7 @@ import {
   useTransform,
 } from "motion/react";
 import Link from "next/link";
+import { PropertyMap, type POIData } from "@/components/properties/map/property-map";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -121,11 +122,13 @@ export function CinematicShowcase({
   agent,
   property,
   photos,
+  pois = [],
 }: {
   site: LuxurySite;
   agent: LuxuryAgent;
   property: LuxuryProperty;
   photos: string[];
+  pois?: POIData[];
 }) {
   // Amenities accept legacy string[] OR {key,custom}[] formats
   const rawAmenities = parseJSON<unknown[]>(property.amenities ?? null, []);
@@ -205,7 +208,7 @@ export function CinematicShowcase({
       {/* Always: gallery (universal value) */}
       <GalleryOverview photos={photos} property={property} />
 
-      {property.premiumLanding && <LocationMap property={property} />}
+      {property.premiumLanding && <LocationMap property={property} pois={pois} />}
       {property.premiumLanding && floorPlans.length > 0 && (
         <FloorPlanning floorPlans={floorPlans} property={property} />
       )}
@@ -1009,7 +1012,58 @@ function GalleryTile({
 // LOCATION MAP — aerial-style card with floating pins
 // ============================================================
 
-function LocationMap({ property }: { property: LuxuryProperty }) {
+function LocationMap({
+  property,
+  pois,
+}: {
+  property: LuxuryProperty;
+  pois: POIData[];
+}) {
+  // Mapa real (Mapbox) cuando hay coordenadas + token; si no, fallback estilizado.
+  const hasMap =
+    property.lat != null &&
+    property.lng != null &&
+    !!process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+  if (hasMap) {
+    return (
+      <section className="relative mx-auto max-w-[1440px] px-6 pb-28 lg:px-12 lg:pb-36">
+        <Reveal>
+          <div className="mb-6">
+            <p
+              className="text-[10px] uppercase tracking-[0.25em]"
+              style={{ color: PALETTE.fgMuted }}
+            >
+              Location
+            </p>
+            <p
+              className="mt-1"
+              style={{
+                fontFamily: "var(--font-cormorant), Georgia, serif",
+                fontSize: "clamp(22px, 3vw, 36px)",
+                fontWeight: 400,
+              }}
+            >
+              {property.location ?? property.address ?? "Premium location"}
+            </p>
+          </div>
+          <PropertyMap
+            property={{
+              id: property.id,
+              title: property.title,
+              lat: property.lat,
+              lng: property.lng,
+              location: property.location,
+            }}
+            pois={pois}
+            variant="full"
+            className="!rounded-3xl"
+          />
+        </Reveal>
+      </section>
+    );
+  }
+
   const nearby = parseJSON<{ key: string; distance: string }[]>(
     property.nearbyPois ?? null,
     []
