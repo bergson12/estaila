@@ -61,6 +61,7 @@ export function ensureLightweightMigrations(): Promise<void> {
     `ALTER TABLE "user" ADD COLUMN "agentBio" TEXT`,
     `ALTER TABLE "user" ADD COLUMN "isTester" BOOLEAN NOT NULL DEFAULT false`,
     `ALTER TABLE "user" ADD COLUMN "creditsResetAt" DATETIME`,
+    `ALTER TABLE "user" ADD COLUMN "locale" TEXT NOT NULL DEFAULT 'es'`,
     `ALTER TABLE "Transaction" ADD COLUMN "receiptUrl" TEXT`,
   ];
   migrationsPromise = (async () => {

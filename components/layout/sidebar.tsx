@@ -15,6 +15,8 @@ import {
   Shield,
 } from "lucide-react";
 import { NAV_GROUPS, ADMIN_NAV } from "./nav-config";
+import { useT } from "@/lib/i18n/provider";
+import { navLabel } from "@/lib/i18n/dictionary";
 import { cn, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -63,6 +65,7 @@ export function Sidebar({
   layoutMode?: "sidebar" | "topbar";
 }) {
   const pathname = usePathname();
+  const { t } = useT();
   const collapsed = useSidebarCollapsed((s) => s.collapsed);
   const setCollapsed = useSidebarCollapsed((s) => s.setCollapsed);
   const adminMode = pathname.startsWith("/admin");
@@ -80,7 +83,7 @@ export function Sidebar({
   }, [collapsed]);
 
   async function handleLogout() {
-    toast.success("Sesión cerrada");
+    toast.success(t.chrome.loggedOut);
     // signOutClean limpia sessionStorage + recarga dura → sin fuga de estado
     // (Studio pipeline, etc.) al siguiente usuario en la misma pestaña.
     await signOutClean();
@@ -162,10 +165,10 @@ export function Sidebar({
               </span>
               <span className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                 {adminMode
-                  ? "Control panel"
+                  ? t.chrome.controlPanel
                   : orgBrand
-                    ? "Equipo · CRM"
-                    : "CRM + Studio IA"}
+                    ? t.chrome.teamCRM
+                    : t.chrome.crmStudio}
               </span>
             </div>
           )}
@@ -183,17 +186,17 @@ export function Sidebar({
                 "group mb-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/15",
                 collapsed && "justify-center px-0"
               )}
-              title="Volver al CRM"
+              title={t.chrome.backToCRM}
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
-              {!collapsed && <span>Volver al CRM</span>}
+              {!collapsed && <span>{t.chrome.backToCRM}</span>}
             </Link>
             {ADMIN_NAV.map((item) => (
               <NavItem
                 key={item.href}
                 href={item.href}
                 icon={<item.icon className="h-4 w-4" strokeWidth={1.75} />}
-                label={item.label}
+                label={navLabel(t, item.href, item.label)}
                 active={
                   item.href === "/admin"
                     ? pathname === "/admin"
@@ -206,10 +209,10 @@ export function Sidebar({
         ) : (
           <>
             {NAV_GROUPS.map((group, gi) => (
-              <div key={group.label} className={cn(gi > 0 && "mt-4")}>
+              <div key={group.key} className={cn(gi > 0 && "mt-4")}>
                 {!collapsed && (
                   <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-                    {group.label}
+                    {t.groups[group.key] ?? group.label}
                   </p>
                 )}
                 <div className="space-y-0.5">
@@ -220,7 +223,7 @@ export function Sidebar({
                         key={item.href}
                         href={item.href}
                         icon={<item.icon className="h-4 w-4" strokeWidth={1.75} />}
-                        label={item.label}
+                        label={navLabel(t, item.href, item.label)}
                         active={isActive(pathname, item.href)}
                         collapsed={collapsed}
                         featured={isStudio}
@@ -235,13 +238,13 @@ export function Sidebar({
               <div className="mt-4">
                 {!collapsed && (
                   <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
-                    Sistema
+                    {t.groups.sistema}
                   </p>
                 )}
                 <NavItem
                   href="/admin"
                   icon={<Shield className="h-4 w-4" strokeWidth={1.75} />}
-                  label="Panel admin"
+                  label={t.chrome.adminPanel}
                   active={false}
                   collapsed={collapsed}
                   admin
@@ -262,7 +265,7 @@ export function Sidebar({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <CreditCard className="h-3.5 w-3.5" />
-                Créditos IA
+                {t.chrome.creditsAI}
               </div>
               <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
                 {user.plan}
@@ -272,7 +275,7 @@ export function Sidebar({
               <span className="font-mono text-2xl font-bold tabular-nums">
                 {user.credits}
               </span>
-              <span className="text-xs text-muted-foreground">restantes</span>
+              <span className="text-xs text-muted-foreground">{t.chrome.remaining}</span>
             </div>
           </Link>
         )}
@@ -327,7 +330,7 @@ export function Sidebar({
                   <DropdownMenuItem asChild>
                     <Link href="/inicio">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Cambiar a CRM
+                      {t.chrome.switchToCRM}
                     </Link>
                   </DropdownMenuItem>
                 ) : (
@@ -337,7 +340,7 @@ export function Sidebar({
                       className="text-amber-600 focus:text-amber-600"
                     >
                       <Shield className="mr-2 h-4 w-4" />
-                      Panel admin
+                      {t.chrome.adminPanel}
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -347,13 +350,13 @@ export function Sidebar({
             <DropdownMenuItem asChild>
               <Link href="/settings">
                 <Settings className="mr-2 h-4 w-4" />
-                Configuración
+                {t.chrome.settingsItem}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/pricing">
                 <CreditCard className="mr-2 h-4 w-4" />
-                Plan y créditos
+                {t.chrome.planCredits}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -362,7 +365,7 @@ export function Sidebar({
               className="text-destructive focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Cerrar sesión
+              {t.chrome.logout}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -40,6 +40,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useT } from "@/lib/i18n/provider";
+import { navLabel } from "@/lib/i18n/dictionary";
 
 type Item = { label: string; href: string; icon: LucideIcon };
 
@@ -64,6 +66,7 @@ function active(pathname: string, href: string) {
 
 export function MobileTabBar({ role }: { role?: string }) {
   const pathname = usePathname();
+  const { t } = useT();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const items: Item[] =
@@ -78,10 +81,15 @@ export function MobileTabBar({ role }: { role?: string }) {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="mx-auto flex max-w-md items-stretch justify-around px-1">
-          <Tab href="/inicio" label="Inicio" icon={Home} activePath={pathname} />
+          <Tab
+            href="/inicio"
+            label={navLabel(t, "/inicio", "Inicio")}
+            icon={Home}
+            activePath={pathname}
+          />
           <Tab
             href="/propiedades"
-            label="Propiedades"
+            label={navLabel(t, "/propiedades", "Propiedades")}
             icon={Building2}
             activePath={pathname}
           />
@@ -106,12 +114,12 @@ export function MobileTabBar({ role }: { role?: string }) {
                   : "text-muted-foreground"
               )}
             >
-              Studio
+              {t.chrome.studio}
             </span>
           </Link>
           <Tab
             href="/contactos"
-            label="Contactos"
+            label={navLabel(t, "/contactos", "Contactos")}
             icon={Users}
             activePath={pathname}
           />
@@ -124,7 +132,7 @@ export function MobileTabBar({ role }: { role?: string }) {
             )}
           >
             <Menu className="h-5 w-5" strokeWidth={1.75} />
-            Más
+            {t.chrome.more}
           </button>
         </div>
       </nav>
@@ -135,7 +143,7 @@ export function MobileTabBar({ role }: { role?: string }) {
           className="rounded-t-2xl border-border pb-[calc(env(safe-area-inset-bottom)+1rem)]"
         >
           <SheetHeader className="text-left">
-            <SheetTitle className="text-base">Menú</SheetTitle>
+            <SheetTitle className="text-base">{t.chrome.menu}</SheetTitle>
           </SheetHeader>
           <div className="mt-3 grid grid-cols-4 gap-2">
             {items.map((it) => {
@@ -155,7 +163,7 @@ export function MobileTabBar({ role }: { role?: string }) {
                 >
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                   <span className="text-[10px] font-medium leading-tight">
-                    {it.label}
+                    {navLabel(t, it.href, it.label)}
                   </span>
                 </Link>
               );

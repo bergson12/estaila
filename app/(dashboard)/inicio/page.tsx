@@ -14,11 +14,13 @@ import { NumberTicker } from "@/components/shared/number-ticker";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  const [t, locale] = await Promise.all([getDict(), getLocale()]);
 
   const [
     onboardingStatus,
@@ -89,9 +91,9 @@ export default async function DashboardPage() {
 
   const greeting = (() => {
     const h = new Date().getHours();
-    if (h < 12) return "Buenos días";
-    if (h < 19) return "Buenas tardes";
-    return "Buenas noches";
+    if (h < 12) return t.home.greetingMorning;
+    if (h < 19) return t.home.greetingAfternoon;
+    return t.home.greetingEvening;
   })();
   const firstName = user.name.split(" ")[0];
   const balance =
@@ -110,14 +112,14 @@ export default async function DashboardPage() {
               <Sparkles className="h-4 w-4" strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold">Termina tu setup</p>
+              <p className="text-sm font-semibold">{t.home.setupTitle}</p>
               <p className="text-xs text-muted-foreground">
-                4 pasos rápidos · perfil, primera propiedad, Studio IA, portal listo
+                {t.home.setupSteps}
               </p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary transition-transform group-hover:translate-x-0.5">
-            Continuar
+            {t.home.continue}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
           </span>
         </Link>
@@ -142,11 +144,14 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {new Date().toLocaleDateString("es-ES", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
+                {new Date().toLocaleDateString(
+                  locale === "en" ? "en-US" : "es-ES",
+                  {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  }
+                )}
               </p>
               <h1 className="mt-2 text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.025em] sm:text-5xl md:text-6xl">
                 {greeting},{" "}
@@ -164,16 +169,17 @@ export default async function DashboardPage() {
                 </span>
               </h1>
               <p className="mt-3 max-w-[60ch] text-sm text-muted-foreground sm:text-base">
-                Hoy tienes{" "}
+                {t.home.heroPrefix}{" "}
                 <strong className="text-foreground">{todayAppts.length}</strong>{" "}
-                {todayAppts.length === 1 ? "cita" : "citas"} y{" "}
+                {todayAppts.length === 1 ? t.home.apptSingular : t.home.apptPlural}{" "}
+                {t.home.heroAnd}{" "}
                 <strong className="text-foreground">
                   {pendingPipeline._count}
                 </strong>{" "}
                 {pendingPipeline._count === 1
-                  ? "deal en pipeline"
-                  : "deals en pipeline"}
-                . Buen momento para enseñar propiedades.
+                  ? t.home.dealSingular
+                  : t.home.dealPlural}
+                . {t.home.heroSuffix}
               </p>
             </div>
 
@@ -183,14 +189,14 @@ export default async function DashboardPage() {
                 className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-medium transition-all hover:border-primary/40 hover:bg-card/60 active:scale-[0.98]"
               >
                 <Sparkles className="h-4 w-4 text-primary" />
-                Studio IA
+                {t.nav["/studio"]}
               </Link>
               <Link
                 href="/propiedades/nueva"
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-ink-foreground transition-all hover:opacity-90 active:scale-[0.98]"
               >
                 <Plus className="h-4 w-4" />
-                Nueva propiedad
+                {t.home.newProperty}
               </Link>
             </div>
           </div>
@@ -198,28 +204,28 @@ export default async function DashboardPage() {
           {/* Hero KPI strip — Arto+ style large numeric */}
           <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
             <HeroKpi
-              label="Propiedades"
+              label={t.home.kpiProperties}
               numeric={propsCount}
-              sub={`${activeProps} activas`}
+              sub={`${activeProps} ${t.home.activeWord}`}
               icon={<Building2 className="h-3.5 w-3.5" />}
             />
             <HeroKpi
-              label="Citas próximas"
+              label={t.home.kpiAppointments}
               numeric={todayAppts.length}
-              sub="Pendientes + en curso"
+              sub={t.home.pendingInProgress}
               icon={<Calendar className="h-3.5 w-3.5" />}
             />
             <HeroKpi
-              label="Pipeline activo"
+              label={t.home.kpiPipeline}
               numeric={pendingPipeline._count}
-              sub={`Potencial ${formatCurrency(
+              sub={`${t.home.potential} ${formatCurrency(
                 Number(pendingPipeline._sum.value ?? 0)
               )}`}
               icon={<TrendingUp className="h-3.5 w-3.5" />}
               accent="primary"
             />
             <HeroKpi
-              label="Balance del mes"
+              label={t.home.monthBalance}
               value={formatCurrency(balance)}
               sub={`+${formatCurrency(
                 Number(monthIncome._sum.amount ?? 0)
@@ -239,14 +245,14 @@ export default async function DashboardPage() {
         <Card className="rounded-2xl border-border lg:col-span-2 p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Agenda</h2>
-              <p className="text-xs text-muted-foreground">Próximas citas</p>
+              <h2 className="text-base font-semibold tracking-tight">{t.home.agenda}</h2>
+              <p className="text-xs text-muted-foreground">{t.home.upcomingAppointments}</p>
             </div>
             <Link
               href="/agenda"
               className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80"
             >
-              Ver todo
+              {t.home.seeAll}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -255,16 +261,16 @@ export default async function DashboardPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium">Sin citas próximas</p>
+              <p className="text-sm font-medium">{t.home.noAppts}</p>
               <p className="max-w-[28ch] text-xs text-muted-foreground">
-                Agenda visitas con tus clientes para llenar tu semana.
+                {t.home.noApptsHint}
               </p>
               <Link
                 href="/agenda"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-medium text-ink-foreground transition-opacity hover:opacity-90"
               >
                 <Plus className="h-3 w-3" />
-                Nueva cita
+                {t.home.newAppt}
               </Link>
             </div>
           ) : (
@@ -292,7 +298,7 @@ export default async function DashboardPage() {
                         : "rounded-full"
                     }
                   >
-                    {a.status === "EN_CURSO" ? "En curso" : "Pendiente"}
+                    {a.status === "EN_CURSO" ? t.home.inProgress : t.home.pending}
                   </Badge>
                 </li>
               ))}
@@ -304,14 +310,14 @@ export default async function DashboardPage() {
         <Card className="rounded-2xl border-border p-6">
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Recientes</h2>
-              <p className="text-xs text-muted-foreground">Últimas propiedades</p>
+              <h2 className="text-base font-semibold tracking-tight">{t.home.recent}</h2>
+              <p className="text-xs text-muted-foreground">{t.home.recentProperties}</p>
             </div>
             <Link
               href="/propiedades"
               className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80"
             >
-              Ver todo
+              {t.home.seeAll}
               <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -320,16 +326,16 @@ export default async function DashboardPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
                 <Building2 className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium">Sin propiedades aún</p>
+              <p className="text-sm font-medium">{t.home.noProps}</p>
               <p className="max-w-[24ch] text-xs text-muted-foreground">
-                Empieza creando tu primera propiedad.
+                {t.home.noPropsHint}
               </p>
               <Link
                 href="/propiedades/nueva"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-medium text-ink-foreground transition-opacity hover:opacity-90"
               >
                 <Plus className="h-3 w-3" />
-                Crear
+                {t.home.create}
               </Link>
             </div>
           ) : (

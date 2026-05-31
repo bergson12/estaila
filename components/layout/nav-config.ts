@@ -29,10 +29,11 @@ import {
 } from "lucide-react";
 
 export type NavItemDef = { label: string; href: string; icon: LucideIcon };
-export type NavGroup = { label: string; items: readonly NavItemDef[] };
+export type NavGroup = { key: string; label: string; items: readonly NavItemDef[] };
 
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
+    key: "principal",
     label: "Principal",
     items: [
       { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
@@ -43,6 +44,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    key: "herramientas",
     label: "Herramientas",
     items: [
       { label: "Asistente IA", href: "/asistente", icon: Bot },
@@ -52,6 +54,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     ],
   },
   {
+    key: "negocio",
     label: "Negocio",
     items: [
       { label: "Finanzas", href: "/finanzas", icon: Wallet },

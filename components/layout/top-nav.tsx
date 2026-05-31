@@ -45,6 +45,8 @@ import { NotificationBell } from "./notification-bell";
 import { signOutClean } from "@/lib/auth-client";
 import { cn, initials } from "@/lib/utils";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/provider";
+import { navLabel } from "@/lib/i18n/dictionary";
 
 type NavUser = {
   name: string;
@@ -101,6 +103,7 @@ export function TopNav({
   layoutMode?: "sidebar" | "topbar";
 }) {
   const pathname = usePathname();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const adminMode = pathname.startsWith("/admin");
   const orgBrand = !adminMode && branding ? branding : null;
@@ -119,7 +122,7 @@ export function TopNav({
   }, []);
 
   async function handleLogout() {
-    toast.success("Sesión cerrada");
+    toast.success(t.chrome.loggedOut);
     // signOutClean limpia sessionStorage + recarga dura → sin fuga de estado
     // (Studio pipeline, etc.) al siguiente usuario en la misma pestaña.
     await signOutClean();
@@ -183,10 +186,10 @@ export function TopNav({
               </span>
               <span className="mt-0.5 hidden text-[10px] uppercase tracking-wider text-muted-foreground sm:block">
                 {adminMode
-                  ? "Control panel"
+                  ? t.chrome.controlPanel
                   : orgBrand
-                    ? "Equipo"
-                    : "CRM + Studio IA"}
+                    ? t.chrome.team
+                    : t.chrome.crmStudio}
               </span>
             </div>
           </Link>
@@ -197,14 +200,14 @@ export function TopNav({
             className="group hidden h-10 flex-1 max-w-md items-center gap-2.5 rounded-full border border-border bg-card/50 px-4 text-left text-sm text-muted-foreground transition-all hover:border-border hover:bg-card md:flex"
           >
             <Search className="h-3.5 w-3.5 shrink-0" />
-            <span className="flex-1">Buscar propiedad, contacto, página...</span>
+            <span className="flex-1">{t.chrome.searchLong}</span>
           </button>
 
           {/* Right actions */}
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => setOpen(true)}
-              aria-label="Buscar"
+              aria-label={t.chrome.search}
               className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
             >
               <Search className="h-4 w-4" />
@@ -219,7 +222,7 @@ export function TopNav({
                 {user.credits}
               </span>
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                créditos
+                {t.chrome.credits}
               </span>
             </Link>
 
@@ -261,7 +264,7 @@ export function TopNav({
                     )}
                     strokeWidth={1.75}
                   />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">{navLabel(t, item.href, item.label)}</span>
                   {active && (
                     <motion.span
                       layoutId="topnav-underline"
@@ -290,9 +293,9 @@ export function TopNav({
                   )}
                 >
                   <Sparkles className="h-3.5 w-3.5 text-primary" strokeWidth={1.75} />
-                  Studio
+                  {t.chrome.studio}
                   <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary">
-                    IA
+                    {t.chrome.studioBadge}
                   </span>
                 </Link>
                 <Link
@@ -306,7 +309,7 @@ export function TopNav({
                   )}
                 >
                   <Globe className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  <span className="font-medium">Mi Sitio</span>
+                  <span className="font-medium">{navLabel(t, "/sitio", "Mi Sitio")}</span>
                 </Link>
                 <Link
                   href="/empresa"
@@ -319,7 +322,7 @@ export function TopNav({
                   )}
                 >
                   <Briefcase className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  <span className="font-medium">Empresa</span>
+                  <span className="font-medium">{navLabel(t, "/empresa", "Mi Empresa")}</span>
                 </Link>
 
                 {user.role === "ADMIN" && (
@@ -347,7 +350,7 @@ export function TopNav({
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/15"
                 >
                   <ArrowLeft className="h-3 w-3" />
-                  Volver al CRM
+                  {t.chrome.backToCRM}
                 </Link>
               </>
             )}
@@ -375,11 +378,12 @@ function UserMenu({
   adminMode: boolean;
   layoutMode: "sidebar" | "topbar";
 }) {
+  const { t } = useT();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label="Tu cuenta"
+          aria-label={t.chrome.account}
           className="flex items-center gap-1.5 rounded-full border border-border bg-card/40 p-0.5 pr-2 transition-colors hover:bg-card"
         >
           <Avatar className="h-8 w-8 ring-1 ring-border">
@@ -427,7 +431,7 @@ function UserMenu({
               <DropdownMenuItem asChild>
                 <Link href="/inicio">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Cambiar a CRM
+                  {t.chrome.switchToCRM}
                 </Link>
               </DropdownMenuItem>
             ) : (
@@ -437,7 +441,7 @@ function UserMenu({
                   className="text-amber-600 focus:text-amber-600"
                 >
                   <Shield className="mr-2 h-4 w-4" />
-                  Panel admin
+                  {t.chrome.adminPanel}
                 </Link>
               </DropdownMenuItem>
             )}
@@ -447,13 +451,13 @@ function UserMenu({
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <Settings className="mr-2 h-4 w-4" />
-            Configuración
+            {t.chrome.settingsItem}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/pricing">
             <CreditCard className="mr-2 h-4 w-4" />
-            Plan y créditos
+            {t.chrome.planCredits}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -462,7 +466,7 @@ function UserMenu({
           className="text-destructive focus:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Cerrar sesión
+          {t.chrome.logout}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

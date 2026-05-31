@@ -17,6 +17,8 @@ import { MobileNav } from "./mobile-nav";
 import { NotificationBell } from "./notification-bell";
 import { useSidebarCollapsed } from "@/lib/stores/sidebar-collapsed";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
+import type { Dict } from "@/lib/i18n/dictionary";
 
 type TopbarUser = {
   name: string;
@@ -33,29 +35,6 @@ type OrgBrand = {
   secondaryColor: string;
 } | null;
 
-const SEGMENTS: Record<string, string> = {
-  "": "Dashboard",
-  propiedades: "Propiedades",
-  agenda: "Agenda",
-  contactos: "Contactos",
-  pipeline: "Pipeline",
-  marketing: "Marketing",
-  finanzas: "Finanzas",
-  studio: "Studio IA",
-  sitio: "Mi Sitio",
-  nueva: "Nueva",
-  pricing: "Plan y créditos",
-  settings: "Configuración",
-  staging: "Virtual Staging",
-  declutter: "Eliminar Objetos",
-  enhance: "Mejorar Calidad",
-  style: "Cambiar Estilo",
-  sky: "Cielo Despejado",
-  twilight: "Atardecer",
-  pool: "Piscina",
-  lawn: "Césped",
-};
-
 /** Detecta segmentos que son IDs (cuid/uuid/hash) para no mostrarlos crudos. */
 function isIdLike(slug: string): boolean {
   return (
@@ -65,9 +44,13 @@ function isIdLike(slug: string): boolean {
   );
 }
 
-function humanize(slug: string) {
-  if (SEGMENTS[slug] !== undefined) return SEGMENTS[slug];
-  if (isIdLike(slug)) return "Detalle";
+/** Traduce un segmento de ruta para la miga de pan (nav → breadcrumb → capitaliza). */
+function humanize(t: Dict, slug: string) {
+  const nav = t.nav["/" + slug];
+  if (nav) return nav;
+  const bc = t.breadcrumb[slug];
+  if (bc) return bc;
+  if (isIdLike(slug)) return t.breadcrumb.detalle;
   return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
@@ -79,6 +62,7 @@ export function Topbar({
   branding?: OrgBrand;
 } = {}) {
   const pathname = usePathname();
+  const { t } = useT();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -108,7 +92,7 @@ export function Topbar({
           <Link
             href="/inicio"
             className="flex shrink-0 items-center text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Home"
+            aria-label={t.chrome.home}
           >
             <Home className="h-3.5 w-3.5" />
           </Link>
@@ -121,13 +105,13 @@ export function Topbar({
                 <span key={href} className="flex min-w-0 items-center gap-1.5">
                   <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
                   {isLast ? (
-                    <span className="truncate font-medium">{humanize(p)}</span>
+                    <span className="truncate font-medium">{humanize(t, p)}</span>
                   ) : (
                     <Link
                       href={href}
                       className="truncate text-muted-foreground transition-colors hover:text-foreground"
                     >
-                      {humanize(p)}
+                      {humanize(t, p)}
                     </Link>
                   )}
                 </span>
@@ -138,7 +122,7 @@ export function Topbar({
           {parts.length > 0 && (
             <span className="ml-1 flex min-w-0 items-center gap-1 text-sm font-medium sm:hidden">
               <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-              <span className="truncate">{humanize(mobileTitleSlug)}</span>
+              <span className="truncate">{humanize(t, mobileTitleSlug)}</span>
             </span>
           )}
         </nav>
@@ -150,7 +134,7 @@ export function Topbar({
             className="hidden h-9 w-72 items-center gap-2.5 rounded-lg border border-border bg-card/50 px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground md:flex"
           >
             <Search className="h-3.5 w-3.5" />
-            <span className="flex-1">Buscar...</span>
+            <span className="flex-1">{t.chrome.search}</span>
           </button>
           <Button
             variant="ghost"

@@ -15,6 +15,8 @@ import { TesterFab } from "@/components/tester/tester-fab";
 import { ActiveAppointmentBanner } from "@/components/agenda/active-appointment-banner";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 import { ensureFreeMonthlyCredits } from "@/lib/plan-limits";
+import { getLocale } from "@/lib/i18n/server";
+import { I18nProvider } from "@/lib/i18n/provider";
 
 // Server actions invoked from this segment inherit this cap.
 // Set to 60 — the Vercel Hobby ceiling — so AI tools can run free.
@@ -26,7 +28,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
-  const [dbUser, settings, layoutMode] = await Promise.all([
+  const [dbUser, settings, layoutMode, locale] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       select: {
@@ -43,6 +45,7 @@ export default async function DashboardLayout({
     }),
     getAppSettings(),
     getLayoutMode(),
+    getLocale(),
   ]);
 
   const sidebarUser = dbUser ?? {
@@ -77,6 +80,7 @@ export default async function DashboardLayout({
   const isTopbar = layoutMode === "topbar";
 
   return (
+    <I18nProvider locale={locale}>
     <div
       data-layout={layoutMode}
       className="relative flex min-h-screen flex-col bg-background"
@@ -149,5 +153,6 @@ export default async function DashboardLayout({
       <ActiveAppointmentBanner />
       {sidebarUser.isTester && <TesterFab />}
     </div>
+    </I18nProvider>
   );
 }
