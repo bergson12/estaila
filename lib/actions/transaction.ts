@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth-server";
 import { prisma, ensureLightweightMigrations } from "@/lib/db";
 import { isTrustedStorageUrl } from "@/lib/storage";
 import { extractReceipt, type ReceiptData } from "@/lib/ai/gemini-receipt";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export type TransactionInput = {
   concept: string;
@@ -72,6 +73,14 @@ export async function scanReceipt(imageUrl: string): Promise<
     return {
       ok: false,
       error: `Necesitas ${OCR_COST} crédito para escanear. Tienes ${dbUser?.credits ?? 0}.`,
+    };
+  }
+
+  // Rate-limit: 20 escaneos por minuto por usuario.
+  if (!(await checkRateLimit(`ocr:${user.id}`, 20, 60))) {
+    return {
+      ok: false,
+      error: "Demasiados escaneos seguidos. Espera unos segundos e intenta de nuevo.",
     };
   }
 

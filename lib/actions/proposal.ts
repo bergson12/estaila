@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-server";
 import { prisma, ensureLightweightMigrations } from "@/lib/db";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   generateProposalContent,
   type ProposalContent,
@@ -32,6 +33,14 @@ export async function generateProposal(
     return {
       ok: false,
       error: "El generador de IA no está configurado (DEEPSEEK_API_KEY).",
+    };
+  }
+
+  // Rate-limit: evita abuso de costo (DeepSeek) — 15 generaciones por minuto.
+  if (!(await checkRateLimit(`proposal:${user.id}`, 15, 60))) {
+    return {
+      ok: false,
+      error: "Demasiadas generaciones seguidas. Espera un momento e intenta de nuevo.",
     };
   }
 
