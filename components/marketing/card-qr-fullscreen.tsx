@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -30,7 +31,9 @@ export function CardQrFullscreen({
   avatarUrl: string | null;
   primaryColor: string;
 }) {
-  if (!open) return null;
+  // Portal a document.body: el overlay `fixed` debe escapar el ancestro con
+  // transform/overflow-hidden de la tarjeta (si no, queda recortado dentro).
+  if (!open || typeof document === "undefined") return null;
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://estaila.com";
@@ -43,7 +46,7 @@ export function CardQrFullscreen({
     .join("")
     .toUpperCase();
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -98,6 +101,7 @@ export function CardQrFullscreen({
           {host}/c/{slug}
         </p>
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
