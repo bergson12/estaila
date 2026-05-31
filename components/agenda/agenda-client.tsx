@@ -93,6 +93,7 @@ import {
   updateAppointmentStatus,
 } from "@/lib/actions/appointment";
 import { AppointmentDetailDialog } from "./appointment-detail-dialog";
+import { useT } from "@/lib/i18n/provider";
 
 type Appointment = {
   id: string;
@@ -143,6 +144,20 @@ const STATUS_META: Record<
   },
 };
 
+/** Etiqueta i18n del estado de la cita (los `label` de STATUS_META quedan como fallback). */
+function statusLabel(
+  t: ReturnType<typeof useT>["t"],
+  status: string
+): string {
+  const map: Record<string, string> = {
+    PENDIENTE: t.agenda.statusPending,
+    EN_CURSO: t.agenda.statusInProgress,
+    COMPLETADO: t.agenda.statusCompleted,
+    CANCELADO: t.agenda.statusCancelled,
+  };
+  return map[status] ?? STATUS_META[status]?.label ?? status;
+}
+
 export function AgendaClient({
   appointments,
   properties,
@@ -150,6 +165,7 @@ export function AgendaClient({
   appointments: Appointment[];
   properties: { id: string; title: string }[];
 }) {
+  const { t } = useT();
   const [view, setView] = useState<View>("week");
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -234,17 +250,17 @@ export function AgendaClient({
         <Card className="overflow-hidden p-0">
           <div className="border-b border-border bg-gradient-to-br from-primary/5 to-transparent p-4">
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Resumen
+              {t.agenda.summary}
             </p>
             <p className="mt-1 font-mono text-3xl font-bold tabular-nums">
               {stats.today}
             </p>
-            <p className="text-xs text-muted-foreground">citas hoy</p>
+            <p className="text-xs text-muted-foreground">{t.agenda.appointmentsToday}</p>
           </div>
           <div className="grid grid-cols-3 divide-x divide-border">
-            <StatCell label="Pendientes" value={stats.pending} color="blue" />
-            <StatCell label="En curso" value={stats.inProgress} color="amber" />
-            <StatCell label="Semana" value={stats.thisWeek} color="emerald" />
+            <StatCell label={t.agenda.statPending} value={stats.pending} color="blue" />
+            <StatCell label={t.agenda.statInProgress} value={stats.inProgress} color="amber" />
+            <StatCell label={t.agenda.statWeek} value={stats.thisWeek} color="emerald" />
           </div>
         </Card>
 
@@ -266,7 +282,7 @@ export function AgendaClient({
             onClick={() => openNew(selectedDate ?? new Date())}
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nueva cita
+            {t.agenda.newAppointment}
           </Button>
         </Card>
 
@@ -274,13 +290,13 @@ export function AgendaClient({
         <Card className="p-4">
           <p className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             <Filter className="h-3 w-3" />
-            Filtros
+            {t.agenda.filters}
           </p>
 
           <div className="space-y-3">
             <div>
               <p className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                Estado
+                {t.agenda.statusLabel}
               </p>
               <div className="grid grid-cols-2 gap-1.5">
                 {(["PENDIENTE", "EN_CURSO", "COMPLETADO", "CANCELADO"] as const).map(
@@ -301,7 +317,7 @@ export function AgendaClient({
                         )}
                       >
                         <Icon className="h-3 w-3 shrink-0" strokeWidth={1.75} />
-                        <span className="truncate">{meta.label}</span>
+                        <span className="truncate">{statusLabel(t, s)}</span>
                       </button>
                     );
                   }
@@ -311,14 +327,14 @@ export function AgendaClient({
 
             <div>
               <p className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                Propiedad
+                {t.agenda.propertyLabel}
               </p>
               <Select value={filterProperty} onValueChange={setFilterProperty}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Todas las propiedades</SelectItem>
+                  <SelectItem value="ALL">{t.agenda.allProperties}</SelectItem>
                   {properties.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.title}
@@ -339,7 +355,7 @@ export function AgendaClient({
                 }}
               >
                 <RefreshCcw className="mr-1 h-3 w-3" />
-                Limpiar filtros
+                {t.agenda.clearFilters}
               </Button>
             )}
           </div>
@@ -352,7 +368,7 @@ export function AgendaClient({
               <Bell className="h-3 w-3 text-primary" />
               {selectedDate && isSameMonth(selectedDate, currentMonth)
                 ? format(selectedDate, "EEEE d 'de' MMM", { locale: es })
-                : "Próximas"}
+                : t.agenda.upcoming}
             </p>
           </div>
           <PendingSidebarList
@@ -371,22 +387,22 @@ export function AgendaClient({
             {/* Primary: timeline pill */}
             <div className="inline-flex items-center rounded-full border border-border bg-card/60 p-1 text-xs shadow-sm">
               <TimelineTab
-                label="Día"
+                label={t.agenda.viewDay}
                 active={view === "day"}
                 onClick={() => setView("day")}
               />
               <TimelineTab
-                label="Semana"
+                label={t.agenda.viewWeek}
                 active={view === "week"}
                 onClick={() => setView("week")}
               />
               <TimelineTab
-                label="Mes"
+                label={t.agenda.viewMonth}
                 active={view === "month"}
                 onClick={() => setView("month")}
               />
               <TimelineTab
-                label="Año"
+                label={t.agenda.viewYear}
                 active={view === "year"}
                 onClick={() => setView("year")}
               />
@@ -396,13 +412,13 @@ export function AgendaClient({
             <div className="hidden items-center gap-1 rounded-lg border border-border bg-card/50 p-1 sm:flex">
               <ViewTab
                 icon={LayoutList}
-                label="Lista"
+                label={t.agenda.viewList}
                 active={view === "list"}
                 onClick={() => setView("list")}
               />
               <ViewTab
                 icon={KanbanSquare}
-                label="Kanban"
+                label={t.agenda.viewKanban}
                 active={view === "kanban"}
                 onClick={() => setView("kanban")}
               />
@@ -414,7 +430,7 @@ export function AgendaClient({
             className="bg-gradient-to-r from-primary to-primary/85"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Nueva cita
+            {t.agenda.newAppointment}
           </Button>
         </div>
 
@@ -634,6 +650,7 @@ function MiniCalendar({
   onNavigate: (d: Date) => void;
   events: Appointment[];
 }) {
+  const { t } = useT();
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -645,6 +662,16 @@ function MiniCalendar({
     days.push(d);
     d = addDays(d, 1);
   }
+
+  const weekdayInitials = [
+    t.agenda.weekdayInitialMon,
+    t.agenda.weekdayInitialTue,
+    t.agenda.weekdayInitialWed,
+    t.agenda.weekdayInitialThu,
+    t.agenda.weekdayInitialFri,
+    t.agenda.weekdayInitialSat,
+    t.agenda.weekdayInitialSun,
+  ];
 
   const dayEvents = (day: Date) =>
     events.filter((e) => isSameDay(new Date(e.startAt), day));
@@ -675,9 +702,9 @@ function MiniCalendar({
         </div>
       </div>
       <div className="grid grid-cols-7 gap-0.5">
-        {["L", "M", "X", "J", "V", "S", "D"].map((dow) => (
+        {weekdayInitials.map((dow, i) => (
           <div
-            key={dow}
+            key={i}
             className="py-1 text-center text-[9px] uppercase tracking-wider text-muted-foreground"
           >
             {dow}
@@ -741,6 +768,7 @@ function MonthView({
   items: Appointment[];
   onCreate: (date?: Date) => void;
 }) {
+  const { t } = useT();
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -752,6 +780,16 @@ function MonthView({
     days.push(d);
     d = addDays(d, 1);
   }
+
+  const weekdayNames = [
+    t.agenda.weekdayMon,
+    t.agenda.weekdayTue,
+    t.agenda.weekdayWed,
+    t.agenda.weekdayThu,
+    t.agenda.weekdayFri,
+    t.agenda.weekdaySat,
+    t.agenda.weekdaySun,
+  ];
 
   const dayEvents = (day: Date) =>
     items
@@ -767,7 +805,7 @@ function MonthView({
       <div className="flex items-center justify-between border-b border-border bg-card/50 px-5 py-4">
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Mes
+            {t.agenda.viewMonth}
           </p>
           <h2 className="text-xl font-bold capitalize">
             {format(month, "MMMM yyyy", { locale: es })}
@@ -779,7 +817,7 @@ function MonthView({
             size="sm"
             onClick={() => onNavigate(new Date())}
           >
-            Hoy
+            {t.agenda.today}
           </Button>
           <Button
             variant="outline"
@@ -802,17 +840,15 @@ function MonthView({
 
       {/* Days of week header */}
       <div className="grid grid-cols-7 border-b border-border bg-muted/30">
-        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map(
-          (dow) => (
-            <div
-              key={dow}
-              className="py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              <span className="hidden sm:inline">{dow}</span>
-              <span className="sm:hidden">{dow.slice(0, 3)}</span>
-            </div>
-          )
-        )}
+        {weekdayNames.map((dow) => (
+          <div
+            key={dow}
+            className="py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+          >
+            <span className="hidden sm:inline">{dow}</span>
+            <span className="sm:hidden">{dow.slice(0, 3)}</span>
+          </div>
+        ))}
       </div>
 
       {/* Grid */}
@@ -856,7 +892,7 @@ function MonthView({
                 ))}
                 {evs.length > 3 && (
                   <p className="px-1 text-[9px] text-muted-foreground">
-                    +{evs.length - 3} más
+                    +{evs.length - 3} {t.agenda.more}
                   </p>
                 )}
               </div>
@@ -869,7 +905,7 @@ function MonthView({
                     onCreate(day);
                   }}
                   className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-primary/15 group-hover:opacity-100"
-                  title="Crear cita"
+                  title={t.agenda.createAppointment}
                 >
                   <Plus className="h-3 w-3" />
                 </button>
@@ -913,13 +949,14 @@ function ListView({
   onCreate: () => void;
   onItemClick?: (a: Appointment) => void;
 }) {
+  const { t } = useT();
   // Group by buckets
   const groups: { label: string; items: Appointment[] }[] = [
-    { label: "Hoy", items: [] },
-    { label: "Mañana", items: [] },
-    { label: "Esta semana", items: [] },
-    { label: "Próximas", items: [] },
-    { label: "Pasadas", items: [] },
+    { label: t.agenda.groupToday, items: [] },
+    { label: t.agenda.groupTomorrow, items: [] },
+    { label: t.agenda.groupThisWeek, items: [] },
+    { label: t.agenda.groupUpcoming, items: [] },
+    { label: t.agenda.groupPast, items: [] },
   ];
 
   for (const a of items) {
@@ -935,12 +972,12 @@ function ListView({
     return (
       <EmptyState
         icon={CalendarDays}
-        title="Sin citas"
-        description="No hay citas con los filtros seleccionados."
+        title={t.agenda.emptyTitle}
+        description={t.agenda.emptyFilteredDescription}
         action={
           <Button onClick={onCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Nueva cita
+            {t.agenda.newAppointment}
           </Button>
         }
       />
@@ -979,11 +1016,12 @@ function ListView({
 // ============================================================
 
 function KanbanView({ items }: { items: Appointment[] }) {
+  const { t } = useT();
   const columns = [
-    { key: "PENDIENTE", label: "Pendiente" },
-    { key: "EN_CURSO", label: "En curso" },
-    { key: "COMPLETADO", label: "Completado" },
-    { key: "CANCELADO", label: "Cancelado" },
+    { key: "PENDIENTE" },
+    { key: "EN_CURSO" },
+    { key: "COMPLETADO" },
+    { key: "CANCELADO" },
   ];
 
   const byStatus: Record<string, Appointment[]> = {};
@@ -1012,7 +1050,7 @@ function KanbanView({ items }: { items: Appointment[] }) {
                   )}
                 >
                   <Icon className="h-3 w-3" />
-                  {meta.label}
+                  {statusLabel(t, col.key)}
                 </span>
                 <span className="font-mono text-xs text-muted-foreground tabular-nums">
                   {colItems.length}
@@ -1022,7 +1060,7 @@ function KanbanView({ items }: { items: Appointment[] }) {
             <div className="flex-1 space-y-2 overflow-y-auto p-2 min-h-[200px]">
               {colItems.length === 0 ? (
                 <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border/60 text-xs text-muted-foreground">
-                  Vacío
+                  {t.agenda.empty}
                 </div>
               ) : (
                 colItems.map((a) => <AppointmentCard key={a.id} a={a} compact />)
@@ -1048,6 +1086,7 @@ function PendingSidebarList({
   selectedDate: Date | null;
   onCreate: () => void;
 }) {
+  const { t } = useT();
   // If a date is selected, show ONLY that day's appointments; otherwise upcoming.
   const list = useMemo(() => {
     if (selectedDate) {
@@ -1080,12 +1119,12 @@ function PendingSidebarList({
       <div className="space-y-3 px-4 py-6 text-center">
         <p className="text-xs text-muted-foreground">
           {selectedDate
-            ? "Sin citas este día"
-            : "No hay próximas citas"}
+            ? t.agenda.noAppointmentsThisDay
+            : t.agenda.noUpcomingAppointments}
         </p>
         <Button size="sm" variant="outline" onClick={onCreate}>
           <Plus className="mr-1.5 h-3 w-3" />
-          Crear ahora
+          {t.agenda.createNow}
         </Button>
       </div>
     );
@@ -1148,6 +1187,7 @@ function AppointmentCard({
   onClick?: () => void;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [, startTransition] = useTransition();
   const meta = STATUS_META[a.status];
 
@@ -1155,7 +1195,7 @@ function AppointmentCard({
     startTransition(async () => {
       try {
         await updateAppointmentStatus(a.id, newStatus);
-        toast.success("Estado actualizado");
+        toast.success(t.agenda.toastStatusUpdated);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -1164,11 +1204,11 @@ function AppointmentCard({
   }
 
   function handleDelete() {
-    if (!confirm("¿Eliminar esta cita?")) return;
+    if (!confirm(t.agenda.deleteConfirmGeneric)) return;
     startTransition(async () => {
       try {
         await deleteAppointment(a.id);
-        toast.success("Cita eliminada");
+        toast.success(t.agenda.toastDeleted);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -1223,7 +1263,7 @@ function AppointmentCard({
               meta.bg
             )}
           >
-            {meta.label}
+            {statusLabel(t, a.status)}
           </span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
@@ -1258,19 +1298,19 @@ function AppointmentCard({
           {a.status === "PENDIENTE" && (
             <DropdownMenuItem onClick={() => changeStatus("EN_CURSO")}>
               <Play className="mr-2 h-4 w-4" />
-              Marcar en curso
+              {t.agenda.markInProgress}
             </DropdownMenuItem>
           )}
           {a.status !== "COMPLETADO" && a.status !== "CANCELADO" && (
             <DropdownMenuItem onClick={() => changeStatus("COMPLETADO")}>
               <Check className="mr-2 h-4 w-4" />
-              Marcar completada
+              {t.agenda.markCompletedItem}
             </DropdownMenuItem>
           )}
           {a.status !== "CANCELADO" && (
             <DropdownMenuItem onClick={() => changeStatus("CANCELADO")}>
               <X className="mr-2 h-4 w-4" />
-              Cancelar cita
+              {t.agenda.cancelAppointment}
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
@@ -1279,7 +1319,7 @@ function AppointmentCard({
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Eliminar
+            {t.agenda.delete}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -1306,6 +1346,7 @@ function NewAppointmentDialog({
   editing?: Appointment | null;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const isEdit = !!editing;
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState("");
@@ -1353,7 +1394,7 @@ function NewAppointmentDialog({
 
   async function onSubmit() {
     if (!title.trim()) {
-      toast.error("Título requerido");
+      toast.error(t.agenda.titleRequired);
       return;
     }
     setSubmitting(true);
@@ -1376,7 +1417,7 @@ function NewAppointmentDialog({
           attendees: attendees || undefined,
           notes: composedNotes,
         });
-        toast.success("Cita actualizada");
+        toast.success(t.agenda.toastUpdated);
       } else {
         await createAppointment({
           title,
@@ -1387,8 +1428,8 @@ function NewAppointmentDialog({
           attendees: attendees || undefined,
           notes: composedNotes,
         });
-        toast.success("Cita creada", {
-          description: `Recordatorio: ${reminder === "NONE" ? "sin recordatorio" : reminder}`,
+        toast.success(t.agenda.toastCreated, {
+          description: `${t.agenda.reminder}: ${reminder === "NONE" ? t.agenda.noReminder : reminder}`,
         });
       }
       onOpenChange(false);
@@ -1415,7 +1456,7 @@ function NewAppointmentDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-primary" />
-            {isEdit ? "Editar cita" : "Nueva cita"}
+            {isEdit ? t.agenda.editAppointment : t.agenda.newAppointment}
             {initialDate && !isEdit && (
               <span className="ml-auto rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                 {format(initialDate, "EEE d MMM", { locale: es })}
@@ -1424,24 +1465,24 @@ function NewAppointmentDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Field label="Título *">
+          <Field label={t.agenda.fieldTitle}>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Visita Casa Miraflores con cliente Ramírez"
+              placeholder={t.agenda.titlePlaceholder}
             />
           </Field>
 
-          <Field label="Propiedad">
+          <Field label={t.agenda.property}>
             <Select
               value={propertyId || "__none"}
               onValueChange={(v) => setPropertyId(v === "__none" ? "" : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Sin propiedad" />
+                <SelectValue placeholder={t.agenda.noProperty} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Sin propiedad</SelectItem>
+                <SelectItem value="__none">{t.agenda.noProperty}</SelectItem>
                 {properties.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.title}
@@ -1452,14 +1493,14 @@ function NewAppointmentDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Inicio *">
+            <Field label={t.agenda.fieldStart}>
               <Input
                 type="datetime-local"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </Field>
-            <Field label="Fin">
+            <Field label={t.agenda.endLabel}>
               <Input
                 type="datetime-local"
                 value={endDate}
@@ -1468,43 +1509,43 @@ function NewAppointmentDialog({
             </Field>
           </div>
 
-          <Field label="🔔 Recordatorio">
+          <Field label={`🔔 ${t.agenda.reminder}`}>
             <Select value={reminder} onValueChange={setReminder}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NONE">Sin recordatorio</SelectItem>
-                <SelectItem value="15 min antes">15 minutos antes</SelectItem>
-                <SelectItem value="1 hora antes">1 hora antes</SelectItem>
-                <SelectItem value="1 día antes">1 día antes</SelectItem>
-                <SelectItem value="1 semana antes">1 semana antes</SelectItem>
+                <SelectItem value="NONE">{t.agenda.noReminder}</SelectItem>
+                <SelectItem value="15 min antes">{t.agenda.reminder15min}</SelectItem>
+                <SelectItem value="1 hora antes">{t.agenda.reminder1hour}</SelectItem>
+                <SelectItem value="1 día antes">{t.agenda.reminder1day}</SelectItem>
+                <SelectItem value="1 semana antes">{t.agenda.reminder1week}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
 
-          <Field label="Ubicación">
+          <Field label={t.agenda.location}>
             <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Lugar de la cita"
+              placeholder={t.agenda.locationPlaceholder}
             />
           </Field>
 
-          <Field label="Asistentes">
+          <Field label={t.agenda.attendees}>
             <Input
               value={attendees}
               onChange={(e) => setAttendees(e.target.value)}
-              placeholder="Nombres separados por comas"
+              placeholder={t.agenda.attendeesPlaceholder}
             />
           </Field>
 
-          <Field label="Notas">
+          <Field label={t.agenda.notes}>
             <Textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalles, recordatorios..."
+              placeholder={t.agenda.notesPlaceholder}
             />
           </Field>
         </div>
@@ -1514,11 +1555,11 @@ function NewAppointmentDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancelar
+            {t.agenda.cancel}
           </Button>
           <Button onClick={onSubmit} disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isEdit ? "Guardar cambios" : "Crear cita"}
+            {isEdit ? t.agenda.saveChanges : t.agenda.createAppointment}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1595,6 +1636,7 @@ function WeekView({
   onItemClick: (a: Appointment) => void;
   onDayClick: (d: Date) => void;
 }) {
+  const { t } = useT();
   const start = startOfWeek(anchor, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const hours = Array.from(
@@ -1629,7 +1671,7 @@ function WeekView({
             onClick={() => onNavigate(new Date())}
             className="rounded-md border border-border bg-background px-3 py-1 text-xs font-medium transition-colors hover:bg-card/80"
           >
-            Hoy
+            {t.agenda.today}
           </button>
           <Button
             variant="ghost"
@@ -1645,7 +1687,7 @@ function WeekView({
           </p>
         </div>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {items.length} citas · semana
+          {items.length} {t.agenda.appointmentsCount} · {t.agenda.weekSuffix}
         </p>
       </div>
 
@@ -1736,6 +1778,7 @@ function DayColumn({
   onCreate: (d?: Date) => void;
   onItemClick: (a: Appointment) => void;
 }) {
+  const { t } = useT();
   const today = isToday(day);
   const hours = Array.from(
     { length: HOUR_END - HOUR_START + 1 },
@@ -1760,7 +1803,7 @@ function DayColumn({
           onClick={() => handleSlotClick(h)}
           className="block w-full border-b border-border/40 transition-colors hover:bg-foreground/[0.025]"
           style={{ height: HOUR_HEIGHT }}
-          aria-label={`Crear cita a las ${h}:00`}
+          aria-label={`${t.agenda.createAppointmentAt} ${h}:00`}
         />
       ))}
 
@@ -1782,6 +1825,7 @@ function WeekEventCard({
   event: Appointment;
   onClick: () => void;
 }) {
+  const { t } = useT();
   const start = new Date(event.startAt);
   const end = event.endAt
     ? new Date(event.endAt)
@@ -1829,7 +1873,7 @@ function WeekEventCard({
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[11px] font-semibold leading-tight">
-            {event.attendees ?? "Cliente"}
+            {event.attendees ?? t.agenda.client}
           </p>
           <p className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground">
             {event.title}
@@ -1849,7 +1893,7 @@ function WeekEventCard({
                 isPending ? "bg-amber-500/15 text-amber-600" : meta.bg
               )}
             >
-              {isPending ? "Pending" : meta.label}
+              {statusLabel(t, event.status)}
             </span>
           )}
         </div>
@@ -1875,6 +1919,7 @@ function DayView({
   onCreate: (d?: Date) => void;
   onItemClick: (a: Appointment) => void;
 }) {
+  const { t } = useT();
   const dayEvents = items.filter((it) => isSameDay(new Date(it.startAt), date));
   const hours = Array.from(
     { length: HOUR_END - HOUR_START + 1 },
@@ -1903,7 +1948,7 @@ function DayView({
             onClick={() => onNavigate(new Date())}
             className="rounded-md border border-border bg-background px-3 py-1 text-xs font-medium transition-colors hover:bg-card/80"
           >
-            Hoy
+            {t.agenda.today}
           </button>
           <Button
             variant="ghost"
@@ -1918,8 +1963,11 @@ function DayView({
               {format(date, "EEEE d 'de' MMMM", { locale: es })}
             </p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {dayEvents.length} cita{dayEvents.length !== 1 && "s"}
-              {isToday(date) && " · hoy"}
+              {dayEvents.length}{" "}
+              {dayEvents.length === 1
+                ? t.agenda.appointmentSingular
+                : t.agenda.appointmentsCount}
+              {isToday(date) && ` · ${t.agenda.todaySuffix}`}
             </p>
           </div>
         </div>
@@ -1987,6 +2035,7 @@ function DayEventCard({
   event: Appointment;
   onClick: () => void;
 }) {
+  const { t } = useT();
   const start = new Date(event.startAt);
   const end = event.endAt
     ? new Date(event.endAt)
@@ -2028,7 +2077,7 @@ function DayEventCard({
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold leading-tight">
-            {event.attendees ?? "Cliente"}
+            {event.attendees ?? t.agenda.client}
           </p>
           <p className="mt-0.5 truncate text-xs leading-tight text-muted-foreground">
             {event.title}
@@ -2058,7 +2107,7 @@ function DayEventCard({
             meta.bg
           )}
         >
-          {meta.label}
+          {statusLabel(t, event.status)}
         </span>
       </div>
     </motion.div>
@@ -2080,6 +2129,7 @@ function YearView({
   onMonthClick: (m: number) => void;
   onDayClick: (d: Date) => void;
 }) {
+  const { t } = useT();
   const byDay = useMemo(() => {
     const map = new Map<string, number>();
     for (const it of items) {
@@ -2099,7 +2149,7 @@ function YearView({
         <p className="text-2xl font-semibold tracking-tight">{year}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {items.filter((it) => new Date(it.startAt).getFullYear() === year).length}{" "}
-          citas este año
+          {t.agenda.appointmentsThisYear}
         </p>
       </div>
 
@@ -2129,12 +2179,22 @@ function MiniMonth({
   onClick: () => void;
   onDayClick: (d: Date) => void;
 }) {
+  const { t } = useT();
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days: Date[] = [];
   for (let d = gridStart; d <= gridEnd; d = addDays(d, 1)) days.push(d);
+  const weekdayInitials = [
+    t.agenda.weekdayInitialMon,
+    t.agenda.weekdayInitialTue,
+    t.agenda.weekdayInitialWed,
+    t.agenda.weekdayInitialThu,
+    t.agenda.weekdayInitialFri,
+    t.agenda.weekdayInitialSat,
+    t.agenda.weekdayInitialSun,
+  ];
 
   let max = 0;
   for (const d of days) {
@@ -2161,9 +2221,9 @@ function MiniMonth({
         {format(month, "MMMM", { locale: es })}
       </button>
       <div className="grid grid-cols-7 gap-1 text-[9px]">
-        {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
+        {weekdayInitials.map((d, i) => (
           <span
-            key={d}
+            key={i}
             className="text-center font-mono text-muted-foreground"
           >
             {d}
@@ -2186,7 +2246,11 @@ function MiniMonth({
                 today && "ring-1 ring-foreground",
                 c > 0 && "hover:scale-110"
               )}
-              title={c > 0 ? `${c} cita${c !== 1 ? "s" : ""}` : ""}
+              title={
+                c > 0
+                  ? `${c} ${c === 1 ? t.agenda.appointmentSingular : t.agenda.appointmentsCount}`
+                  : ""
+              }
             >
               {format(d, "d")}
             </button>

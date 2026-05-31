@@ -15,25 +15,13 @@ import {
   type TicketDetail,
   type TicketStatus,
 } from "@/lib/actions/support";
+import { useT } from "@/lib/i18n/provider";
 
-const STATUS_LABEL: Record<string, string> = {
-  OPEN: "Abierto",
-  IN_PROGRESS: "En curso",
-  RESOLVED: "Resuelto",
-  CLOSED: "Cerrado",
-};
 const STATUS_COLOR: Record<string, string> = {
   OPEN: "bg-amber-500/15 text-amber-600",
   IN_PROGRESS: "bg-blue-500/15 text-blue-600",
   RESOLVED: "bg-emerald-500/15 text-emerald-600",
   CLOSED: "bg-muted text-muted-foreground",
-};
-const CATEGORY_LABEL: Record<string, string> = {
-  BUG: "Error",
-  QUESTION: "Pregunta",
-  BILLING: "Billing",
-  FEATURE: "Sugerencia",
-  OTHER: "Otro",
 };
 
 export function TicketThread({
@@ -45,11 +33,32 @@ export function TicketThread({
   basePath: string;
   isAdminView?: boolean;
 }) {
+  const { t, locale } = useT();
   const router = useRouter();
   const [reply, setReply] = useState("");
   const [internal, setInternal] = useState(false);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  const STATUS_LABEL: Record<string, string> = {
+    OPEN: t.soporte.statusOpen,
+    IN_PROGRESS: t.soporte.statusInProgress,
+    RESOLVED: t.soporte.statusResolved,
+    CLOSED: t.soporte.statusClosed,
+  };
+  const STATUS_LABEL_LOWER: Record<string, string> = {
+    OPEN: t.soporte.statusOpenLower,
+    IN_PROGRESS: t.soporte.statusInProgressLower,
+    RESOLVED: t.soporte.statusResolvedLower,
+    CLOSED: t.soporte.statusClosedLower,
+  };
+  const CATEGORY_LABEL: Record<string, string> = {
+    BUG: t.soporte.catShortBug,
+    QUESTION: t.soporte.catShortQuestion,
+    BILLING: t.soporte.catShortBilling,
+    FEATURE: t.soporte.catShortFeature,
+    OTHER: t.soporte.catShortOther,
+  };
 
   async function send() {
     if (!reply.trim()) return;
@@ -64,7 +73,7 @@ export function TicketThread({
         toast.error(res.error, { duration: 10000 });
         return;
       }
-      toast.success("Mensaje enviado");
+      toast.success(t.soporte.toastMessageSent);
       setReply("");
       setInternal(false);
       router.refresh();
@@ -83,7 +92,7 @@ export function TicketThread({
         toast.error(res.error);
         return;
       }
-      toast.success(`Estado: ${STATUS_LABEL[status]}`);
+      toast.success(`${t.soporte.toastStatusPrefix}: ${STATUS_LABEL[status]}`);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -116,7 +125,7 @@ export function TicketThread({
             <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
               <span>{CATEGORY_LABEL[ticket.category]}</span>
               <span>·</span>
-              <span>Prioridad: {ticket.priority}</span>
+              <span>{t.soporte.priorityLabel}: {ticket.priority}</span>
               {isAdminView && (
                 <>
                   <span>·</span>
@@ -187,7 +196,7 @@ export function TicketThread({
               >
                 {m.internal && (
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-amber-600">
-                    Nota interna (solo admins)
+                    {t.soporte.internalNoteAdmins}
                   </p>
                 )}
                 <p
@@ -197,12 +206,15 @@ export function TicketThread({
                   {m.content}
                 </p>
                 <p className="mt-2 text-[10px] text-muted-foreground">
-                  {new Date(m.createdAt).toLocaleString("es-DO", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {new Date(m.createdAt).toLocaleString(
+                    locale === "en" ? "en-US" : "es-DO",
+                    {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }
+                  )}
                 </p>
               </div>
             </div>
@@ -217,7 +229,7 @@ export function TicketThread({
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             rows={4}
-            placeholder="Escribe tu respuesta..."
+            placeholder={t.soporte.replyPlaceholder}
             className="resize-none"
             maxLength={8000}
           />
@@ -228,7 +240,7 @@ export function TicketThread({
                   checked={internal}
                   onCheckedChange={(v) => setInternal(!!v)}
                 />
-                Nota interna (no visible al usuario)
+                {t.soporte.internalNoteHidden}
               </label>
             ) : (
               <p className="text-[10px] text-muted-foreground">
@@ -245,20 +257,20 @@ export function TicketThread({
               ) : (
                 <Send className="mr-1.5 h-3.5 w-3.5" />
               )}
-              Enviar
+              {t.soporte.sendBtn}
             </Button>
           </div>
         </Card>
       ) : (
         <Card className="p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Ticket {STATUS_LABEL[ticket.status].toLowerCase()}.{" "}
+            {t.soporte.closedTicketWord} {STATUS_LABEL_LOWER[ticket.status]}.{" "}
             {!isAdminView && (
               <a href={basePath} className="text-primary underline">
-                Abre un nuevo ticket
+                {t.soporte.closedNewTicketLink}
               </a>
             )}{" "}
-            si necesitas más ayuda.
+            {t.soporte.closedNeedMoreHelp}
           </p>
         </Card>
       )}

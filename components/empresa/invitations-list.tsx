@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Building2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n/provider";
 import { acceptInvitation } from "@/lib/actions/organization";
 
 type Invite = {
@@ -20,17 +21,18 @@ type Invite = {
 
 export function InvitationsList({ invites }: { invites: Invite[] }) {
   const router = useRouter();
+  const { t } = useT();
   const [pending, startTransition] = useTransition();
 
   function accept(token: string | null) {
     if (!token) {
-      toast.error("Invitación sin token válido");
+      toast.error(t.empresa.toastInviteNoToken);
       return;
     }
     startTransition(async () => {
       try {
         await acceptInvitation(token);
-        toast.success("Te uniste a la organización");
+        toast.success(t.empresa.toastJoinedOrg);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -60,13 +62,13 @@ export function InvitationsList({ invites }: { invites: Invite[] }) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{i.orgName}</p>
             <p className="truncate text-xs text-muted-foreground">
-              Invitado por {i.invitedBy}
+              {t.empresa.invitedBy} {i.invitedBy}
             </p>
           </div>
           <Badge variant="outline" className="text-xs">{i.role}</Badge>
           <Button size="sm" onClick={() => accept(i.token)} disabled={pending}>
             <Check className="mr-1.5 h-3.5 w-3.5" />
-            Aceptar
+            {t.empresa.acceptBtn}
           </Button>
         </li>
       ))}

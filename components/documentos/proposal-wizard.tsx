@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { generateProposal, recordProposal } from "@/lib/actions/proposal";
 
 type ProposalType = "VENTA" | "INVERSION" | "FINANCIAMIENTO" | "LUJO";
@@ -51,18 +52,18 @@ type PropertyLite = {
 };
 type ContactLite = { id: string; name: string; whatsapp: string | null };
 
-const TYPES: { value: ProposalType; label: string; desc: string }[] = [
-  { value: "VENTA", label: "Venta directa", desc: "Compra para vivir" },
-  { value: "INVERSION", label: "Inversión", desc: "ROI y rentabilidad" },
-  { value: "FINANCIAMIENTO", label: "Financiamiento", desc: "Cuotas y pagos" },
-  { value: "LUJO", label: "Lujo / Exclusiva", desc: "Premium, aspiracional" },
+const TYPES: { value: ProposalType; labelKey: string; descKey: string }[] = [
+  { value: "VENTA", labelKey: "typeSaleLabel", descKey: "typeSaleDesc" },
+  { value: "INVERSION", labelKey: "typeInvestmentLabel", descKey: "typeInvestmentDesc" },
+  { value: "FINANCIAMIENTO", labelKey: "typeFinancingLabel", descKey: "typeFinancingDesc" },
+  { value: "LUJO", labelKey: "typeLuxuryLabel", descKey: "typeLuxuryDesc" },
 ];
 
-const TONES: { value: ProposalTone; label: string }[] = [
-  { value: "CERCANO", label: "Profesional cercano" },
-  { value: "FORMAL", label: "Formal corporativo" },
-  { value: "CARIBENO", label: "Caribeño relajado" },
-  { value: "LUXURY", label: "Luxury sofisticado" },
+const TONES: { value: ProposalTone; labelKey: string }[] = [
+  { value: "CERCANO", labelKey: "toneFriendly" },
+  { value: "FORMAL", labelKey: "toneFormal" },
+  { value: "CARIBENO", labelKey: "toneCaribbean" },
+  { value: "LUXURY", labelKey: "toneLuxury" },
 ];
 
 export function ProposalWizard({
@@ -74,6 +75,7 @@ export function ProposalWizard({
   contacts: ContactLite[];
   agentName: string;
 }) {
+  const { t, locale } = useT();
   const [step, setStep] = useState<"form" | "result">("form");
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -99,7 +101,7 @@ export function ProposalWizard({
 
   async function onGenerate() {
     if (!propertyId) {
-      toast.error("Elige una propiedad");
+      toast.error(t.documentos.errChooseProperty);
       return;
     }
     setGenerating(true);
@@ -143,7 +145,7 @@ export function ProposalWizard({
           }`
         : "",
       "",
-      "Por qué esta propiedad:",
+      t.documentos.whyThisPropertyPlain,
       ...content.argumentos.map((a) => `• ${a}`),
       "",
       content.analisisFinanciero,
@@ -165,7 +167,7 @@ export function ProposalWizard({
         propertyId,
         contactId: mode === "contact" ? contactId || null : null,
         recipientName,
-        titulo: content?.titulo ?? "Propuesta",
+        titulo: content?.titulo ?? t.documentos.proposalFallbackTitle,
       });
       setSaved(true);
     } catch {
@@ -177,10 +179,20 @@ export function ProposalWizard({
     if (!content) return;
     setExporting(true);
     try {
-      const html = buildProposalHtml(content, property, recipientName, agentName);
+      const html = buildProposalHtml(content, property, recipientName, agentName, {
+        locale,
+        whyTitle: t.documentos.htmlWhyTitle,
+        sectionCarta: t.documentos.fieldCoverLetter,
+        sectionFinancial: t.documentos.fieldFinancial,
+        sectionBarrio: t.documentos.htmlNeighborhood,
+        sectionNextSteps: t.documentos.fieldNextSteps,
+        sectionAgent: t.documentos.htmlAboutAgent,
+        footerPrefix: t.documentos.htmlFooterPreparedBy,
+        footerFor: t.documentos.htmlFooterFor,
+      });
       const w = window.open("", "_blank");
       if (!w) {
-        toast.error("Permite las ventanas emergentes para exportar el PDF");
+        toast.error(t.documentos.errPopupBlocked);
         return;
       }
       w.document.write(html);
@@ -198,7 +210,7 @@ export function ProposalWizard({
   async function onCopy() {
     await navigator.clipboard.writeText(plainText());
     setCopied(true);
-    toast.success("Texto copiado");
+    toast.success(t.documentos.toastTextCopied);
     setTimeout(() => setCopied(false), 1800);
     recordOnce();
   }
@@ -224,9 +236,9 @@ export function ProposalWizard({
             <Wand2 className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">Generar propuesta con IA</h2>
+            <h2 className="text-sm font-semibold">{t.documentos.wizardTitle}</h2>
             <p className="text-xs text-muted-foreground">
-              La IA redacta una propuesta personalizada que luego puedes editar.
+              {t.documentos.wizardSubtitle}
             </p>
           </div>
         </div>
@@ -234,11 +246,11 @@ export function ProposalWizard({
         <div className="space-y-5">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Propiedad
+              {t.documentos.propertyLabel}
             </Label>
             <Select value={propertyId} onValueChange={setPropertyId}>
               <SelectTrigger>
-                <SelectValue placeholder="Elige una propiedad" />
+                <SelectValue placeholder={t.documentos.choosePropertyPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {properties.map((p) => (
@@ -250,14 +262,14 @@ export function ProposalWizard({
             </Select>
             {properties.length === 0 && (
               <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                No tienes propiedades. Crea una primero.
+                {t.documentos.noPropertiesWarning}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              ¿Para quién es?
+              {t.documentos.forWhomLabel}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -270,7 +282,7 @@ export function ProposalWizard({
                     : "border-border text-muted-foreground hover:bg-card/50"
                 )}
               >
-                Contacto existente
+                {t.documentos.existingContact}
               </button>
               <button
                 type="button"
@@ -282,13 +294,13 @@ export function ProposalWizard({
                     : "border-border text-muted-foreground hover:bg-card/50"
                 )}
               >
-                Cliente nuevo
+                {t.documentos.newClient}
               </button>
             </div>
             {mode === "contact" ? (
               <Select value={contactId} onValueChange={setContactId}>
                 <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Elige un contacto" />
+                  <SelectValue placeholder={t.documentos.chooseContactPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
                   {contacts.map((c) => (
@@ -302,7 +314,7 @@ export function ProposalWizard({
               <Input
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
-                placeholder="Nombre del cliente"
+                placeholder={t.documentos.clientNamePlaceholder}
                 className="mt-1.5"
               />
             )}
@@ -310,17 +322,17 @@ export function ProposalWizard({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Tipo de propuesta
+              {t.documentos.proposalTypeLabel}
             </Label>
             <div className="grid grid-cols-2 gap-2">
-              {TYPES.map((t) => (
+              {TYPES.map((opt) => (
                 <button
-                  key={t.value}
+                  key={opt.value}
                   type="button"
-                  onClick={() => setType(t.value)}
+                  onClick={() => setType(opt.value)}
                   className={cn(
                     "rounded-lg border px-3 py-2 text-left transition-colors",
-                    type === t.value
+                    type === opt.value
                       ? "border-primary/50 bg-primary/5"
                       : "border-border hover:bg-card/50"
                   )}
@@ -328,12 +340,12 @@ export function ProposalWizard({
                   <p
                     className={cn(
                       "text-sm font-medium",
-                      type === t.value && "text-primary"
+                      type === opt.value && "text-primary"
                     )}
                   >
-                    {t.label}
+                    {t.documentos[opt.labelKey]}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">{t.desc}</p>
+                  <p className="text-[11px] text-muted-foreground">{t.documentos[opt.descKey]}</p>
                 </button>
               ))}
             </div>
@@ -341,22 +353,22 @@ export function ProposalWizard({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Tono
+              {t.documentos.toneLabel}
             </Label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {TONES.map((t) => (
+              {TONES.map((opt) => (
                 <button
-                  key={t.value}
+                  key={opt.value}
                   type="button"
-                  onClick={() => setTone(t.value)}
+                  onClick={() => setTone(opt.value)}
                   className={cn(
                     "rounded-lg border px-2.5 py-2 text-xs font-medium transition-colors",
-                    tone === t.value
+                    tone === opt.value
                       ? "border-primary/50 bg-primary/5 text-primary"
                       : "border-border text-muted-foreground hover:bg-card/50"
                   )}
                 >
-                  {t.label}
+                  {t.documentos[opt.labelKey]}
                 </button>
               ))}
             </div>
@@ -371,19 +383,19 @@ export function ProposalWizard({
             {generating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Redactando con IA…
+                {t.documentos.writingWithAi}
               </>
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generar propuesta
+                {t.documentos.generateProposalBtn}
               </>
             )}
           </Button>
           {generating && (
             <GeneratingBar
               durationMs={15000}
-              label="Redactando tu propuesta…"
+              label={t.documentos.writingYourProposal}
               className="mt-3"
             />
           )}
@@ -399,7 +411,7 @@ export function ProposalWizard({
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Button variant="ghost" size="sm" onClick={() => setStep("form")} className="self-start sm:self-auto">
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Volver
+          {t.documentos.backBtn}
         </Button>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <Button variant="outline" size="sm" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
@@ -408,7 +420,7 @@ export function ProposalWizard({
             ) : (
               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Regenerar
+            {t.documentos.regenerateBtn}
           </Button>
           <Button variant="outline" size="sm" onClick={onCopy} className="w-full sm:w-auto">
             {copied ? (
@@ -416,7 +428,7 @@ export function ProposalWizard({
             ) : (
               <Copy className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Copiar
+            {t.documentos.copyBtn}
           </Button>
           <Button
             variant="outline"
@@ -433,24 +445,24 @@ export function ProposalWizard({
             ) : (
               <FileDown className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Exportar PDF
+            {t.documentos.exportPdfBtn}
           </Button>
         </div>
       </div>
 
       <Card className="space-y-5 p-6">
-        <EditField label="Título" value={content.titulo} onChange={(v) => patch("titulo", v)} />
-        <EditArea label="Carta de presentación" value={content.carta} onChange={(v) => patch("carta", v)} />
+        <EditField label={t.documentos.fieldTitle} value={content.titulo} onChange={(v) => patch("titulo", v)} />
+        <EditArea label={t.documentos.fieldCoverLetter} value={content.carta} onChange={(v) => patch("carta", v)} />
         {content.perfilCliente && (
           <EditArea
-            label="Diagnóstico del cliente"
+            label={t.documentos.fieldClientDiagnosis}
             value={content.perfilCliente}
             onChange={(v) => patch("perfilCliente", v)}
           />
         )}
         <div className="space-y-1.5">
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Por qué esta propiedad (una razón por línea)
+            {t.documentos.fieldArguments}
           </Label>
           <Textarea
             rows={5}
@@ -464,17 +476,17 @@ export function ProposalWizard({
           />
         </div>
         <EditArea
-          label="Análisis financiero"
+          label={t.documentos.fieldFinancial}
           value={content.analisisFinanciero}
           onChange={(v) => patch("analisisFinanciero", v)}
         />
-        <EditArea label="El barrio / entorno" value={content.barrio} onChange={(v) => patch("barrio", v)} />
+        <EditArea label={t.documentos.fieldNeighborhood} value={content.barrio} onChange={(v) => patch("barrio", v)} />
         <EditArea
-          label="Próximos pasos"
+          label={t.documentos.fieldNextSteps}
           value={content.proximosPasos}
           onChange={(v) => patch("proximosPasos", v)}
         />
-        <EditArea label="Sobre el agente" value={content.sobreAgente} onChange={(v) => patch("sobreAgente", v)} />
+        <EditArea label={t.documentos.fieldAboutAgent} value={content.sobreAgente} onChange={(v) => patch("sobreAgente", v)} />
       </Card>
     </div>
   );
@@ -523,7 +535,18 @@ function buildProposalHtml(
   c: ProposalContent,
   property: PropertyLite | null,
   recipientName: string,
-  agentName: string
+  agentName: string,
+  i18n: {
+    locale: string;
+    whyTitle: string;
+    sectionCarta: string;
+    sectionFinancial: string;
+    sectionBarrio: string;
+    sectionNextSteps: string;
+    sectionAgent: string;
+    footerPrefix: string;
+    footerFor: string;
+  }
 ): string {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -535,7 +558,7 @@ function buildProposalHtml(
       ? `<section><h2>${esc(title)}</h2><p>${esc(body).replace(/\n/g, "<br>")}</p></section>`
       : "";
 
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <title>${esc(c.titulo)}</title>
 <style>
   @page { margin: 18mm; }
@@ -564,12 +587,12 @@ function buildProposalHtml(
         : ""
     }
   </div>
-  ${section("Carta de presentación", c.carta)}
-  ${c.argumentos.length ? `<section><h2>Por qué esta propiedad para ti</h2><ul>${args}</ul></section>` : ""}
-  ${section("Análisis financiero", c.analisisFinanciero)}
-  ${section("El barrio", c.barrio)}
-  ${section("Próximos pasos", c.proximosPasos)}
-  ${section("Sobre tu agente", c.sobreAgente)}
-  <div class="footer">Preparado por ${esc(agentName)} para ${esc(recipientName)} · estaila</div>
+  ${section(i18n.sectionCarta, c.carta)}
+  ${c.argumentos.length ? `<section><h2>${esc(i18n.whyTitle)}</h2><ul>${args}</ul></section>` : ""}
+  ${section(i18n.sectionFinancial, c.analisisFinanciero)}
+  ${section(i18n.sectionBarrio, c.barrio)}
+  ${section(i18n.sectionNextSteps, c.proximosPasos)}
+  ${section(i18n.sectionAgent, c.sobreAgente)}
+  <div class="footer">${esc(i18n.footerPrefix)} ${esc(agentName)} ${esc(i18n.footerFor)} ${esc(recipientName)} · estaila</div>
 </body></html>`;
 }

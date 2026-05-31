@@ -59,6 +59,7 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn, initials } from "@/lib/utils";
 import { CONTACT_TYPES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import {
   deleteContact,
   toggleContactFavorite,
@@ -143,6 +144,7 @@ export function ContactsClient({
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -156,10 +158,10 @@ export function ContactsClient({
   // Column visibility (persisted)
   type ColKey = "datos" | "tipo" | "ubicacion" | "asignado";
   const ALL_COLS: { key: ColKey; label: string }[] = [
-    { key: "datos", label: "Datos (email / teléfono)" },
-    { key: "tipo", label: "Tipo" },
-    { key: "ubicacion", label: "Ubicación / Referencia" },
-    { key: "asignado", label: "Asignado a" },
+    { key: "datos", label: t.contactos.colDataLong },
+    { key: "tipo", label: t.contactos.colType },
+    { key: "ubicacion", label: t.contactos.colLocationRef },
+    { key: "asignado", label: t.contactos.colAssignedTo },
   ];
   const [cols, setCols] = useState<Record<ColKey, boolean>>({
     datos: true,
@@ -348,16 +350,16 @@ export function ContactsClient({
     const cells = (c: Contact) => {
       const row: string[] = [c.name];
       if (cols.datos) row.push(c.email ?? "", c.phone ?? "", c.whatsapp ?? "");
-      if (cols.tipo) row.push(labelFor(CONTACT_TYPES, c.type));
+      if (cols.tipo) row.push(labelFor(CONTACT_TYPES, c.type, locale));
       if (cols.ubicacion) row.push(c.location ?? "", c.reference ?? "");
       if (cols.asignado) row.push(owner.name);
       return row;
     };
-    const headers: string[] = ["Nombre"];
-    if (cols.datos) headers.push("Email", "Teléfono", "WhatsApp");
-    if (cols.tipo) headers.push("Tipo");
-    if (cols.ubicacion) headers.push("Ubicación", "Referencia");
-    if (cols.asignado) headers.push("Asignado a");
+    const headers: string[] = [t.contactos.csvName];
+    if (cols.datos) headers.push(t.contactos.csvEmail, t.contactos.csvPhone, t.contactos.csvWhatsapp);
+    if (cols.tipo) headers.push(t.contactos.csvType);
+    if (cols.ubicacion) headers.push(t.contactos.csvLocation, t.contactos.csvReference);
+    if (cols.asignado) headers.push(t.contactos.csvAssignedTo);
 
     const esc = (v: string) =>
       /[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -376,7 +378,7 @@ export function ContactsClient({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`${sorted.length} contactos exportados`);
+    toast.success(`${sorted.length} ${t.contactos.toastExported}`);
   }
 
   function setListParam(id: string) {
@@ -413,7 +415,7 @@ export function ContactsClient({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nombre, teléfono, email..."
+            placeholder={t.contactos.searchPlaceholder}
             className="h-9 pl-9"
           />
           {search && (
@@ -432,10 +434,10 @@ export function ContactsClient({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
               <Filter className="mr-1.5 h-3.5 w-3.5" />
-              Tipo
+              {t.contactos.type}
               {type && (
                 <span className="ml-1.5 inline-flex h-4 items-center rounded-full bg-primary/15 px-1.5 text-[10px] text-primary">
-                  {labelFor(CONTACT_TYPES, type)}
+                  {labelFor(CONTACT_TYPES, type, locale)}
                 </span>
               )}
             </Button>
@@ -443,7 +445,7 @@ export function ContactsClient({
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={() => setParam("type", "")}>
               <LayoutGrid className="mr-2 h-3.5 w-3.5" />
-              Todos
+              {t.contactos.all}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {CONTACT_TYPES.map((c) => {
@@ -455,7 +457,7 @@ export function ContactsClient({
                   onClick={() => setParam("type", c.value)}
                 >
                   {Icon && <Icon className="mr-2 h-3.5 w-3.5" />}
-                  {c.label}
+                  {labelFor(CONTACT_TYPES, c.value, locale)}
                   <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
                     {n}
                   </span>
@@ -476,7 +478,7 @@ export function ContactsClient({
           <Star
             className={cn("mr-1.5 h-3.5 w-3.5", favs && "fill-current")}
           />
-          Favoritos
+          {t.contactos.favorites}
           <span
             className={cn(
               "ml-1.5 font-mono text-[10px] tabular-nums",
@@ -497,7 +499,7 @@ export function ContactsClient({
               startTransition(() => router.push(pathname));
             }}
           >
-            Limpiar
+            {t.contactos.clear}
           </Button>
         )}
 
@@ -510,7 +512,7 @@ export function ContactsClient({
                 className="hidden sm:inline-flex"
               >
                 <Columns3 className="mr-1.5 h-3.5 w-3.5" />
-                Columnas
+                {t.contactos.columns}
                 <span className="ml-1.5 font-mono text-[10px] tabular-nums text-muted-foreground">
                   {Object.values(cols).filter(Boolean).length}/{ALL_COLS.length}
                 </span>
@@ -518,7 +520,7 @@ export function ContactsClient({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Mostrar columnas
+                {t.contactos.showColumns}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {ALL_COLS.map((c) => (
@@ -537,7 +539,7 @@ export function ContactsClient({
                   setCols({ datos: true, tipo: true, ubicacion: true, asignado: true })
                 }
               >
-                Mostrar todas
+                {t.contactos.showAllColumns}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -549,11 +551,11 @@ export function ContactsClient({
             onClick={handleExport}
           >
             <Download className="mr-1.5 h-3.5 w-3.5" />
-            Exportar
+            {t.contactos.export}
           </Button>
           <Button onClick={openCreate}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Nuevo contacto
+            {t.contactos.newContact}
           </Button>
         </div>
       </div>
@@ -564,19 +566,19 @@ export function ContactsClient({
       {/* Result count */}
       <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
         <p>
-          Mostrando{" "}
+          {t.contactos.showing}{" "}
           <span className="font-mono font-semibold text-foreground tabular-nums">
             {sorted.length}
           </span>{" "}
-          de{" "}
+          {t.contactos.of}{" "}
           <span className="font-mono font-semibold text-foreground tabular-nums">
             {counts.total}
           </span>{" "}
-          contactos
+          {t.contactos.contactsWord}
         </p>
         {selected.size > 0 && (
           <span className="rounded-md bg-primary/15 px-2 py-0.5 font-mono text-[11px] tabular-nums text-primary">
-            {selected.size} seleccionados
+            {selected.size} {t.contactos.selected}
           </span>
         )}
       </div>
@@ -585,20 +587,20 @@ export function ContactsClient({
         counts.total === 0 ? (
           <EmptyState
             icon={Users}
-            title="Sin contactos todavía"
-            description="Agrega propietarios, clientes, abogados y servicios. Todo en un solo directorio."
+            title={t.contactos.emptyTitle}
+            description={t.contactos.emptyDescription}
             action={
               <Button onClick={openCreate}>
                 <Plus className="mr-2 h-4 w-4" />
-                Crear primer contacto
+                {t.contactos.createFirst}
               </Button>
             }
           />
         ) : (
           <EmptyState
             icon={Users}
-            title="Sin resultados"
-            description="Ningún contacto coincide con los filtros aplicados."
+            title={t.contactos.noResultsTitle}
+            description={t.contactos.noResultsDescription}
           />
         )
       ) : (
@@ -632,19 +634,19 @@ export function ContactsClient({
                     />
                   </th>
                   <ThSortable
-                    label="Contacto"
+                    label={t.contactos.thContact}
                     active={sortKey === "name"}
                     dir={sortDir}
                     onClick={() => toggleSort("name")}
                   />
                   {cols.datos && (
                     <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Datos
+                      {t.contactos.thData}
                     </th>
                   )}
                   {cols.tipo && (
                     <ThSortable
-                      label="Tipo"
+                      label={t.contactos.thType}
                       active={sortKey === "type"}
                       dir={sortDir}
                       onClick={() => toggleSort("type")}
@@ -652,12 +654,12 @@ export function ContactsClient({
                   )}
                   {cols.ubicacion && (
                     <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Ubicación / Referencia
+                      {t.contactos.thLocationRef}
                     </th>
                   )}
                   {cols.asignado && (
                     <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Asignado a
+                      {t.contactos.thAssignedTo}
                     </th>
                   )}
                   <th className="w-12 px-2 py-3" />
@@ -756,11 +758,15 @@ function ContactRow({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
 
   const Icon = TYPE_ICONS[c.type];
   const lastActivity = c.updatedAt
-    ? formatDistanceToNow(new Date(c.updatedAt), { addSuffix: true, locale: es })
+    ? formatDistanceToNow(new Date(c.updatedAt), {
+        addSuffix: true,
+        locale: locale === "en" ? undefined : es,
+      })
     : null;
 
   const [waOpen, setWaOpen] = useState(false);
@@ -777,11 +783,11 @@ function ContactRow({
   }
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar a ${c.name}?`)) return;
+    if (!confirm(t.contactos.confirmDeleteContact.replace("{name}", c.name))) return;
     startTransition(async () => {
       try {
         await deleteContact(c.id);
-        toast.success("Contacto eliminado");
+        toast.success(t.contactos.toastDeleted);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -893,7 +899,7 @@ function ContactRow({
             )}
           >
             {Icon && <Icon className="h-3 w-3" />}
-            {labelFor(CONTACT_TYPES, c.type)}
+            {labelFor(CONTACT_TYPES, c.type, locale)}
           </span>
         </td>
       )}
@@ -901,7 +907,9 @@ function ContactRow({
         <td className="px-4 py-3 text-xs text-muted-foreground">
           <div>{c.location ?? "—"}</div>
           {c.reference && (
-            <div className="mt-0.5 text-[11px] italic">via {c.reference}</div>
+            <div className="mt-0.5 text-[11px] italic">
+              {t.contactos.viaPrefix} {c.reference}
+            </div>
           )}
         </td>
       )}
@@ -933,7 +941,7 @@ function ContactRow({
                 }
               }}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-600 transition-colors hover:bg-blue-500/20"
-              title={`Llamar ${c.phone}`}
+              title={`${t.contactos.callAction} ${c.phone}`}
             >
               <Phone className="h-3.5 w-3.5" strokeWidth={1.75} />
             </a>
@@ -948,7 +956,7 @@ function ContactRow({
                 setWaOpen(true);
               }}
               className="h-7 w-7 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-600"
-              title={`WhatsApp ${c.name}`}
+              title={`${t.contactos.whatsappAction} ${c.name}`}
             >
               <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
             </Button>
@@ -962,7 +970,7 @@ function ContactRow({
               c.favorite ? "text-amber-400" : "text-muted-foreground/60 hover:text-amber-400"
             )}
             onClick={handleToggleFav}
-            title="Favorito"
+            title={t.contactos.favorite}
           >
             <Star className={cn("h-3.5 w-3.5", c.favorite && "fill-amber-400")} />
           </Button>
@@ -976,12 +984,12 @@ function ContactRow({
               <DropdownMenuItem asChild>
                 <Link href={`/contactos/${c.id}`}>
                   <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                  Ver detalle
+                  {t.contactos.viewDetail}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onEdit}>
                 <Pencil className="mr-2 h-3.5 w-3.5" />
-                Editar
+                {t.contactos.edit}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -989,7 +997,7 @@ function ContactRow({
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Eliminar
+                {t.contactos.delete}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1021,6 +1029,7 @@ function ContactMobileCard({
   owner: Owner;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [waOpen, setWaOpen] = useState(false);
   const Icon = TYPE_ICONS[c.type];
   return (
@@ -1052,7 +1061,7 @@ function ContactMobileCard({
             </div>
             <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
               {Icon && <Icon className="h-2.5 w-2.5" />}
-              {labelFor(CONTACT_TYPES, c.type)}
+              {labelFor(CONTACT_TYPES, c.type, locale)}
               {c.location && (
                 <>
                   <span>·</span>
@@ -1108,7 +1117,7 @@ function ContactMobileCard({
                   setWaOpen(true);
                 }}
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 active:bg-emerald-500/20"
-                aria-label="WhatsApp"
+                aria-label={t.contactos.whatsapp}
               >
                 <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
@@ -1118,7 +1127,7 @@ function ContactMobileCard({
                 href={`tel:${c.phone.replace(/\D/g, "")}`}
                 onClick={(e) => e.stopPropagation()}
                 className="flex h-8 w-8 items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-600 active:bg-blue-500/20"
-                aria-label="Llamar"
+                aria-label={t.contactos.call}
               >
                 <Phone className="h-3.5 w-3.5" strokeWidth={1.75} />
               </a>
@@ -1159,6 +1168,7 @@ function QuickFilterBar({
   onSelectTag: (id: string) => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const pinnedLists = smartLists.filter((s) => s.pinned);
   const otherLists = smartLists.filter((s) => !s.pinned);
 
@@ -1166,13 +1176,13 @@ function QuickFilterBar({
     <div className="mb-3 -mx-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex items-center gap-1 whitespace-nowrap pb-1">
         <Pill
-          label="Todos"
+          label={t.contactos.all}
           count={counts.total}
           active={!activeListId}
           onClick={() => onSelectList("")}
         />
         <Pill
-          label="Favoritos"
+          label={t.contactos.favorites}
           count={counts.favs}
           icon={Star}
           active={activeListId === "favorites"}
@@ -1180,7 +1190,7 @@ function QuickFilterBar({
           color="amber"
         />
         <Pill
-          label="Sin contacto +60d"
+          label={t.contactos.stale60}
           count={counts.stale60 ?? 0}
           active={activeListId === "stale60"}
           onClick={() => onSelectList("stale60")}
@@ -1209,12 +1219,12 @@ function QuickFilterBar({
               className="inline-flex items-center gap-1 rounded-full border border-dashed border-border bg-transparent px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
             >
               <Filter className="h-3 w-3" strokeWidth={1.75} />
-              Más
+              {t.contactos.more}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Por tipo
+              {t.contactos.byType}
             </DropdownMenuLabel>
             {CONTACT_TYPES.slice(0, 8).map((c) => {
               const n = counts.byType[c.value] ?? 0;
@@ -1226,7 +1236,7 @@ function QuickFilterBar({
                   onClick={() => onSelectList(`type:${c.value}`)}
                 >
                   {Icon && <Icon className="mr-2 h-3.5 w-3.5" />}
-                  {c.label}
+                  {labelFor(CONTACT_TYPES, c.value, locale)}
                   <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
                     {n}
                   </span>
@@ -1237,7 +1247,7 @@ function QuickFilterBar({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Mis listas
+                  {t.contactos.myLists}
                 </DropdownMenuLabel>
                 {otherLists.map((sl) => (
                   <DropdownMenuItem key={sl.id} onClick={() => onSelectList(sl.id)}>
@@ -1253,7 +1263,7 @@ function QuickFilterBar({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/contactos?manage=tags")}>
               <Plus className="mr-2 h-3.5 w-3.5" />
-              Gestionar listas y tags
+              {t.contactos.manageListsTags}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -1274,7 +1284,7 @@ function QuickFilterBar({
                   activeTagId
                     ? {
                         backgroundColor:
-                          tags.find((t) => t.id === activeTagId)?.color ?? undefined,
+                          tags.find((tag) => tag.id === activeTagId)?.color ?? undefined,
                       }
                     : undefined
                 }
@@ -1288,8 +1298,8 @@ function QuickFilterBar({
                   }}
                 />
                 {activeTagId
-                  ? tags.find((t) => t.id === activeTagId)?.name ?? "Tag"
-                  : "Tags"}
+                  ? tags.find((tag) => tag.id === activeTagId)?.name ?? t.contactos.tag
+                  : t.contactos.tags}
                 {activeTagId && (
                   <X
                     className="ml-0.5 h-3 w-3 opacity-80 hover:opacity-100"
@@ -1303,27 +1313,27 @@ function QuickFilterBar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 max-h-[300px] overflow-y-auto">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Filtrar por tag
+                {t.contactos.filterByTag}
               </DropdownMenuLabel>
-              {tags.map((t) => (
+              {tags.map((tag) => (
                 <DropdownMenuItem
-                  key={t.id}
-                  onClick={() => onSelectTag(t.id === activeTagId ? "" : t.id)}
+                  key={tag.id}
+                  onClick={() => onSelectTag(tag.id === activeTagId ? "" : tag.id)}
                 >
                   <span
                     className="mr-2 h-2 w-2 rounded-full"
-                    style={{ backgroundColor: t.color }}
+                    style={{ backgroundColor: tag.color }}
                   />
-                  {t.name}
+                  {tag.name}
                   <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
-                    {t.count}
+                    {tag.count}
                   </span>
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/contactos?manage=tags")}>
                 <Plus className="mr-2 h-3.5 w-3.5" />
-                Gestionar tags
+                {t.contactos.manageTags}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1699,7 +1709,7 @@ function BulkActionBar({
   onClear: () => void;
   onAfterAction: () => void;
 }) {
-  const [, startTransition] = useTransition();
+  const { t, locale } = useT();
   const [pending, setPending] = useState(false);
   if (selected.size === 0) return null;
 
@@ -1729,7 +1739,7 @@ function BulkActionBar({
         <span className="font-mono font-semibold tabular-nums text-foreground">
           {selected.size}
         </span>
-        <span className="text-muted-foreground">seleccionados</span>
+        <span className="text-muted-foreground">{t.contactos.selected}</span>
       </span>
       <span className="h-5 w-px bg-border" />
 
@@ -1738,33 +1748,33 @@ function BulkActionBar({
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 text-xs" disabled={pending || tags.length === 0}>
             <Plus className="mr-1 h-3 w-3" />
-            Tag
+            {t.contactos.tag}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {tags.length === 0 && (
             <DropdownMenuLabel className="text-[11px] text-muted-foreground">
-              Sin tags
+              {t.contactos.noTags}
             </DropdownMenuLabel>
           )}
-          {tags.map((t) => (
+          {tags.map((tag) => (
             <DropdownMenuItem
-              key={t.id}
+              key={tag.id}
               onClick={() =>
                 run(
                   async () => {
                     const { bulkAttachTag } = await import("@/lib/actions/contact-polish");
-                    await bulkAttachTag(ids, t.id);
+                    await bulkAttachTag(ids, tag.id);
                   },
-                  `${ids.length} contactos etiquetados con «${t.name}»`
+                  `${ids.length} ${t.contactos.toastBulkTagged} «${tag.name}»`
                 )
               }
             >
               <span
                 className="mr-2 h-2 w-2 rounded-full"
-                style={{ backgroundColor: t.color }}
+                style={{ backgroundColor: tag.color }}
               />
-              {t.name}
+              {tag.name}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -1774,7 +1784,7 @@ function BulkActionBar({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 text-xs" disabled={pending}>
-            Cambiar tipo
+            {t.contactos.changeType}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -1787,11 +1797,11 @@ function BulkActionBar({
                     const { bulkUpdateContactType } = await import("@/lib/actions/contact-polish");
                     await bulkUpdateContactType(ids, c.value);
                   },
-                  `Tipo cambiado a ${c.label}`
+                  `${t.contactos.toastTypeChanged} ${labelFor(CONTACT_TYPES, c.value, locale)}`
                 )
               }
             >
-              {c.label}
+              {labelFor(CONTACT_TYPES, c.value, locale)}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -1809,12 +1819,12 @@ function BulkActionBar({
               const { bulkToggleFavorite } = await import("@/lib/actions/contact-polish");
               await bulkToggleFavorite(ids, true);
             },
-            "Marcados como favoritos"
+            t.contactos.toastMarkedFavorites
           )
         }
       >
         <Star className="mr-1 h-3 w-3" />
-        Favorito
+        {t.contactos.favorite}
       </Button>
 
       {/* Delete */}
@@ -1824,18 +1834,18 @@ function BulkActionBar({
         className="h-8 text-xs text-destructive hover:text-destructive"
         disabled={pending}
         onClick={() => {
-          if (!confirm(`¿Eliminar ${selected.size} contactos? No se puede deshacer.`)) return;
+          if (!confirm(t.contactos.confirmBulkDelete.replace("{count}", String(selected.size)))) return;
           run(
             async () => {
               const { bulkDeleteContacts } = await import("@/lib/actions/contact-polish");
               await bulkDeleteContacts(ids);
             },
-            `${ids.length} contactos eliminados`
+            `${ids.length} ${t.contactos.toastBulkDeleted}`
           );
         }}
       >
         <Trash2 className="mr-1 h-3 w-3" />
-        Eliminar
+        {t.contactos.delete}
       </Button>
 
       <span className="h-5 w-px bg-border" />

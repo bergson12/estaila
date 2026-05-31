@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -41,6 +41,7 @@ import {
 } from "@/lib/actions/transaction";
 import { cn, formatCurrency } from "@/lib/utils";
 import { SendInvoiceDialog } from "./send-invoice-dialog";
+import { useT } from "@/lib/i18n/provider";
 
 type Tx = {
   id: string;
@@ -56,11 +57,7 @@ type Tx = {
   propertyTitle: string | null;
 };
 
-const STATUS_OPTIONS = [
-  { value: "PENDIENTE", label: "Pendiente" },
-  { value: "EN_PROGRESO", label: "En progreso" },
-  { value: "PAGADO", label: "Pagado" },
-];
+const STATUS_VALUES = ["PENDIENTE", "EN_PROGRESO", "PAGADO"] as const;
 
 const STATUS_STYLE: Record<string, string> = {
   PENDIENTE: "bg-warning/15 text-warning border-warning/30",
@@ -68,37 +65,64 @@ const STATUS_STYLE: Record<string, string> = {
   PAGADO: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  EN_PROGRESO: "En progreso",
-  PAGADO: "Pagado",
-};
+type Dict = ReturnType<typeof useT>["t"];
+
+// Etiqueta i18n del estado (DB enum -> texto UI). Claves planas en `finanzas`.
+function statusLabels(t: Dict): Record<string, string> {
+  return {
+    PENDIENTE: t.finanzas.statusPending,
+    EN_PROGRESO: t.finanzas.statusInProgress,
+    PAGADO: t.finanzas.statusPaid,
+  };
+}
+
+// Etiqueta i18n del subtipo (DB enum -> texto UI). Claves planas en `finanzas`.
+function typeLabels(t: Dict): Record<string, string> {
+  return {
+    RESERVA: t.finanzas.typeReserva,
+    COMISION: t.finanzas.typeComision,
+    MANTENIMIENTO: t.finanzas.typeMantenimiento,
+    PUBLICIDAD: t.finanzas.typePublicidad,
+    MARKETING: t.finanzas.typeMarketing,
+    SUSCRIPCION: t.finanzas.typeSuscripcion,
+    LEGAL: t.finanzas.typeLegal,
+    OTRO: t.finanzas.typeOtro,
+  };
+}
 
 export function TransactionDetailDialog({
   open,
   onOpenChange,
-  transaction: t,
+  transaction: tx,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   transaction: Tx | null;
 }) {
+  const { t, locale } = useT();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [sendOpen, setSendOpen] = useState(false);
 
-  if (!t) return null;
+  if (!tx) return null;
 
-  const isIncome = t.category === "INGRESO";
-  const docNumber = t.id.slice(-8).toUpperCase();
-  const invoiceUrl = `/i/${t.id}`;
+  const statusLabel = statusLabels(t);
+  const typeLabel = typeLabels(t);
+  const isIncome = tx.category === "INGRESO";
+  const docNumber = tx.id.slice(-8).toUpperCase();
+  const invoiceUrl = `/i/${tx.id}`;
 
   function changeStatus(status: string) {
-    if (!t) return;
+    if (!tx) return;
     startTransition(async () => {
       try {
-        await updateTransactionStatus(t.id, status);
-        toast.success(`Marcada como ${STATUS_LABEL[status]?.toLowerCase()}`);
+        await updateTransactionStatus(tx.id, status);
+        toast.success(
+          t.finanzas.toastMarkedAs.replace(
+            "{status}",
+            statusLabel[status]?.toLowerCase() ?? status
+          )
+        );
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -107,12 +131,12 @@ export function TransactionDetailDialog({
   }
 
   function handleDelete() {
-    if (!t) return;
-    if (!confirm(`¿Eliminar "${t.concept}"?`)) return;
+    if (!tx) return;
+    if (!confirm(t.finanzas.confirmDelete.replace("{concept}", tx.concept))) return;
     startTransition(async () => {
       try {
-        await deleteTransaction(t.id);
-        toast.success("Eliminada");
+        await deleteTransaction(tx.id);
+        toast.success(t.finanzas.toastDeletedShort);
         onOpenChange(false);
         router.refresh();
       } catch (e) {
@@ -143,15 +167,15 @@ export function TransactionDetailDialog({
               </span>
               <div className="min-w-0">
                 <span className="block truncate text-lg leading-tight">
-                  {t.concept}
+                  {tx.concept}
                 </span>
                 <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  #{docNumber} · {t.type.replace(/_/g, " ").toLowerCase()}
+                  #{docNumber} · {typeLabel[tx.type] ?? tx.type}
                 </span>
               </div>
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Detalle de transacción {t.concept}
+              {t.finanzas.detailSrTitle.replace("{concept}", tx.concept)}
             </DialogDescription>
           </DialogHeader>
 
@@ -160,7 +184,7 @@ export function TransactionDetailDialog({
             <div className="mb-6 flex items-end justify-between gap-3 rounded-xl border border-border bg-background/40 p-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Monto
+                  {t.finanzas.amount}
                 </p>
                 <p
                   className={cn(
@@ -169,21 +193,21 @@ export function TransactionDetailDialog({
                   )}
                 >
                   {isIncome ? "+" : "−"}
-                  {formatCurrency(t.amount, t.currency as "USD" | "DOP")}
+                  {formatCurrency(tx.amount, tx.currency as "USD" | "DOP")}
                 </p>
                 <p className="font-mono text-[11px] text-muted-foreground">
-                  {t.currency}
+                  {tx.currency}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Fecha
+                  {t.finanzas.date}
                 </p>
                 <p className="mt-1 font-mono text-sm font-medium tabular-nums">
-                  {format(new Date(t.date), "d MMM yyyy", { locale: es })}
+                  {format(new Date(tx.date), "d MMM yyyy", { locale: locale === "en" ? enUS : es })}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {format(new Date(t.date), "EEEE", { locale: es })}
+                  {format(new Date(tx.date), "EEEE", { locale: locale === "en" ? enUS : es })}
                 </p>
               </div>
             </div>
@@ -191,34 +215,34 @@ export function TransactionDetailDialog({
             {/* Status — interactive */}
             <div className="mb-5">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Estado
+                {t.finanzas.status}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
-                    STATUS_STYLE[t.status]
+                    STATUS_STYLE[tx.status]
                   )}
                 >
-                  {t.status === "PAGADO" ? (
+                  {tx.status === "PAGADO" ? (
                     <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
                   ) : (
                     <Clock className="h-3 w-3" strokeWidth={2} />
                   )}
-                  {STATUS_LABEL[t.status]}
+                  {statusLabel[tx.status]}
                 </span>
                 <Select
-                  value={t.status}
+                  value={tx.status}
                   onValueChange={changeStatus}
                   disabled={pending}
                 >
                   <SelectTrigger className="h-7 w-40 text-xs">
-                    <SelectValue placeholder="Cambiar a..." />
+                    <SelectValue placeholder={t.finanzas.changeStatusPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value} disabled={s.value === t.status}>
-                        {s.label}
+                    {STATUS_VALUES.map((s) => (
+                      <SelectItem key={s} value={s} disabled={s === tx.status}>
+                        {statusLabel[s]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -227,20 +251,20 @@ export function TransactionDetailDialog({
             </div>
 
             {/* Property */}
-            {t.propertyTitle && (
+            {tx.propertyTitle && (
               <div className="mb-5 flex items-start gap-3 rounded-xl border border-border bg-background/40 p-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <Building2 className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Propiedad
+                    {t.finanzas.property}
                   </p>
                   <Link
-                    href={`/propiedades/${t.propertyId}`}
+                    href={`/propiedades/${tx.propertyId}`}
                     className="mt-0.5 inline-flex items-center gap-1 text-sm font-medium hover:text-primary"
                   >
-                    {t.propertyTitle}
+                    {tx.propertyTitle}
                     <ExternalLink className="h-3 w-3 opacity-60" />
                   </Link>
                 </div>
@@ -248,13 +272,13 @@ export function TransactionDetailDialog({
             )}
 
             {/* Notes */}
-            {t.notes && (
+            {tx.notes && (
               <div className="mb-5">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Notas
+                  {t.finanzas.notes}
                 </p>
                 <p className="whitespace-pre-line rounded-xl border border-border bg-background/40 p-3 text-sm leading-relaxed">
-                  {t.notes}
+                  {tx.notes}
                 </p>
               </div>
             )}
@@ -270,13 +294,13 @@ export function TransactionDetailDialog({
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              Eliminar
+              {t.finanzas.delete}
             </Button>
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" asChild>
                 <Link href={invoiceUrl} target="_blank" rel="noopener noreferrer">
                   <Printer className="mr-1.5 h-3.5 w-3.5" />
-                  Imprimir
+                  {t.finanzas.print}
                 </Link>
               </Button>
               <Button
@@ -285,7 +309,7 @@ export function TransactionDetailDialog({
                 onClick={() => setSendOpen(true)}
               >
                 <Send className="mr-1.5 h-3.5 w-3.5" />
-                Enviar
+                {t.finanzas.send}
               </Button>
             </div>
           </DialogFooter>
@@ -295,7 +319,7 @@ export function TransactionDetailDialog({
       <SendInvoiceDialog
         open={sendOpen}
         onOpenChange={setSendOpen}
-        transaction={t}
+        transaction={tx}
       />
     </>
   );

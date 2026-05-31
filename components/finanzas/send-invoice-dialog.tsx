@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type Tx = {
   id: string;
@@ -54,12 +55,13 @@ type Channel = "whatsapp" | "email";
 export function SendInvoiceDialog({
   open,
   onOpenChange,
-  transaction: t,
+  transaction,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   transaction: Tx;
 }) {
+  const { t } = useT();
   const [recipientKind, setRecipientKind] = useState<RecipientKind>("manual");
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -72,23 +74,29 @@ export function SendInvoiceDialog({
 
   const invoiceUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/i/${t.id}`
-      : `/i/${t.id}`;
+      ? `${window.location.origin}/i/${transaction.id}`
+      : `/i/${transaction.id}`;
 
   // ----------------------------------------------------------
   // Default message body
   // ----------------------------------------------------------
   useEffect(() => {
     if (!open) return;
-    const isIncome = t.category === "INGRESO";
-    const verb = isIncome ? "el recibo de" : "el comprobante de";
-    const amt = formatCurrency(t.amount, t.currency as "USD" | "DOP");
+    const isIncome = transaction.category === "INGRESO";
+    const verb = isIncome ? t.finanzas.msgVerbReceipt : t.finanzas.msgVerbVoucher;
+    const amt = formatCurrency(transaction.amount, transaction.currency as "USD" | "DOP");
+    const propertyLine = transaction.propertyTitle
+      ? `\n${t.finanzas.msgPropertyLine.replace("{property}", transaction.propertyTitle)}`
+      : "";
     setMessage(
-      `Hola 👋\n\nTe comparto ${verb} *${t.concept}* por ${amt}.${
-        t.propertyTitle ? `\nPropiedad: ${t.propertyTitle}` : ""
-      }\n\nPuedes verlo aquí:\n${invoiceUrl}\n\nCualquier cosa, escríbeme.`
+      t.finanzas.msgBody
+        .replace("{verb}", verb)
+        .replace("{concept}", transaction.concept)
+        .replace("{amount}", amt)
+        .replace("{propertyLine}", propertyLine)
+        .replace("{url}", invoiceUrl)
     );
-  }, [open, t, invoiceUrl]);
+  }, [open, transaction, invoiceUrl, t]);
 
   // ----------------------------------------------------------
   // Load contacts when needed
@@ -99,9 +107,9 @@ export function SendInvoiceDialog({
     fetch("/api/contacts/lite")
       .then((r) => r.json())
       .then((data: ContactOption[]) => setContacts(data))
-      .catch(() => toast.error("No pude cargar contactos"))
+      .catch(() => toast.error(t.finanzas.toastContactsError))
       .finally(() => setLoadingContacts(false));
-  }, [open, recipientKind, contacts.length]);
+  }, [open, recipientKind, contacts.length, t]);
 
   const selectedContact = useMemo(
     () => contacts.find((c) => c.id === selectedContactId) ?? null,
@@ -121,13 +129,13 @@ export function SendInvoiceDialog({
     }
     if (recipientKind === "manual") {
       return {
-        name: manualName.trim() || "destinatario",
+        name: manualName.trim() || t.finanzas.recipientFallback,
         email: manualEmail.trim() || null,
         phone: manualPhone.trim() || null,
       };
     }
     return { name: "", email: null, phone: null };
-  }, [recipientKind, selectedContact, manualName, manualEmail, manualPhone]);
+  }, [recipientKind, selectedContact, manualName, manualEmail, manualPhone, t]);
 
   // ----------------------------------------------------------
   // Send via channel
@@ -136,27 +144,27 @@ export function SendInvoiceDialog({
     if (channel === "whatsapp") {
       const phone = (recipient.phone || "").replace(/[^\d+]/g, "");
       if (!phone) {
-        toast.error("Necesito un número de WhatsApp del destinatario.");
+        toast.error(t.finanzas.toastNeedWhatsapp);
         return;
       }
       const cleaned = phone.startsWith("+") ? phone.slice(1) : phone;
       const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
       window.open(url, "_blank", "noopener,noreferrer");
-      toast.success("Abriendo WhatsApp...");
+      toast.success(t.finanzas.toastOpeningWhatsapp);
       onOpenChange(false);
       return;
     }
     if (channel === "email") {
       if (!recipient.email) {
-        toast.error("Necesito un email del destinatario.");
+        toast.error(t.finanzas.toastNeedEmail);
         return;
       }
-      const subject = `Recibo · ${t.concept}`;
+      const subject = t.finanzas.emailSubject.replace("{concept}", transaction.concept);
       const url = `mailto:${recipient.email}?subject=${encodeURIComponent(
         subject
       )}&body=${encodeURIComponent(message)}`;
       window.location.href = url;
-      toast.success("Abriendo cliente de correo...");
+      toast.success(t.finanzas.toastOpeningEmail);
       onOpenChange(false);
       return;
     }
@@ -164,7 +172,7 @@ export function SendInvoiceDialog({
 
   function copyLink() {
     navigator.clipboard.writeText(invoiceUrl).then(() => {
-      toast.success("Link copiado al portapapeles");
+      toast.success(t.finanzas.toastLinkCopied);
     });
   }
 
@@ -183,10 +191,10 @@ export function SendInvoiceDialog({
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <Send className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            Enviar comprobante
+            {t.finanzas.sendDialogTitle}
           </DialogTitle>
           <DialogDescription>
-            Comparte el enlace con un cliente, propietario o contacto externo.
+            {t.finanzas.sendDialogDesc}
           </DialogDescription>
         </DialogHeader>
 
@@ -194,7 +202,7 @@ export function SendInvoiceDialog({
           {/* Public link preview + copy */}
           <div className="rounded-xl border border-border bg-background/40 p-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Enlace público del comprobante
+              {t.finanzas.publicLinkLabel}
             </p>
             <div className="mt-1.5 flex items-center gap-2">
               <code className="flex-1 truncate rounded-md bg-secondary/60 px-2 py-1 font-mono text-[11px]">
@@ -207,7 +215,7 @@ export function SendInvoiceDialog({
                 onClick={copyLink}
               >
                 <Copy className="mr-1.5 h-3 w-3" />
-                Copiar
+                {t.finanzas.copy}
               </Button>
             </div>
           </div>
@@ -215,7 +223,7 @@ export function SendInvoiceDialog({
           {/* Channel selector */}
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Canal
+              {t.finanzas.channel}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <ChannelButton
@@ -223,14 +231,14 @@ export function SendInvoiceDialog({
                 onClick={() => setChannel("whatsapp")}
                 icon={MessageCircle}
                 label="WhatsApp"
-                hint="Mensaje directo"
+                hint={t.finanzas.channelWhatsappHint}
               />
               <ChannelButton
                 active={channel === "email"}
                 onClick={() => setChannel("email")}
                 icon={Mail}
                 label="Email"
-                hint="Cliente de correo"
+                hint={t.finanzas.channelEmailHint}
               />
             </div>
           </div>
@@ -238,27 +246,27 @@ export function SendInvoiceDialog({
           {/* Recipient kind */}
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Destinatario
+              {t.finanzas.recipient}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <RecipientButton
                 active={recipientKind === "manual"}
                 onClick={() => setRecipientKind("manual")}
                 icon={UserIcon}
-                label="Nuevo"
+                label={t.finanzas.recipientNew}
               />
               <RecipientButton
                 active={recipientKind === "contact"}
                 onClick={() => setRecipientKind("contact")}
                 icon={Users}
-                label="Contacto"
+                label={t.finanzas.recipientContact}
               />
               <RecipientButton
                 active={recipientKind === "owner"}
                 onClick={() => setRecipientKind("owner")}
                 icon={Building2}
-                label="Propietario"
-                disabled={!t.propertyId}
+                label={t.finanzas.recipientOwner}
+                disabled={!transaction.propertyId}
               />
             </div>
 
@@ -266,23 +274,23 @@ export function SendInvoiceDialog({
             <div className="mt-3">
               {recipientKind === "manual" && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="Nombre">
+                  <Field label={t.finanzas.recipientName}>
                     <Input
-                      placeholder="María Hernández"
+                      placeholder={t.finanzas.recipientNamePlaceholder}
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
                     />
                   </Field>
-                  <Field label="Email">
+                  <Field label={t.finanzas.recipientEmail}>
                     <Input
                       type="email"
-                      placeholder="cliente@email.com"
+                      placeholder={t.finanzas.recipientEmailPlaceholder}
                       value={manualEmail}
                       onChange={(e) => setManualEmail(e.target.value)}
                     />
                   </Field>
                   <Field
-                    label="WhatsApp / Teléfono"
+                    label={t.finanzas.recipientPhone}
                     className="sm:col-span-2"
                   >
                     <Input
@@ -298,12 +306,11 @@ export function SendInvoiceDialog({
                 <div>
                   {loadingContacts ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      Cargando contactos...
+                      {t.finanzas.loadingContacts}
                     </p>
                   ) : contacts.length === 0 ? (
                     <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-                      No tienes contactos aún. Usa &quot;Nuevo&quot; para
-                      ingresar manualmente.
+                      {t.finanzas.noContacts}
                     </p>
                   ) : (
                     <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-border p-1">
@@ -348,7 +355,7 @@ export function SendInvoiceDialog({
 
               {recipientKind === "owner" && (
                 <OwnerLookup
-                  propertyId={t.propertyId}
+                  propertyId={transaction.propertyId}
                   onResolved={(email, phone, name) => {
                     setManualEmail(email ?? "");
                     setManualPhone(phone ?? "");
@@ -362,7 +369,7 @@ export function SendInvoiceDialog({
           {/* Message editor */}
           <div>
             <Label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Mensaje
+              {t.finanzas.message}
             </Label>
             <Textarea
               rows={6}
@@ -371,7 +378,7 @@ export function SendInvoiceDialog({
               className="font-mono text-xs leading-relaxed"
             />
             <p className="mt-1.5 text-[10px] text-muted-foreground">
-              El link público del comprobante ya está incluido. Edita libremente.
+              {t.finanzas.messageHint}
             </p>
           </div>
         </div>
@@ -381,11 +388,11 @@ export function SendInvoiceDialog({
             variant="ghost"
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t.finanzas.cancel}
           </Button>
           <Button onClick={send} disabled={!canSend} variant="ink">
             <Send className="mr-1.5 h-3.5 w-3.5" />
-            Enviar por {channel === "whatsapp" ? "WhatsApp" : "Email"}
+            {channel === "whatsapp" ? t.finanzas.sendViaWhatsapp : t.finanzas.sendViaEmail}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -510,6 +517,7 @@ function OwnerLookup({
     name: string
   ) => void;
 }) {
+  const { t } = useT();
   const [owner, setOwner] = useState<{
     name: string;
     email: string | null;
@@ -541,7 +549,7 @@ function OwnerLookup({
   if (!propertyId) {
     return (
       <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-        Esta transacción no tiene propiedad asociada.
+        {t.finanzas.ownerNoProperty}
       </p>
     );
   }
@@ -549,7 +557,7 @@ function OwnerLookup({
   if (loading) {
     return (
       <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-        Buscando propietario...
+        {t.finanzas.ownerLoading}
       </p>
     );
   }
@@ -557,7 +565,7 @@ function OwnerLookup({
   if (!owner) {
     return (
       <p className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
-        La propiedad no tiene propietario configurado.
+        {t.finanzas.ownerNotConfigured}
       </p>
     );
   }

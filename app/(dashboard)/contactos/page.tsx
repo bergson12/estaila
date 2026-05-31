@@ -5,6 +5,7 @@ import { ContactsClient } from "@/components/contacts/contacts-client";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function ContactosPage({
 }) {
   const user = await requireUser();
   const sp = await searchParams;
+  const t = await getDict();
 
   const where = {
     userId: user.id,
@@ -130,13 +132,13 @@ export default async function ContactosPage({
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Contactos"
-        description="Directorio de propietarios, clientes, abogados, servicios y colegas."
+        title={t.contactos.title}
+        description={t.contactos.pageDescription}
         actions={
           <Button asChild variant="outline">
             <Link href="/importar?type=CONTACTS">
               <Upload className="mr-2 h-4 w-4" />
-              Importar CSV
+              {t.contactos.importCsv}
             </Link>
           </Button>
         }

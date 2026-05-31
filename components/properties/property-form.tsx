@@ -38,7 +38,8 @@ import {
   type LuxuryFieldsValue,
 } from "./luxury-fields-editor";
 import { PropertySchema, type PropertyInput } from "@/lib/validations";
-import { CATEGORIES, OPERATIONS, PROPERTY_STATUSES } from "@/lib/constants";
+import { CATEGORIES, OPERATIONS, PROPERTY_STATUSES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import {
   createProperty,
   updateProperty,
@@ -73,6 +74,7 @@ export function PropertyForm({
   userPlan?: string;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const isEdit = !!initial?.id;
   const [photos, setPhotos] = useState<string[]>(
     initial?.initialPhotos ?? (initial?.featuredPhoto ? [initial.featuredPhoto] : [])
@@ -124,12 +126,12 @@ export function PropertyForm({
   async function handleExtractCoords(raw?: string) {
     const url = (raw ?? form.getValues("mapsUrl") ?? "").trim();
     if (!url) {
-      toast.error("Pega un link de Google Maps primero");
+      toast.error(t.propForm.toastPasteFirst);
       return;
     }
     if (!looksLikeGoogleMapsUrl(url)) {
       setExtractingCoords("fail");
-      toast.error("No parece un link de Google Maps");
+      toast.error(t.propForm.toastNotMapsLink);
       return;
     }
     // 1) Fast path: direct parse (long URLs)
@@ -139,7 +141,7 @@ export function PropertyForm({
       form.setValue("lng", local.lng, { shouldDirty: true });
       setExtractingCoords("ok");
       toast.success(
-        `Coordenadas extraídas: ${local.lat.toFixed(5)}, ${local.lng.toFixed(5)}`
+        `${t.propForm.toastCoordsExtracted} ${local.lat.toFixed(5)}, ${local.lng.toFixed(5)}`
       );
       return;
     }
@@ -152,11 +154,11 @@ export function PropertyForm({
         form.setValue("lng", coords.lng, { shouldDirty: true });
         setExtractingCoords("ok");
         toast.success(
-          `Coordenadas extraídas: ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
+          `${t.propForm.toastCoordsExtracted} ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`
         );
       } else {
         setExtractingCoords("fail");
-        toast.error("No pude extraer coordenadas de ese link");
+        toast.error(t.propForm.toastCoordsFail);
       }
     } catch (e) {
       setExtractingCoords("fail");
@@ -190,7 +192,7 @@ export function PropertyForm({
             await addPhotoToProperty(initial.id, url, url === photos[0]);
           }
         }
-        toast.success("Propiedad actualizada");
+        toast.success(t.propForm.toastUpdated);
         router.push(`/propiedades/${initial.id}`);
         router.refresh();
       } else {
@@ -199,7 +201,7 @@ export function PropertyForm({
         for (const url of photos) {
           await addPhotoToProperty(result.id, url, url === photos[0]);
         }
-        toast.success("Propiedad creada");
+        toast.success(t.propForm.toastCreated);
         router.push(`/propiedades/${result.id}`);
         router.refresh();
       }
@@ -215,7 +217,7 @@ export function PropertyForm({
     startTransition(async () => {
       try {
         await deleteProperty(initial.id!);
-        toast.success("Propiedad eliminada");
+        toast.success(t.propForm.toastDeleted);
       } catch (e) {
         toast.error((e as Error).message);
       }
@@ -230,26 +232,26 @@ export function PropertyForm({
         {/* MAIN */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Información principal</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.mainInfo}</h2>
 
             <div className="space-y-4">
-              <Field label="Título *" error={errors.title?.message}>
+              <Field label={t.propForm.titleLabel} error={errors.title?.message}>
                 <Input
                   {...form.register("title")}
-                  placeholder="Ej: Casa moderna en Los Rosales"
+                  placeholder={t.propForm.titlePlaceholder}
                 />
               </Field>
 
-              <Field label="Descripción">
+              <Field label={t.propForm.descriptionLabel}>
                 <Textarea
                   {...form.register("description")}
                   rows={4}
-                  placeholder="Detalles, amenidades, características destacables..."
+                  placeholder={t.propForm.descriptionPlaceholder}
                 />
               </Field>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Field label="Categoría *" error={errors.category?.message}>
+                <Field label={t.propForm.categoryLabel} error={errors.category?.message}>
                   <Controller
                     control={form.control}
                     name="category"
@@ -261,7 +263,7 @@ export function PropertyForm({
                         <SelectContent>
                           {CATEGORIES.map((c) => (
                             <SelectItem key={c.value} value={c.value}>
-                              {c.label}
+                              {labelFor(CATEGORIES, c.value, locale)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -269,7 +271,7 @@ export function PropertyForm({
                     )}
                   />
                 </Field>
-                <Field label="Operación *" error={errors.operation?.message}>
+                <Field label={t.propForm.operationLabel} error={errors.operation?.message}>
                   <Controller
                     control={form.control}
                     name="operation"
@@ -281,7 +283,7 @@ export function PropertyForm({
                         <SelectContent>
                           {OPERATIONS.map((c) => (
                             <SelectItem key={c.value} value={c.value}>
-                              {c.label}
+                              {labelFor(OPERATIONS, c.value, locale)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -289,7 +291,7 @@ export function PropertyForm({
                     )}
                   />
                 </Field>
-                <Field label="Estado">
+                <Field label={t.propForm.statusLabel}>
                   <Controller
                     control={form.control}
                     name="status"
@@ -301,7 +303,7 @@ export function PropertyForm({
                         <SelectContent>
                           {PROPERTY_STATUSES.map((c) => (
                             <SelectItem key={c.value} value={c.value}>
-                              {c.label}
+                              {labelFor(PROPERTY_STATUSES, c.value, locale)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -314,9 +316,9 @@ export function PropertyForm({
           </Card>
 
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Características</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.features}</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Field label="Habitaciones">
+              <Field label={t.propForm.bedrooms}>
                 <Input
                   type="number"
                   min={0}
@@ -324,7 +326,7 @@ export function PropertyForm({
                   className="font-mono tabular-nums"
                 />
               </Field>
-              <Field label="Baños">
+              <Field label={t.propForm.bathrooms}>
                 <Input
                   type="number"
                   min={0}
@@ -333,7 +335,7 @@ export function PropertyForm({
                   className="font-mono tabular-nums"
                 />
               </Field>
-              <Field label="Parqueos">
+              <Field label={t.propForm.parking}>
                 <Input
                   type="number"
                   min={0}
@@ -341,7 +343,7 @@ export function PropertyForm({
                   className="font-mono tabular-nums"
                 />
               </Field>
-              <Field label="Metros² ">
+              <Field label={t.propForm.metersSquared}>
                 <Input
                   type="number"
                   min={0}
@@ -353,9 +355,9 @@ export function PropertyForm({
           </Card>
 
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Precio</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.price}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Precio USD">
+              <Field label={t.propForm.priceUSD}>
                 <Input
                   type="number"
                   min={0}
@@ -364,7 +366,7 @@ export function PropertyForm({
                   className="font-mono tabular-nums"
                 />
               </Field>
-              <Field label="Precio DOP (opcional)">
+              <Field label={t.propForm.priceDOP}>
                 <Input
                   type="number"
                   min={0}
@@ -377,25 +379,25 @@ export function PropertyForm({
           </Card>
 
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Ubicación</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.location}</h2>
             <div className="space-y-4">
-              <Field label="Sector / Ciudad">
+              <Field label={t.propForm.sectorCity}>
                 <Input
                   {...form.register("location")}
-                  placeholder="Ej: Sector, Ciudad"
+                  placeholder={t.propForm.sectorCityPlaceholder}
                 />
               </Field>
-              <Field label="Dirección completa">
+              <Field label={t.propForm.fullAddress}>
                 <Input
                   {...form.register("address")}
-                  placeholder="Calle, número, sector, ciudad"
+                  placeholder={t.propForm.fullAddressPlaceholder}
                 />
               </Field>
-              <Field label="Google Maps URL" error={errors.mapsUrl?.message}>
+              <Field label={t.propForm.mapsUrlLabel} error={errors.mapsUrl?.message}>
                 <div className="flex gap-2">
                   <Input
                     {...form.register("mapsUrl")}
-                    placeholder="https://maps.google.com/... o maps.app.goo.gl/..."
+                    placeholder={t.propForm.mapsUrlPlaceholder}
                     onBlur={(e) => {
                       const v = e.target.value.trim();
                       if (v && looksLikeGoogleMapsUrl(v) && extractingCoords === "idle") {
@@ -432,6 +434,9 @@ export function PropertyForm({
                   status={extractingCoords}
                   lat={form.watch("lat") as number | undefined}
                   lng={form.watch("lng") as number | undefined}
+                  failText={t.propForm.coordsFailHint}
+                  coordsLabel={t.propForm.coordsLabel}
+                  idleText={t.propForm.coordsIdleHint}
                 />
               </Field>
             </div>
@@ -441,15 +446,15 @@ export function PropertyForm({
         {/* SIDE */}
         <div className="space-y-6">
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Fotos</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.photos}</h2>
             <ImageUploader value={photos} onChange={setPhotos} maxFiles={12} />
             <p className="mt-3 text-xs text-muted-foreground">
-              La primera foto se usa como portada.
+              {t.propForm.photosHint}
             </p>
           </Card>
 
           <Card className="p-6">
-            <h2 className="mb-4 text-sm font-semibold">Propietario</h2>
+            <h2 className="mb-4 text-sm font-semibold">{t.propForm.owner}</h2>
             <Controller
               control={form.control}
               name="ownerId"
@@ -459,10 +464,10 @@ export function PropertyForm({
                   value={field.value || "__none"}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sin propietario" />
+                    <SelectValue placeholder={t.propForm.noOwner} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none">Sin propietario</SelectItem>
+                    <SelectItem value="__none">{t.propForm.noOwner}</SelectItem>
                     {ownerOptions.map((o) => (
                       <SelectItem key={o.value} value={o.value}>
                         {o.label}
@@ -473,7 +478,7 @@ export function PropertyForm({
               )}
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              Sólo contactos tipo Propietario.
+              {t.propForm.ownerHint}
             </p>
           </Card>
 
@@ -490,13 +495,12 @@ export function PropertyForm({
           >
             <div className="mb-1 flex items-center gap-1.5">
               <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                Premium ↓
+                {t.propForm.premiumBadge}
               </span>
             </div>
-            <p className="text-xs font-semibold">Landing personalizada</p>
+            <p className="text-xs font-semibold">{t.propForm.customLanding}</p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-              Más abajo: amenidades, acabados, planos, mapa Mapbox, video tour.
-              Configura todo lo que potencia la landing pública.
+              {t.propForm.customLandingHint}
             </p>
           </a>
 
@@ -507,7 +511,7 @@ export function PropertyForm({
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              {isEdit ? "Guardar cambios" : "Crear propiedad"}
+              {isEdit ? t.propForm.saveChanges : t.propForm.createProperty}
             </Button>
             <Button
               type="button"
@@ -515,7 +519,7 @@ export function PropertyForm({
               className="w-full"
               onClick={() => router.back()}
             >
-              Cancelar
+              {t.propForm.cancel}
             </Button>
             {isEdit && (
               <Button
@@ -525,7 +529,7 @@ export function PropertyForm({
                 onClick={() => setConfirmDelete(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar propiedad
+                {t.propForm.deleteProperty}
               </Button>
             )}
           </div>
@@ -544,19 +548,18 @@ export function PropertyForm({
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar propiedad?</DialogTitle>
+            <DialogTitle>{t.propForm.deleteDialogTitle}</DialogTitle>
             <DialogDescription>
-              Esta acción no se puede deshacer. Se borrarán también las fotos
-              asociadas y los registros relacionados.
+              {t.propForm.deleteDialogDesc}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              Cancelar
+              {t.propForm.cancel}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
+              {t.propForm.deleteConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -589,10 +592,16 @@ function CoordStatus({
   status,
   lat,
   lng,
+  failText,
+  coordsLabel,
+  idleText,
 }: {
   status: "idle" | "loading" | "ok" | "fail";
   lat: number | undefined;
   lng: number | undefined;
+  failText: string;
+  coordsLabel: string;
+  idleText: string;
 }) {
   const hasCoords =
     typeof lat === "number" &&
@@ -603,7 +612,7 @@ function CoordStatus({
   if (status === "fail") {
     return (
       <p className="text-[11px] text-destructive">
-        No reconocido. Acepta google.com/maps, goo.gl/maps, maps.app.goo.gl
+        {failText}
       </p>
     );
   }
@@ -611,7 +620,7 @@ function CoordStatus({
     return (
       <p className="flex items-center gap-1.5 text-[11px] text-success">
         <CheckCircle2 className="h-3 w-3" />
-        Coordenadas{" "}
+        {coordsLabel}{" "}
         <span className="font-mono tabular-nums">
           {lat!.toFixed(5)}, {lng!.toFixed(5)}
         </span>
@@ -620,7 +629,7 @@ function CoordStatus({
   }
   return (
     <p className="text-[11px] text-muted-foreground">
-      Pega un link de Google Maps y detectaremos lat/lng automáticamente.
+      {idleText}
     </p>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { numberToWords } from "@/lib/document-templates";
+import type { Dict, Locale } from "@/lib/i18n/dictionary";
 
 type Transaction = {
   id: string;
@@ -40,19 +41,42 @@ type Agent = {
   avatar: string | null;
 };
 
+// Etiqueta i18n del subtipo (DB enum -> texto UI). Claves planas en `finanzas`.
+function invoiceTypeLabels(t: Dict): Record<string, string> {
+  return {
+    RESERVA: t.finanzas.typeReserva,
+    COMISION: t.finanzas.typeComision,
+    MANTENIMIENTO: t.finanzas.typeMantenimiento,
+    PUBLICIDAD: t.finanzas.typePublicidad,
+    MARKETING: t.finanzas.typeMarketing,
+    SUSCRIPCION: t.finanzas.typeSuscripcion,
+    LEGAL: t.finanzas.typeLegal,
+    OTRO: t.finanzas.typeOtro,
+  };
+}
+
 export function InvoiceView({
-  transaction: t,
+  transaction: tx,
   agent,
+  t,
+  locale,
 }: {
   transaction: Transaction;
   agent: Agent;
+  t: Dict;
+  locale: Locale;
 }) {
-  const isIncome = t.category === "INGRESO";
-  const docNumber = t.id.slice(-8).toUpperCase();
-  const cur = t.currency as "USD" | "DOP";
-  const amountInWords = `${numberToWords(Math.floor(t.amount))} ${
-    cur === "USD" ? "dólares" : "pesos"
-  } con ${String(Math.round((t.amount % 1) * 100)).padStart(2, "0")}/100`;
+  const isIncome = tx.category === "INGRESO";
+  const docNumber = tx.id.slice(-8).toUpperCase();
+  const cur = tx.currency as "USD" | "DOP";
+  const currencyWord =
+    cur === "USD" ? t.finanzas.wordsDollars : t.finanzas.wordsPesos;
+  const cents = String(Math.round((tx.amount % 1) * 100)).padStart(2, "0");
+  const amountInWords = t.finanzas.amountInWordsTemplate
+    .replace("{words}", numberToWords(Math.floor(tx.amount)))
+    .replace("{currency}", currencyWord)
+    .replace("{cents}", cents);
+  const dateFnsLocale = locale === "en" ? enUS : es;
 
   function handlePrint() {
     window.print();
@@ -73,7 +97,7 @@ export function InvoiceView({
           </div>
           <Button onClick={handlePrint} variant="ink">
             <Printer className="mr-2 h-4 w-4" />
-            Imprimir / Guardar PDF
+            {t.finanzas.printSavePdf}
           </Button>
         </div>
       </div>
@@ -85,26 +109,26 @@ export function InvoiceView({
           <div className="flex items-start justify-between border-b border-border pb-7">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-                {isIncome ? "Recibo de ingreso" : "Comprobante de gasto"}
+                {isIncome ? t.finanzas.incomeReceiptTitle : t.finanzas.expenseVoucherTitle}
               </p>
               <h1 className="mt-2 font-mono text-2xl font-bold tabular-nums">
                 #{docNumber}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Emitido el{" "}
-                {format(new Date(t.date), "d 'de' MMMM 'de' yyyy", {
-                  locale: es,
+                {t.finanzas.issuedOn}{" "}
+                {format(new Date(tx.date), t.finanzas.dateFormatLong, {
+                  locale: dateFnsLocale,
                 })}
               </p>
             </div>
-            <StatusPill status={t.status} />
+            <StatusPill status={tx.status} t={t} />
           </div>
 
           {/* Parties — issued by */}
           <div className="grid grid-cols-1 gap-6 border-b border-border py-7 sm:grid-cols-2">
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Emitido por
+                {t.finanzas.issuedBy}
               </p>
               <p className="text-base font-semibold">{agent.name}</p>
               <div className="mt-2 space-y-1 text-xs text-muted-foreground">
@@ -130,27 +154,27 @@ export function InvoiceView({
             </div>
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Recibo de
+                {t.finanzas.receivedBy}
               </p>
               <p className="text-base font-semibold text-muted-foreground">
                 _______________________________
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Espacio para nombre del cliente (rellenar a mano si corresponde)
+                {t.finanzas.clientNameHint}
               </p>
             </div>
           </div>
 
           {/* Property reference */}
-          {t.propertyTitle && (
+          {tx.propertyTitle && (
             <div className="border-b border-border py-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Propiedad
+                {t.finanzas.property}
               </p>
-              <p className="mt-2 text-sm font-medium">{t.propertyTitle}</p>
-              {(t.propertyAddress || t.propertyLocation) && (
+              <p className="mt-2 text-sm font-medium">{tx.propertyTitle}</p>
+              {(tx.propertyAddress || tx.propertyLocation) && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {t.propertyAddress ?? t.propertyLocation}
+                  {tx.propertyAddress ?? tx.propertyLocation}
                 </p>
               )}
             </div>
@@ -159,7 +183,7 @@ export function InvoiceView({
           {/* Concept + amount */}
           <div className="py-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Concepto
+              {t.finanzas.concept}
             </p>
             <div className="mt-3 flex items-start justify-between gap-6">
               <div className="flex-1">
@@ -179,15 +203,15 @@ export function InvoiceView({
                     )}
                   </span>
                   <div>
-                    <p className="text-lg font-semibold">{t.concept}</p>
+                    <p className="text-lg font-semibold">{tx.concept}</p>
                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t.type.replace(/_/g, " ").toLowerCase()}
+                      {invoiceTypeLabels(t)[tx.type] ?? tx.type}
                     </p>
                   </div>
                 </div>
-                {t.notes && (
+                {tx.notes && (
                   <p className="mt-4 whitespace-pre-line rounded-lg border border-border bg-background/50 p-3 text-xs leading-relaxed text-muted-foreground">
-                    {t.notes}
+                    {tx.notes}
                   </p>
                 )}
               </div>
@@ -199,7 +223,7 @@ export function InvoiceView({
                   )}
                 >
                   {isIncome ? "+" : "−"}
-                  {formatCurrency(t.amount, cur)}
+                  {formatCurrency(tx.amount, cur)}
                 </p>
                 <p className="mt-1 font-mono text-xs text-muted-foreground">
                   {cur}
@@ -211,7 +235,7 @@ export function InvoiceView({
           {/* Amount in words — legal */}
           <div className="rounded-xl border border-dashed border-border bg-background/40 p-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Monto en letras
+              {t.finanzas.amountInWords}
             </p>
             <p className="mt-2 text-sm font-medium leading-relaxed">
               {amountInWords}
@@ -220,18 +244,17 @@ export function InvoiceView({
 
           {/* Signatures */}
           <div className="mt-12 grid grid-cols-1 gap-12 sm:grid-cols-2">
-            <SignatureLine label="Firma del emisor" name={agent.name} />
-            <SignatureLine label="Firma del receptor" />
+            <SignatureLine label={t.finanzas.issuerSignature} name={agent.name} />
+            <SignatureLine label={t.finanzas.receiverSignature} />
           </div>
 
           {/* Footer — legal disclaimer */}
           <div className="mt-12 border-t border-border pt-5 text-center">
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              Este documento es un comprobante de la transacción registrada. Para
-              uso administrativo y legal entre las partes. Generado por estaila.
+              {t.finanzas.legalDisclaimer}
             </p>
             <p className="mt-1.5 font-mono text-[10px] text-muted-foreground/70">
-              Doc · {t.id}
+              {t.finanzas.docWord} · {tx.id}
             </p>
           </div>
         </article>
@@ -261,23 +284,23 @@ export function InvoiceView({
 // STATUS PILL
 // ============================================================
 
-function StatusPill({ status }: { status: string }) {
+function StatusPill({ status, t }: { status: string; t: Dict }) {
   const map: Record<
     string,
     { label: string; icon: typeof Clock; color: string }
   > = {
     PENDIENTE: {
-      label: "Pendiente",
+      label: t.finanzas.statusPending,
       icon: Clock,
       color: "bg-warning/15 text-warning border-warning/30",
     },
     EN_PROGRESO: {
-      label: "En progreso",
+      label: t.finanzas.statusInProgress,
       icon: Clock,
       color: "bg-primary/15 text-primary border-primary/30",
     },
     PAGADO: {
-      label: "Pagado",
+      label: t.finanzas.statusPaid,
       icon: CheckCircle2,
       color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
     },

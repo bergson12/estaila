@@ -15,11 +15,12 @@ import { listMyTickets } from "@/lib/actions/support";
 import { TicketsList } from "@/components/support/tickets-list";
 import { NewTicketDialog } from "@/components/support/new-ticket-dialog";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function SoportePage() {
-  const [tickets] = await Promise.all([listMyTickets()]);
+  const [tickets, t] = await Promise.all([listMyTickets(), getDict()]);
   const aiEnabled = isDeepSeekConfigured();
   const openTickets = tickets.filter(
     (t) => t.status === "OPEN" || t.status === "IN_PROGRESS"
@@ -31,10 +32,10 @@ export default async function SoportePage() {
         title={
           <>
             <LifeBuoy className="h-6 w-6 text-primary" />
-            Centro de ayuda
+            {t.soporte.title}
           </>
         }
-        description="Resuelve tu duda al instante con el asistente IA. Si necesitas a un humano, abre un ticket."
+        description={t.soporte.description}
       />
 
       {/* AI-first hero */}
@@ -48,7 +49,7 @@ export default async function SoportePage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold tracking-tight">
-                  Asistente IA · instantáneo
+                  {t.soporte.aiHeroTitle}
                 </h3>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
                   <Zap className="h-2.5 w-2.5" />
@@ -56,9 +57,10 @@ export default async function SoportePage() {
                 </span>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                <strong className="text-foreground">Empieza por aquí.</strong>{" "}
-                Resuelve 90% de las dudas al instante: usar Studio IA, ajustar
-                billing, navegar el CRM, crear contactos, automatizar emails…
+                <strong className="text-foreground">
+                  {t.soporte.aiHeroLead}
+                </strong>{" "}
+                {t.soporte.aiHeroBody}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button
@@ -67,11 +69,11 @@ export default async function SoportePage() {
                 >
                   <a href="#chatbot-trigger" id="open-chatbot-link">
                     <Sparkles className="mr-1.5 h-4 w-4" />
-                    Hablar con el asistente
+                    {t.soporte.talkToAssistant}
                   </a>
                 </Button>
                 <p className="text-[11px] text-muted-foreground">
-                  Pulsa el botón verde flotante 💚 abajo a la derecha
+                  {t.soporte.floatingButtonHint}
                 </p>
               </div>
             </div>
@@ -87,26 +89,24 @@ export default async function SoportePage() {
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-sm font-semibold">
-              ¿El asistente no resuelve tu caso?
+              {t.soporte.escalationTitle}
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Abre un ticket solo si el asistente IA no pudo ayudar, o si es un
-              problema técnico que requiere atención humana (cobros, errores
-              del sistema, datos perdidos). Respuesta en{" "}
-              <strong>máx 24h hábiles</strong>.
+              {t.soporte.escalationBody}{" "}
+              <strong>{t.soporte.escalationSla}</strong>.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <NewTicketDialog>
                 <Button variant="outline" size="sm">
                   <MessageSquarePlus className="mr-1.5 h-3.5 w-3.5" />
-                  Abrir ticket de soporte
+                  {t.soporte.openTicketBtn}
                 </Button>
               </NewTicketDialog>
               <Link
                 href="/legal/reembolsos"
                 className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               >
-                Política de reembolsos →
+                {t.soporte.refundPolicyLink} →
               </Link>
             </div>
           </div>
@@ -117,11 +117,11 @@ export default async function SoportePage() {
       {tickets.length > 0 && (
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Tus tickets ({openTickets.length} abiertos)
+            {t.soporte.yourTickets} ({openTickets.length} {t.soporte.openCount})
           </h2>
           {openTickets.length > 0 && (
             <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
-              Pendiente respuesta
+              {t.soporte.awaitingReply}
             </span>
           )}
         </div>
@@ -134,8 +134,7 @@ export default async function SoportePage() {
             strokeWidth={1.5}
           />
           <p className="text-xs text-muted-foreground">
-            Sin tickets abiertos. Si el asistente IA no resuelve tu duda,
-            abre uno aquí.
+            {t.soporte.emptyTickets}
           </p>
         </div>
       ) : (
@@ -145,35 +144,33 @@ export default async function SoportePage() {
       {/* Quick tips */}
       <Card className="mt-8 p-5">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Antes de abrir un ticket
+          {t.soporte.tipsTitle}
         </h3>
         <ul className="space-y-2 text-xs">
           <li className="flex items-start gap-2">
             <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
             <span>
-              <strong>Studio IA falla:</strong> los créditos se reembolsan
-              automáticamente cuando una generación falla. Vuelve a intentarlo
-              antes de reportar.
+              <strong>{t.soporte.tipStudioLead}</strong> {t.soporte.tipStudioBody}
             </span>
           </li>
           <li className="flex items-start gap-2">
             <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
             <span>
-              <strong>Cobros / facturación:</strong> consulta primero la{" "}
+              <strong>{t.soporte.tipBillingLead}</strong>{" "}
+              {t.soporte.tipBillingBefore}{" "}
               <Link
                 href="/legal/reembolsos"
                 className="text-primary underline"
               >
-                política de reembolsos
+                {t.soporte.refundPolicyInline}
               </Link>{" "}
-              — la mayoría de casos tienen respuesta clara ahí.
+              {t.soporte.tipBillingAfter}
             </span>
           </li>
           <li className="flex items-start gap-2">
             <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
             <span>
-              <strong>Para acelerar resolución:</strong> incluye capturas, el
-              mensaje exacto del error y la URL donde ocurrió.
+              <strong>{t.soporte.tipSpeedLead}</strong> {t.soporte.tipSpeedBody}
             </span>
           </li>
         </ul>

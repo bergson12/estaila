@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatDate } from "@/lib/utils";
 import { compressImage } from "@/lib/compress-image";
+import { useT } from "@/lib/i18n/provider";
 import {
   createUploadedDocument,
   updateDocStatus,
@@ -43,19 +44,19 @@ type DocRow = {
   createdAt: string | Date;
 };
 
-const KIND_LABEL: Record<string, string> = {
-  PROPUESTA: "Propuesta",
-  CONTRATO: "Contrato",
-  RECIBO: "Recibo",
-  OTRO: "Otro",
+const KIND_LABEL_KEY: Record<string, string> = {
+  PROPUESTA: "kindProposal",
+  CONTRATO: "kindContract",
+  RECIBO: "kindReceipt",
+  OTRO: "kindOther",
 };
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  PENDIENTE: { label: "Pendiente", cls: "bg-muted text-muted-foreground" },
-  ENVIADO: { label: "Enviado", cls: "bg-blue-500/15 text-blue-500" },
-  FIRMADO: { label: "Firmado", cls: "bg-emerald-500/15 text-emerald-500" },
-  CERRADO: { label: "Cerrado", cls: "bg-violet-500/15 text-violet-500" },
-  RECHAZADO: { label: "Rechazado", cls: "bg-destructive/15 text-destructive" },
+const STATUS_META: Record<string, { labelKey: string; cls: string }> = {
+  PENDIENTE: { labelKey: "statusPending", cls: "bg-muted text-muted-foreground" },
+  ENVIADO: { labelKey: "statusSent", cls: "bg-blue-500/15 text-blue-500" },
+  FIRMADO: { labelKey: "statusSigned", cls: "bg-emerald-500/15 text-emerald-500" },
+  CERRADO: { labelKey: "statusClosed", cls: "bg-violet-500/15 text-violet-500" },
+  RECHAZADO: { labelKey: "statusRejected", cls: "bg-destructive/15 text-destructive" },
 };
 
 const STATUS_TABS = ["ALL", "PENDIENTE", "ENVIADO", "FIRMADO", "CERRADO"] as const;
@@ -70,6 +71,7 @@ export function DocumentsManager({
   contacts: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [filter, setFilter] = useState<(typeof STATUS_TABS)[number]>("ALL");
   const [uploading, setUploading] = useState(false);
   const [kind, setKind] = useState("OTRO");
@@ -99,7 +101,7 @@ export function DocumentsManager({
       fd.append("file", compressed);
       const up = await fetch("/api/upload/document", { method: "POST", body: fd });
       const data = await up.json();
-      if (!up.ok) throw new Error(data.error ?? "Error al subir el documento");
+      if (!up.ok) throw new Error(data.error ?? t.documentos.toastUploadError);
       const r = await createUploadedDocument({
         name: file.name,
         fileUrl: data.url as string,
@@ -109,7 +111,7 @@ export function DocumentsManager({
         contactId: contactId || null,
       });
       if (!r.ok) throw new Error(r.error);
-      toast.success("Documento subido");
+      toast.success(t.documentos.toastUploaded);
       router.refresh();
     } catch (err) {
       toast.error((err as Error).message);
@@ -131,11 +133,11 @@ export function DocumentsManager({
   }
 
   async function onDelete(id: string, name: string) {
-    if (!confirm(`¿Eliminar "${name}"? No se puede deshacer.`)) return;
+    if (!confirm(t.documentos.confirmDelete.replace("{name}", name))) return;
     setBusyId(id);
     try {
       await deleteUploadedDocument(id);
-      toast.success("Documento eliminado");
+      toast.success(t.documentos.toastDeleted);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -148,14 +150,13 @@ export function DocumentsManager({
     <Card className="mt-4 rounded-2xl border-border p-6">
       <div className="mb-4">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-          Mis documentos
+          {t.documentos.myDocsLabel}
         </p>
         <h2 className="mt-1 text-base font-semibold tracking-tight">
-          Sube y organiza documentos
+          {t.documentos.uploadOrganizeTitle}
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          PDF, Word o imágenes (máx 25MB). Vincula a una propiedad o contacto y
-          controla su estado.
+          {t.documentos.uploadOrganizeHint}
         </p>
       </div>
 
@@ -163,33 +164,33 @@ export function DocumentsManager({
       <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-card/40 p-3 sm:flex-row sm:flex-wrap sm:items-end">
         <div className="w-full sm:min-w-[120px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Tipo
+            {t.documentos.typeLabel}
           </label>
           <Select value={kind} onValueChange={setKind}>
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PROPUESTA">Propuesta</SelectItem>
-              <SelectItem value="CONTRATO">Contrato</SelectItem>
-              <SelectItem value="RECIBO">Recibo</SelectItem>
-              <SelectItem value="OTRO">Otro</SelectItem>
+              <SelectItem value="PROPUESTA">{t.documentos.kindProposal}</SelectItem>
+              <SelectItem value="CONTRATO">{t.documentos.kindContract}</SelectItem>
+              <SelectItem value="RECIBO">{t.documentos.kindReceipt}</SelectItem>
+              <SelectItem value="OTRO">{t.documentos.kindOther}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="w-full sm:min-w-[140px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Propiedad (opcional)
+            {t.documentos.propertyOptionalLabel}
           </label>
           <Select
             value={propertyId || "__none"}
             onValueChange={(v) => setPropertyId(v === "__none" ? "" : v)}
           >
             <SelectTrigger className="h-9">
-              <SelectValue placeholder="Sin propiedad" />
+              <SelectValue placeholder={t.documentos.noProperty} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">Sin propiedad</SelectItem>
+              <SelectItem value="__none">{t.documentos.noProperty}</SelectItem>
               {properties.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.title}
@@ -200,17 +201,17 @@ export function DocumentsManager({
         </div>
         <div className="w-full sm:min-w-[140px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Contacto (opcional)
+            {t.documentos.contactOptionalLabel}
           </label>
           <Select
             value={contactId || "__none"}
             onValueChange={(v) => setContactId(v === "__none" ? "" : v)}
           >
             <SelectTrigger className="h-9">
-              <SelectValue placeholder="Sin contacto" />
+              <SelectValue placeholder={t.documentos.noContact} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">Sin contacto</SelectItem>
+              <SelectItem value="__none">{t.documentos.noContact}</SelectItem>
               {contacts.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -226,7 +227,7 @@ export function DocumentsManager({
             ) : (
               <Upload className="mr-1.5 h-4 w-4" />
             )}
-            Subir documento
+            {t.documentos.uploadDocBtn}
             <input
               type="file"
               accept=".pdf,.doc,.docx,application/pdf,image/*"
@@ -252,7 +253,7 @@ export function DocumentsManager({
                 : "border-border text-muted-foreground hover:bg-card/50"
             )}
           >
-            {s === "ALL" ? "Todos" : STATUS_META[s].label}
+            {s === "ALL" ? t.documentos.filterAll : t.documentos[STATUS_META[s].labelKey]}
           </button>
         ))}
       </div>
@@ -261,8 +262,8 @@ export function DocumentsManager({
       {filtered.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
           {docs.length === 0
-            ? "Aún no has subido documentos. Sube el primero arriba."
-            : "Sin documentos en este estado."}
+            ? t.documentos.emptyNoDocs
+            : t.documentos.emptyNoDocsInStatus}
         </p>
       ) : (
         <ul className="mt-4 space-y-2">
@@ -290,7 +291,7 @@ export function DocumentsManager({
                       {d.name}
                     </a>
                     <Badge variant="outline" className="text-[9px]">
-                      {KIND_LABEL[d.kind] ?? d.kind}
+                      {KIND_LABEL_KEY[d.kind] ? t.documentos[KIND_LABEL_KEY[d.kind]] : d.kind}
                     </Badge>
                   </div>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
@@ -313,7 +314,7 @@ export function DocumentsManager({
                 </div>
 
                 <Badge className={cn("shrink-0 text-[10px]", meta.cls)}>
-                  {meta.label}
+                  {t.documentos[meta.labelKey]}
                 </Badge>
 
                 <Select
@@ -327,14 +328,14 @@ export function DocumentsManager({
                   <SelectContent>
                     {Object.entries(STATUS_META).map(([key, m]) => (
                       <SelectItem key={key} value={key}>
-                        {m.label}
+                        {t.documentos[m.labelKey]}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
                 <Button asChild size="icon" variant="ghost" className="h-8 w-8 shrink-0">
-                  <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" aria-label="Abrir">
+                  <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" aria-label={t.documentos.openAria}>
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </Button>
@@ -344,7 +345,7 @@ export function DocumentsManager({
                   className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => onDelete(d.id, d.name)}
                   disabled={busyId === d.id}
-                  aria-label="Eliminar"
+                  aria-label={t.documentos.deleteAria}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

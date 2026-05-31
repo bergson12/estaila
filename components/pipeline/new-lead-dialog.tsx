@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createPipelineCard } from "@/lib/actions/pipeline";
-import { PIPELINE_STAGES } from "@/lib/constants";
+import { PIPELINE_STAGES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 
 export function NewLeadDialog({
   open,
@@ -39,6 +40,7 @@ export function NewLeadDialog({
   properties: { id: string; title: string }[];
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [submitting, setSubmitting] = useState(false);
   const [contactId, setContactId] = useState<string>("");
   const [propertyId, setPropertyId] = useState<string>("");
@@ -50,7 +52,7 @@ export function NewLeadDialog({
 
   async function onSubmit() {
     if (!contactId) {
-      toast.error("Selecciona un contacto");
+      toast.error(t.pipeline.errSelectContact);
       return;
     }
     setSubmitting(true);
@@ -64,7 +66,7 @@ export function NewLeadDialog({
         nextAction: nextAction || undefined,
         nextActionDate: nextActionDate ? new Date(nextActionDate) : undefined,
       });
-      toast.success("Lead creado");
+      toast.success(t.pipeline.toastLeadCreated);
       onOpenChange(false);
       router.refresh();
       // Reset
@@ -85,13 +87,13 @@ export function NewLeadDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nuevo lead</DialogTitle>
+          <DialogTitle>{t.pipeline.newLead}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Field label="Contacto *">
+          <Field label={t.pipeline.fieldContact}>
             <Select value={contactId} onValueChange={setContactId}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona un contacto" />
+                <SelectValue placeholder={t.pipeline.placeholderSelectContact} />
               </SelectTrigger>
               <SelectContent>
                 {contacts.map((c) => (
@@ -103,16 +105,16 @@ export function NewLeadDialog({
             </Select>
           </Field>
 
-          <Field label="Propiedad (opcional)">
+          <Field label={t.pipeline.fieldProperty}>
             <Select
               value={propertyId || "__none"}
               onValueChange={(v) => setPropertyId(v === "__none" ? "" : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Sin propiedad" />
+                <SelectValue placeholder={t.pipeline.noProperty} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Sin propiedad</SelectItem>
+                <SelectItem value="__none">{t.pipeline.noProperty}</SelectItem>
                 {properties.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.title}
@@ -123,7 +125,7 @@ export function NewLeadDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Etapa">
+            <Field label={t.pipeline.fieldStage}>
               <Select value={stage} onValueChange={setStage}>
                 <SelectTrigger>
                   <SelectValue />
@@ -131,13 +133,13 @@ export function NewLeadDialog({
                 <SelectContent>
                   {PIPELINE_STAGES.map((s) => (
                     <SelectItem key={s.value} value={s.value}>
-                      {s.label}
+                      {labelFor(PIPELINE_STAGES, s.value, locale)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Valor potencial (USD)">
+            <Field label={t.pipeline.fieldValue}>
               <Input
                 type="number"
                 min={0}
@@ -149,15 +151,15 @@ export function NewLeadDialog({
             </Field>
           </div>
 
-          <Field label="Próxima acción">
+          <Field label={t.pipeline.fieldNextAction}>
             <Input
               value={nextAction}
               onChange={(e) => setNextAction(e.target.value)}
-              placeholder="Ej: Llamar para confirmar visita"
+              placeholder={t.pipeline.placeholderNextAction}
             />
           </Field>
 
-          <Field label="Fecha próxima acción">
+          <Field label={t.pipeline.fieldNextActionDate}>
             <Input
               type="date"
               value={nextActionDate}
@@ -165,12 +167,12 @@ export function NewLeadDialog({
             />
           </Field>
 
-          <Field label="Notas">
+          <Field label={t.pipeline.fieldNotes}>
             <Textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Contexto, detalles, recordatorios..."
+              placeholder={t.pipeline.placeholderNotes}
             />
           </Field>
         </div>
@@ -181,11 +183,11 @@ export function NewLeadDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancelar
+            {t.pipeline.cancel}
           </Button>
           <Button onClick={onSubmit} disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear lead
+            {t.pipeline.createLead}
           </Button>
         </DialogFooter>
       </DialogContent>

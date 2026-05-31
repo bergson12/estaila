@@ -28,7 +28,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CONTACT_TYPES } from "@/lib/constants";
+import { CONTACT_TYPES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 
 const TAG_COLORS = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308", "#84CC16",
@@ -58,6 +59,7 @@ export function TagListManagerDialog({
   tags: Tag[];
   smartLists: SmartList[];
 }) {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState<"tags" | "lists">("tags");
 
   return (
@@ -68,24 +70,24 @@ export function TagListManagerDialog({
       >
         <DialogHeader className="border-b border-border px-5 py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
-            Gestor de etiquetas y listas
+            {t.contactos.managerTitle}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Crea, edita y elimina tags y smart lists
+            {t.contactos.managerSrDesc}
           </DialogDescription>
         </DialogHeader>
 
         {/* Tab toggle */}
         <div className="flex border-b border-border bg-card/30">
           <TabButton
-            label="Tags"
+            label={t.contactos.tags}
             count={tags.length}
             icon={TagIcon}
             active={activeTab === "tags"}
             onClick={() => setActiveTab("tags")}
           />
           <TabButton
-            label="Smart Lists"
+            label={t.contactos.smartLists}
             count={smartLists.length}
             icon={List}
             active={activeTab === "lists"}
@@ -149,6 +151,7 @@ function TabButton({
 
 function TagsPanel({ tags }: { tags: Tag[] }) {
   const router = useRouter();
+  const { t } = useT();
   const [pending, startTransition] = useTransition();
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState<string>(TAG_COLORS[10]);
@@ -161,7 +164,7 @@ function TagsPanel({ tags }: { tags: Tag[] }) {
     try {
       const { createTag } = await import("@/lib/actions/contact-polish");
       await createTag({ name: newName.trim(), color: newColor });
-      toast.success(`Tag «${newName}» creada`);
+      toast.success(`${t.contactos.toastTagCreatedPre} «${newName}» ${t.contactos.toastTagCreatedPost}`);
       setNewName("");
       startTransition(() => router.refresh());
     } catch (e) {
@@ -170,11 +173,11 @@ function TagsPanel({ tags }: { tags: Tag[] }) {
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`¿Eliminar tag «${name}»? Se desetiquetan los contactos.`)) return;
+    if (!confirm(t.contactos.confirmDeleteTag.replace("{name}", name))) return;
     try {
       const { deleteTag } = await import("@/lib/actions/contact-polish");
       await deleteTag(id);
-      toast.success(`Tag eliminada`);
+      toast.success(t.contactos.toastTagDeleted);
       startTransition(() => router.refresh());
     } catch (e) {
       toast.error((e as Error).message);
@@ -188,7 +191,7 @@ function TagsPanel({ tags }: { tags: Tag[] }) {
       // createTag uses upsert by name — easier path: delete + create with new name.
       // For simple color update keep same name (upsert).
       await createTag({ name: editName.trim(), color: editColor });
-      toast.success("Tag actualizada");
+      toast.success(t.contactos.toastTagUpdated);
       setEditingId(null);
       startTransition(() => router.refresh());
     } catch (e) {
@@ -207,20 +210,20 @@ function TagsPanel({ tags }: { tags: Tag[] }) {
       {/* Create new */}
       <div className="rounded-xl border border-dashed border-border bg-card/40 p-3">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Nueva tag
+          {t.contactos.newTag}
         </p>
         <div className="flex items-center gap-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            placeholder="Nombre de tag"
+            placeholder={t.contactos.tagNamePlaceholder}
             className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
             maxLength={40}
           />
           <Button size="sm" onClick={handleCreate} disabled={!newName.trim() || pending}>
             <Plus className="mr-1 h-3 w-3" />
-            Crear
+            {t.contactos.create}
           </Button>
         </div>
         <ColorPicker value={newColor} onChange={setNewColor} />
@@ -229,7 +232,7 @@ function TagsPanel({ tags }: { tags: Tag[] }) {
       {/* Existing tags */}
       {tags.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Sin tags todavía. Crea la primera arriba.
+          {t.contactos.tagsEmpty}
         </p>
       ) : (
         <ul className="space-y-1.5">
@@ -338,6 +341,7 @@ function ColorPicker({
 
 function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [pending, startTransition] = useTransition();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -356,7 +360,7 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
       if (filterFavorite) filters.favorite = true;
       if (filterDays) filters.daysSinceContact = parseInt(filterDays, 10);
       await createSmartList({ name: name.trim(), color, filters, pinned });
-      toast.success(`Lista «${name}» creada`);
+      toast.success(`${t.contactos.toastListCreatedPre} «${name}» ${t.contactos.toastListCreatedPost}`);
       setCreating(false);
       setName("");
       setFilterType("");
@@ -370,11 +374,11 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
   }
 
   async function handleDelete(id: string, listName: string) {
-    if (!confirm(`¿Eliminar lista «${listName}»?`)) return;
+    if (!confirm(t.contactos.confirmDeleteList.replace("{name}", listName))) return;
     try {
       const { deleteSmartList } = await import("@/lib/actions/contact-polish");
       await deleteSmartList(id);
-      toast.success("Lista eliminada");
+      toast.success(t.contactos.toastListDeleted);
       startTransition(() => router.refresh());
     } catch (e) {
       toast.error((e as Error).message);
@@ -397,12 +401,12 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
       {creating ? (
         <div className="rounded-xl border border-primary/30 bg-primary/[0.03] p-3 space-y-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-            Nueva smart list
+            {t.contactos.newSmartList}
           </p>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nombre de la lista"
+            placeholder={t.contactos.listNamePlaceholder}
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
             maxLength={60}
             autoFocus
@@ -410,7 +414,7 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
 
           <div>
             <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-              Filtros
+              {t.contactos.filters}
             </p>
             <div className="space-y-2">
               <select
@@ -418,10 +422,10 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full rounded-md border bg-background px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
               >
-                <option value="">Cualquier tipo</option>
+                <option value="">{t.contactos.anyType}</option>
                 {CONTACT_TYPES.map((c) => (
                   <option key={c.value} value={c.value}>
-                    {c.label}
+                    {labelFor(CONTACT_TYPES, c.value, locale)}
                   </option>
                 ))}
               </select>
@@ -433,11 +437,11 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
                   onChange={(e) => setFilterFavorite(e.target.checked)}
                   className="accent-primary"
                 />
-                Solo favoritos
+                {t.contactos.onlyFavorites}
               </label>
 
               <div className="flex items-center gap-2 text-xs">
-                <span>Sin contacto hace</span>
+                <span>{t.contactos.noContactFor}</span>
                 <input
                   type="number"
                   min={1}
@@ -447,7 +451,7 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
                   placeholder="N"
                   className="w-16 rounded-md border bg-background px-2 py-0.5 font-mono text-xs tabular-nums focus:border-primary focus:outline-none"
                 />
-                <span>días (opcional)</span>
+                <span>{t.contactos.daysOptional}</span>
               </div>
 
               <label className="flex items-center gap-2 text-xs">
@@ -457,7 +461,7 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
                   onChange={(e) => setPinned(e.target.checked)}
                   className="accent-primary"
                 />
-                Anclar al sidebar
+                {t.contactos.pinToSidebar}
               </label>
             </div>
           </div>
@@ -466,10 +470,10 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
 
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={handleCreate} disabled={!name.trim() || pending} className="flex-1">
-              <Plus className="mr-1 h-3 w-3" /> Crear
+              <Plus className="mr-1 h-3 w-3" /> {t.contactos.create}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>
-              Cancelar
+              {t.contactos.cancel}
             </Button>
           </div>
         </div>
@@ -481,14 +485,14 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
           onClick={() => setCreating(true)}
         >
           <Plus className="mr-1.5 h-3 w-3" />
-          Crear smart list
+          {t.contactos.createSmartList}
         </Button>
       )}
 
       {/* Existing lists */}
       {smartLists.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          Sin smart lists. Crea una para filtrar contactos rápido.
+          {t.contactos.smartListsEmpty}
         </p>
       ) : (
         <ul className="space-y-1.5">
@@ -504,12 +508,12 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{sl.name}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {summarizeFilters(sl.filters)}
+                  {summarizeFilters(sl.filters, t, locale)}
                 </p>
               </div>
               {sl.pinned && (
                 <Badge variant="outline" className="text-[9px]">
-                  Pinned
+                  {t.contactos.pinnedBadge}
                 </Badge>
               )}
               <Button
@@ -517,7 +521,7 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
                 variant="ghost"
                 className="h-7 w-7"
                 onClick={() => togglePin(sl.id, sl.pinned)}
-                title={sl.pinned ? "Desanclar" : "Anclar"}
+                title={sl.pinned ? t.contactos.unpin : t.contactos.pin}
               >
                 {sl.pinned ? "📌" : "📍"}
               </Button>
@@ -537,14 +541,19 @@ function SmartListsPanel({ smartLists }: { smartLists: SmartList[] }) {
   );
 }
 
-function summarizeFilters(f: Record<string, unknown>): string {
+function summarizeFilters(
+  f: Record<string, unknown>,
+  t: ReturnType<typeof useT>["t"],
+  locale: "es" | "en"
+): string {
   const parts: string[] = [];
-  if (f.type) parts.push(`Tipo: ${f.type}`);
-  if (f.favorite) parts.push("Favoritos");
+  if (f.type) parts.push(`${t.contactos.type}: ${labelFor(CONTACT_TYPES, String(f.type), locale)}`);
+  if (f.favorite) parts.push(t.contactos.favorites);
   if (f.tagIds && Array.isArray(f.tagIds) && f.tagIds.length)
     parts.push(`${f.tagIds.length} tag${f.tagIds.length > 1 ? "s" : ""}`);
-  if (f.daysSinceContact) parts.push(`+${f.daysSinceContact}d sin contacto`);
-  return parts.length > 0 ? parts.join(" · ") : "Sin filtros";
+  if (f.daysSinceContact)
+    parts.push(`+${f.daysSinceContact}d ${t.contactos.filterNoContactSuffix}`);
+  return parts.length > 0 ? parts.join(" · ") : t.contactos.filterNone;
 }
 
 // ============================================================

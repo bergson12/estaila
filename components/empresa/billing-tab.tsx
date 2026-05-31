@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 type OrgPlanCtx = {
   id: string;
@@ -21,11 +22,11 @@ const PLAN_CARDS = [
     price: 39,
     seats: 5,
     featured: false,
-    features: [
-      "5 asientos",
-      "200 créditos IA / mes",
-      "Colores y logo de marca",
-      "1 equipo (default)",
+    featureKeys: [
+      "featTeamSeats",
+      "featTeamCredits",
+      "featTeamBranding",
+      "featTeamOneTeam",
     ],
   },
   {
@@ -34,13 +35,13 @@ const PLAN_CARDS = [
     price: 39,
     seats: 10,
     featured: true,
-    features: [
-      "10 asientos",
-      "500 créditos IA / mes",
-      "Hasta 5 sub-equipos",
-      "Dominio personalizado",
-      "Marca completa",
-      "Soporte prioritario",
+    featureKeys: [
+      "featBizSeats",
+      "featBizCredits",
+      "featBizSubteams",
+      "featBizDomain",
+      "featBizFullBranding",
+      "featBizPrioritySupport",
     ],
   },
   {
@@ -49,14 +50,14 @@ const PLAN_CARDS = [
     price: 79,
     seats: 15,
     featured: false,
-    features: [
-      "15 asientos",
-      "1000 créditos IA / mes",
-      "Equipos ilimitados",
-      "Dominio personalizado",
-      "Modo White-label",
-      "Cinematic Luxury templates",
-      "Account manager",
+    featureKeys: [
+      "featAgencySeats",
+      "featAgencyCredits",
+      "featAgencyUnlimitedTeams",
+      "featAgencyDomain",
+      "featAgencyWhiteLabel",
+      "featAgencyTemplates",
+      "featAgencyAccountManager",
     ],
   },
 ] as const;
@@ -68,6 +69,7 @@ export function BillingTab({
   org: OrgPlanCtx;
   acceptedCount: number;
 }) {
+  const { t } = useT();
   return (
     <div>
       {/* Current plan summary */}
@@ -75,27 +77,27 @@ export function BillingTab({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              Plan actual
+              {t.empresa.currentPlan}
             </p>
             <p className="mt-1 text-2xl font-semibold">{org.plan}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {acceptedCount} / {org.maxSeats} asientos en uso
+              {acceptedCount} / {org.maxSeats} {t.empresa.seatsInUse}
             </p>
           </div>
           <div className="flex items-center gap-2">
             {org.planActive ? (
               <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15">
                 <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Activo
+                {t.empresa.statusActive}
               </Badge>
             ) : (
               <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                Inactivo
+                {t.empresa.statusInactive}
               </Badge>
             )}
             <Button asChild variant="outline" size="sm">
               <Link href="/pricing">
-                Cambiar plan
+                {t.empresa.changePlan}
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
             </Button>
@@ -105,7 +107,7 @@ export function BillingTab({
 
       {/* Plan comparison */}
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Planes para organizaciones
+        {t.empresa.plansForOrgs}
       </h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {PLAN_CARDS.map((p) => {
@@ -122,12 +124,12 @@ export function BillingTab({
               {p.featured && !isCurrent && (
                 <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground hover:bg-primary">
                   <Sparkles className="mr-1 h-2.5 w-2.5" />
-                  Recomendado
+                  {t.empresa.recommended}
                 </Badge>
               )}
               {isCurrent && (
                 <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white hover:bg-emerald-600">
-                  Plan actual
+                  {t.empresa.currentPlanBadge}
                 </Badge>
               )}
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -139,7 +141,7 @@ export function BillingTab({
                     <span className="font-mono text-4xl font-bold tabular-nums">
                       ${p.price}
                     </span>
-                    <span className="text-sm text-muted-foreground">/mes</span>
+                    <span className="text-sm text-muted-foreground">{t.empresa.perMonth}</span>
                   </>
                 ) : (
                   <span className="font-mono text-3xl font-semibold">Custom</span>
@@ -147,13 +149,13 @@ export function BillingTab({
               </div>
               <p className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3 w-3" />
-                {p.seats} asientos
+                {p.seats} {t.empresa.seats}
               </p>
               <ul className="mt-5 flex-1 space-y-2">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs">
+                {p.featureKeys.map((fk) => (
+                  <li key={fk} className="flex items-start gap-2 text-xs">
                     <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" />
-                    <span className="text-muted-foreground">{f}</span>
+                    <span className="text-muted-foreground">{t.empresa[fk]}</span>
                   </li>
                 ))}
               </ul>
@@ -164,7 +166,7 @@ export function BillingTab({
                 disabled={isCurrent}
               >
                 <Link href="/pricing">
-                  {isCurrent ? "Plan actual" : `Cambiar a ${p.name}`}
+                  {isCurrent ? t.empresa.currentPlanBadge : `${t.empresa.changeTo} ${p.name}`}
                 </Link>
               </Button>
             </Card>

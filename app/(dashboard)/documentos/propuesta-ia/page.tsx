@@ -4,11 +4,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ProposalWizard } from "@/components/documentos/proposal-wizard";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProposalIaPage() {
   const user = await requireUser();
+  const t = await getDict();
   const [properties, contacts] = await Promise.all([
     prisma.property.findMany({
       where: { userId: user.id },
@@ -30,11 +32,11 @@ export default async function ProposalIaPage() {
         className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" />
-        Volver a documentos
+        {t.documentos.backToDocuments}
       </Link>
       <PageHeader
-        title="Propuesta con IA"
-        description="Genera una propuesta de venta personalizada en segundos y edítala antes de enviarla."
+        title={t.documentos.proposalPageTitle}
+        description={t.documentos.proposalPageSubtitle}
       />
       <ProposalWizard
         properties={properties.map((p) => ({

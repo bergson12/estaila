@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, initials } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { PLAN_MAX_TEAMS, type PlanKey } from "@/lib/billing-config";
 
 // Icon registry — limited to known Lucide names
@@ -99,6 +100,7 @@ export function TeamsTab({
   canEdit: boolean;
 }) {
   const router = useRouter();
+  const { t: dict } = useT();
   const [, startTransition] = useTransition();
   const [activeId, setActiveId] = useState<string | null>(teams[0]?.id ?? null);
   const [creating, setCreating] = useState(false);
@@ -121,7 +123,7 @@ export function TeamsTab({
         <div className="flex items-center justify-between px-1">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-              Equipos
+              {dict.empresa.teamsLabel}
             </p>
             <p className="font-mono text-[10px] tabular-nums text-muted-foreground">
               {teams.length} / {maxTeams === 999 ? "∞" : maxTeams}
@@ -134,7 +136,7 @@ export function TeamsTab({
             <div className="rounded-xl border border-dashed border-border bg-card/40 p-4 text-center">
               <Users className="mx-auto mb-2 h-6 w-6 text-muted-foreground/40" />
               <p className="text-xs text-muted-foreground">
-                Sin equipos creados
+                {dict.empresa.noTeamsCreated}
               </p>
             </div>
           )}
@@ -168,7 +170,7 @@ export function TeamsTab({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{t.name}</p>
                     <p className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                      {t.members.length} {t.members.length === 1 ? "miembro" : "miembros"}
+                      {t.members.length} {t.members.length === 1 ? dict.empresa.memberSingular : dict.empresa.memberPlural}
                     </p>
                   </div>
                   {isActive && (
@@ -192,24 +194,24 @@ export function TeamsTab({
             className="w-full justify-start border-dashed"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Crear equipo
+            {dict.empresa.createTeam}
           </Button>
         )}
 
         {!canCreate && canEdit && planUpgradeNeeded && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.05] p-3 text-xs">
             <p className="font-medium text-amber-700 dark:text-amber-500">
-              Sub-equipos en plan Business
+              {dict.empresa.subteamsBusinessTitle}
             </p>
             <p className="mt-1 text-muted-foreground">
-              Sube a Business o Agency para crear múltiples equipos.
+              {dict.empresa.subteamsBusinessHint}
             </p>
           </div>
         )}
 
         {!canCreate && !planUpgradeNeeded && canEdit && (
           <p className="px-2 text-[11px] text-muted-foreground">
-            Has alcanzado el límite de {maxTeams} equipos de tu plan.
+            {dict.empresa.teamsLimitPrefix} {maxTeams} {dict.empresa.teamsLimitSuffix}
           </p>
         )}
       </aside>
@@ -257,11 +259,11 @@ export function TeamsTab({
               className="flex h-[400px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/30 text-center"
             >
               <Users className="mb-3 h-10 w-10 text-muted-foreground/40" strokeWidth={1.5} />
-              <p className="font-medium">Selecciona un equipo</p>
+              <p className="font-medium">{dict.empresa.selectTeam}</p>
               <p className="mt-1 max-w-[40ch] text-xs text-muted-foreground">
                 {canCreate
-                  ? "O crea tu primer equipo para organizar a tu gente por zona, función o cliente."
-                  : "Sube de plan para crear sub-equipos."}
+                  ? dict.empresa.selectTeamHintCanCreate
+                  : dict.empresa.selectTeamHintUpgrade}
               </p>
               {canCreate && (
                 <Button
@@ -271,7 +273,7 @@ export function TeamsTab({
                   className="mt-4"
                 >
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
-                  Crear primer equipo
+                  {dict.empresa.createFirstTeam}
                 </Button>
               )}
             </motion.div>
@@ -295,6 +297,7 @@ function TeamCreateForm({
   onCreated: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [color, setColor] = useState(TEAM_COLORS[0]);
   const [icon, setIcon] = useState("Users");
@@ -307,7 +310,7 @@ function TeamCreateForm({
     try {
       const { createTeam } = await import("@/lib/actions/team");
       await createTeam(orgId, { name: name.trim(), color, icon, description });
-      toast.success(`Equipo «${name}» creado`);
+      toast.success(`${t.empresa.teamCreatedPrefix} «${name}» ${t.empresa.teamCreatedSuffix}`);
       onCreated();
     } catch (e) {
       toast.error((e as Error).message);
@@ -321,7 +324,7 @@ function TeamCreateForm({
       <div className="mb-5 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-base font-semibold">
           <Plus className="h-4 w-4 text-primary" />
-          Nuevo equipo
+          {t.empresa.newTeam}
         </h3>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onCancel}>
           <X className="h-4 w-4" />
@@ -342,22 +345,22 @@ function TeamCreateForm({
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">
-              {name || "Nombre del equipo"}
+              {name || t.empresa.teamNamePlaceholderPreview}
             </p>
             <p className="truncate text-[11px] text-muted-foreground">
-              {description || "Descripción opcional"}
+              {description || t.empresa.optionalDescription}
             </p>
           </div>
         </div>
 
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Nombre <span className="text-destructive">*</span>
+            {t.empresa.name} <span className="text-destructive">*</span>
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Equipo Norte"
+            placeholder={t.empresa.teamNamePlaceholder}
             maxLength={60}
             autoFocus
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -366,12 +369,12 @@ function TeamCreateForm({
 
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Descripción
+            {t.empresa.description}
           </label>
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="¿De qué se encarga este equipo?"
+            placeholder={t.empresa.teamDescPlaceholder}
             maxLength={240}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
@@ -379,7 +382,7 @@ function TeamCreateForm({
 
         <div>
           <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Color
+            {t.empresa.color}
           </label>
           <div className="flex flex-wrap gap-1.5">
             {TEAM_COLORS.map((c) => (
@@ -401,7 +404,7 @@ function TeamCreateForm({
 
         <div>
           <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Ícono
+            {t.empresa.icon}
           </label>
           <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {Object.entries(TEAM_ICONS).map(([key, Icon]) => {
@@ -428,11 +431,11 @@ function TeamCreateForm({
 
         <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
           <Button variant="ghost" onClick={onCancel}>
-            Cancelar
+            {t.empresa.cancel}
           </Button>
           <Button onClick={handleCreate} disabled={!name.trim() || pending}>
             <Plus className="mr-1.5 h-4 w-4" />
-            Crear equipo
+            {t.empresa.createTeam}
           </Button>
         </div>
       </div>
@@ -459,6 +462,7 @@ function TeamDetail({
   pending: boolean;
   setPending: (v: boolean) => void;
 }) {
+  const { t } = useT();
   const Icon = TEAM_ICONS[team.icon] ?? Users;
 
   const memberIds = useMemo(() => new Set(team.members.map((m) => m.memberId)), [
@@ -475,7 +479,7 @@ function TeamDetail({
     try {
       const { addMemberToTeam } = await import("@/lib/actions/team");
       await addMemberToTeam({ teamId: team.id, memberId, role });
-      toast.success("Miembro agregado");
+      toast.success(t.empresa.toastMemberAdded);
       setShowAddMember(false);
       onAfterChange();
     } catch (e) {
@@ -490,7 +494,7 @@ function TeamDetail({
     try {
       const { removeMemberFromTeam } = await import("@/lib/actions/team");
       await removeMemberFromTeam({ teamId: team.id, memberId });
-      toast.success("Miembro removido del equipo");
+      toast.success(t.empresa.toastMemberRemovedTeam);
       onAfterChange();
     } catch (e) {
       toast.error((e as Error).message);
@@ -500,12 +504,12 @@ function TeamDetail({
   }
 
   async function handleDelete() {
-    if (!confirm(`¿Eliminar el equipo «${team.name}»? Los miembros se desasocian del equipo.`)) return;
+    if (!confirm(`${t.empresa.confirmDeleteTeamPrefix} «${team.name}»? ${t.empresa.confirmDeleteTeamSuffix}`)) return;
     setPending(true);
     try {
       const { deleteTeam } = await import("@/lib/actions/team");
       await deleteTeam(team.id);
-      toast.success("Equipo eliminado");
+      toast.success(t.empresa.toastTeamDeleted);
       onAfterChange();
     } catch (e) {
       toast.error((e as Error).message);
@@ -542,7 +546,7 @@ function TeamDetail({
                   disabled={pending}
                 >
                   <Trash2 className="mr-1 h-3.5 w-3.5" />
-                  Eliminar
+                  {t.empresa.delete}
                 </Button>
               </div>
             )}
@@ -569,7 +573,7 @@ function TeamDetail({
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               <Users className="h-3.5 w-3.5" strokeWidth={1.75} />
-              Miembros
+              {t.empresa.tabMembers}
               <span className="font-mono text-[10px] text-muted-foreground">
                 {team.members.length}
               </span>
@@ -583,14 +587,14 @@ function TeamDetail({
               disabled={available.length === 0}
             >
               <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-              {available.length === 0 ? "Sin más miembros" : "Agregar"}
+              {available.length === 0 ? t.empresa.noMoreMembers : t.empresa.add}
             </Button>
           )}
         </div>
 
         {team.members.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Sin miembros en este equipo.
+            {t.empresa.noMembersInTeam}
           </p>
         ) : (
           <ul className="space-y-1.5">
@@ -647,7 +651,7 @@ function TeamDetail({
             >
               <div className="rounded-lg border border-dashed border-border bg-card/30 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Agregar al equipo
+                  {t.empresa.addToTeam}
                 </p>
                 <ul className="space-y-1">
                   {available.map((m) => (

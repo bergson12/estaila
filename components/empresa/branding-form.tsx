@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { updateBranding } from "@/lib/actions/organization";
 
 type OrgInitial = {
@@ -42,10 +43,10 @@ type OrgInitial = {
 };
 
 const FONT_PAIRS = [
-  { value: "ELEGANT", label: "Elegante", desc: "Cormorant Garamond + Inter", preview: "Cormorant" },
-  { value: "EDITORIAL", label: "Editorial", desc: "Playfair Display + Inter", preview: "Playfair" },
-  { value: "MODERN", label: "Moderno", desc: "Inter Bold + Inter", preview: "Inter" },
-  { value: "MINIMAL", label: "Minimal", desc: "Inter Light + Inter", preview: "Inter" },
+  { value: "ELEGANT", labelKey: "fontElegant", desc: "Cormorant Garamond + Inter", preview: "Cormorant" },
+  { value: "EDITORIAL", labelKey: "fontEditorial", desc: "Playfair Display + Inter", preview: "Playfair" },
+  { value: "MODERN", labelKey: "fontModern", desc: "Inter Bold + Inter", preview: "Inter" },
+  { value: "MINIMAL", labelKey: "fontMinimal", desc: "Inter Light + Inter", preview: "Inter" },
 ] as const;
 
 export function BrandingForm({
@@ -56,6 +57,7 @@ export function BrandingForm({
   canEdit: boolean;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [state, setState] = useState({
     name: initial.name,
     logoUrl: initial.logoUrl ?? "",
@@ -86,7 +88,7 @@ export function BrandingForm({
     startTransition(async () => {
       try {
         await updateBranding(initial.id, state as Parameters<typeof updateBranding>[1]);
-        toast.success("Configuración guardada");
+        toast.success(t.empresa.toastSettingsSaved);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -106,11 +108,11 @@ export function BrandingForm({
         const errJson = (await res.json().catch(() => ({}))) as {
           error?: string;
         };
-        throw new Error(errJson.error ?? "Error al subir");
+        throw new Error(errJson.error ?? t.empresa.errUpload);
       }
       const data = (await res.json()) as { url: string };
       set("logoUrl", data.url);
-      toast.success("Logo subido");
+      toast.success(t.empresa.toastLogoUploaded);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -125,7 +127,7 @@ export function BrandingForm({
       {!canEdit && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
           <Lock className="h-3.5 w-3.5" />
-          Solo OWNER y ADMIN pueden editar la marca. Tú puedes ver los valores.
+          {t.empresa.onlyOwnerAdminEdit}
         </div>
       )}
 
@@ -133,27 +135,27 @@ export function BrandingForm({
       <Card className="p-6">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Building2 className="h-3.5 w-3.5" />
-          Identidad
+          {t.empresa.identity}
         </h3>
         <p className="mb-5 text-xs text-muted-foreground">
-          Nombre comercial, logotipo y datos básicos visibles en tu portal.
+          {t.empresa.identityHint}
         </p>
 
         <div className="space-y-4">
           <div>
-            <Label className="text-xs">Nombre comercial</Label>
+            <Label className="text-xs">{t.empresa.commercialName}</Label>
             <Input
               value={state.name}
               onChange={(e) => set("name", e.target.value)}
               disabled={!canEdit}
               className="mt-1"
-              placeholder="ej. Atelier Estates"
+              placeholder={t.empresa.commercialNamePlaceholder}
             />
           </div>
 
           {/* Logo */}
           <div>
-            <Label className="text-xs">Logo</Label>
+            <Label className="text-xs">{t.empresa.logo}</Label>
             <div className="mt-1 flex items-center gap-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
                 {state.logoUrl ? (
@@ -185,7 +187,7 @@ export function BrandingForm({
                   disabled={!canEdit || uploading}
                 >
                   <Upload className="mr-1.5 h-3.5 w-3.5" />
-                  {uploading ? "Subiendo…" : "Subir logo"}
+                  {uploading ? t.empresa.uploading : t.empresa.uploadLogo}
                 </Button>
                 {state.logoUrl && canEdit && (
                   <Button
@@ -194,11 +196,11 @@ export function BrandingForm({
                     onClick={() => set("logoUrl", "")}
                     className="ml-2 text-muted-foreground"
                   >
-                    Quitar
+                    {t.empresa.remove}
                   </Button>
                 )}
                 <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  PNG o SVG cuadrado. Mínimo 256×256px. Fondo transparente recomendado.
+                  {t.empresa.logoHint}
                 </p>
               </div>
             </div>
@@ -210,26 +212,26 @@ export function BrandingForm({
       <Card className="p-6">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Palette className="h-3.5 w-3.5" />
-          Colores de marca
+          {t.empresa.brandColors}
         </h3>
         <p className="mb-5 text-xs text-muted-foreground">
-          Estos colores se aplican a tus portales, emails y contenido generado.
+          {t.empresa.brandColorsHint}
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <ColorField
-            label="Primario"
+            label={t.empresa.colorPrimary}
             value={state.primaryColor}
             onChange={(v) => set("primaryColor", v)}
             disabled={!canEdit}
           />
           <ColorField
-            label="Secundario"
+            label={t.empresa.colorSecondary}
             value={state.secondaryColor}
             onChange={(v) => set("secondaryColor", v)}
             disabled={!canEdit}
           />
           <ColorField
-            label="Acento"
+            label={t.empresa.colorAccent}
             value={state.accentColor}
             onChange={(v) => set("accentColor", v)}
             disabled={!canEdit}
@@ -239,7 +241,7 @@ export function BrandingForm({
         {/* Live preview */}
         <div className="mt-5">
           <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-            Vista previa
+            {t.empresa.preview}
           </p>
           <div
             className="flex items-center justify-between rounded-lg p-5 text-white shadow-lg"
@@ -259,9 +261,9 @@ export function BrandingForm({
                         : "var(--font-inter)",
                 }}
               >
-                {state.name || "Tu Empresa"}
+                {state.name || t.empresa.yourCompany}
               </p>
-              <p className="text-xs opacity-90">Preview con tus colores</p>
+              <p className="text-xs opacity-90">{t.empresa.previewWithColors}</p>
             </div>
             <button
               className="rounded-full px-4 py-1.5 text-xs font-semibold"
@@ -277,10 +279,10 @@ export function BrandingForm({
       <Card className="p-6">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Type className="h-3.5 w-3.5" />
-          Tipografía
+          {t.empresa.typography}
         </h3>
         <p className="mb-5 text-xs text-muted-foreground">
-          Personalidad tipográfica de tus portales y materiales.
+          {t.empresa.typographyHint}
         </p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {FONT_PAIRS.map((fp) => (
@@ -297,7 +299,7 @@ export function BrandingForm({
               )}
             >
               <div>
-                <p className="text-sm font-semibold">{fp.label}</p>
+                <p className="text-sm font-semibold">{t.empresa[fp.labelKey]}</p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">{fp.desc}</p>
               </div>
               <span
@@ -323,24 +325,24 @@ export function BrandingForm({
       <Card className="p-6">
         <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Building2 className="h-3.5 w-3.5" />
-          Información legal
+          {t.empresa.legalInfo}
         </h3>
         <p className="mb-5 text-xs text-muted-foreground">
-          Datos que aparecen en contratos, facturas y pie de página.
+          {t.empresa.legalInfoHint}
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <Label className="text-xs">Razón social</Label>
+            <Label className="text-xs">{t.empresa.legalName}</Label>
             <Input
               value={state.legalName}
               onChange={(e) => set("legalName", e.target.value)}
               disabled={!canEdit}
               className="mt-1"
-              placeholder="ej. Atelier Estates SRL"
+              placeholder={t.empresa.legalNamePlaceholder}
             />
           </div>
           <div>
-            <Label className="text-xs">RNC / Tax ID</Label>
+            <Label className="text-xs">{t.empresa.taxId}</Label>
             <Input
               value={state.taxId}
               onChange={(e) => set("taxId", e.target.value)}
@@ -349,7 +351,7 @@ export function BrandingForm({
             />
           </div>
           <div>
-            <Label className="text-xs">Email comercial</Label>
+            <Label className="text-xs">{t.empresa.businessEmail}</Label>
             <Input
               type="email"
               value={state.email}
@@ -359,7 +361,7 @@ export function BrandingForm({
             />
           </div>
           <div>
-            <Label className="text-xs">Teléfono</Label>
+            <Label className="text-xs">{t.empresa.phone}</Label>
             <Input
               value={state.phone}
               onChange={(e) => set("phone", e.target.value)}
@@ -368,7 +370,7 @@ export function BrandingForm({
             />
           </div>
           <div>
-            <Label className="text-xs">Sitio web</Label>
+            <Label className="text-xs">{t.empresa.website}</Label>
             <Input
               value={state.website}
               onChange={(e) => set("website", e.target.value)}
@@ -378,7 +380,7 @@ export function BrandingForm({
             />
           </div>
           <div>
-            <Label className="text-xs">Dirección</Label>
+            <Label className="text-xs">{t.empresa.address}</Label>
             <Input
               value={state.address}
               onChange={(e) => set("address", e.target.value)}
@@ -395,23 +397,23 @@ export function BrandingForm({
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               <Globe className="h-3.5 w-3.5" />
-              Avanzado (Agency)
+              {t.empresa.advancedAgency}
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Dominio propio y white-label. Disponible en plan Agency.
+              {t.empresa.advancedAgencyHint}
             </p>
           </div>
           {!isAgency && (
             <div className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400/20 to-amber-200/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600 ring-1 ring-amber-400/30">
               <Lock className="h-2.5 w-2.5" />
-              Plan Agency
+              {t.empresa.planAgency}
             </div>
           )}
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label className="text-xs">Dominio personalizado</Label>
+            <Label className="text-xs">{t.empresa.customDomain}</Label>
             <Input
               value={state.customDomain}
               onChange={(e) => set("customDomain", e.target.value)}
@@ -420,14 +422,14 @@ export function BrandingForm({
               className="mt-1"
             />
             <p className="mt-1.5 text-[11px] text-muted-foreground">
-              Configure un CNAME hacia <code className="rounded bg-muted px-1">portals.estaila.com</code>
+              {t.empresa.cnamePrefix} <code className="rounded bg-muted px-1">portals.estaila.com</code>
             </p>
           </div>
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
             <div>
-              <Label className="text-sm font-medium">Modo White-label</Label>
+              <Label className="text-sm font-medium">{t.empresa.whiteLabelMode}</Label>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Oculta el branding &ldquo;Powered by estaila&rdquo; en sus portales.
+                {t.empresa.whiteLabelHint}
               </p>
             </div>
             <Switch
@@ -450,7 +452,7 @@ export function BrandingForm({
           {!dirty && <Save className="h-4 w-4 text-muted-foreground" />}
           {dirty && <AlertTriangle className="h-4 w-4 text-amber-500" />}
           <span className="text-sm font-medium">
-            {dirty ? "Cambios sin guardar" : "Todo al día"}
+            {dirty ? t.empresa.unsavedChanges : t.empresa.allSaved}
           </span>
           {dirty && (
             <>
@@ -475,11 +477,11 @@ export function BrandingForm({
                 })}
                 disabled={pending}
               >
-                Descartar
+                {t.empresa.discard}
               </Button>
               <Button size="sm" onClick={save} disabled={pending}>
                 <Save className="mr-1.5 h-3.5 w-3.5" />
-                Guardar
+                {t.empresa.save}
               </Button>
             </>
           )}

@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { createTicket, type TicketCategory } from "@/lib/actions/support";
+import { useT } from "@/lib/i18n/provider";
 
 import {
   Bug,
@@ -29,12 +30,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-const CATEGORIES: { value: TicketCategory; label: string; icon: LucideIcon }[] = [
-  { value: "BUG", label: "Reportar error", icon: Bug },
-  { value: "QUESTION", label: "Pregunta / ayuda", icon: HelpCircle },
-  { value: "BILLING", label: "Cobros / suscripción", icon: CreditCard },
-  { value: "FEATURE", label: "Sugerir mejora", icon: Lightbulb },
-  { value: "OTHER", label: "Otro", icon: Mail },
+const CATEGORIES: {
+  value: TicketCategory;
+  labelKey: "catBug" | "catQuestion" | "catBilling" | "catFeature" | "catOther";
+  icon: LucideIcon;
+}[] = [
+  { value: "BUG", labelKey: "catBug", icon: Bug },
+  { value: "QUESTION", labelKey: "catQuestion", icon: HelpCircle },
+  { value: "BILLING", labelKey: "catBilling", icon: CreditCard },
+  { value: "FEATURE", labelKey: "catFeature", icon: Lightbulb },
+  { value: "OTHER", labelKey: "catOther", icon: Mail },
 ];
 
 export function NewTicketDialog({
@@ -46,6 +51,7 @@ export function NewTicketDialog({
   defaultCategory?: TicketCategory;
   defaultSubject?: string;
 }) {
+  const { t } = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<TicketCategory>(
@@ -57,7 +63,7 @@ export function NewTicketDialog({
 
   async function submit() {
     if (!subject.trim() || !message.trim()) {
-      toast.error("Completa asunto y mensaje");
+      toast.error(t.soporte.toastFillSubjectMessage);
       return;
     }
     setSending(true);
@@ -67,7 +73,7 @@ export function NewTicketDialog({
         toast.error(res.error, { duration: 10000 });
         return;
       }
-      toast.success("Ticket abierto. Te respondemos en máx 24h.");
+      toast.success(t.soporte.toastTicketCreated);
       setOpen(false);
       setSubject("");
       setMessage("");
@@ -84,16 +90,16 @@ export function NewTicketDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nuevo ticket de soporte</DialogTitle>
+          <DialogTitle>{t.soporte.dialogTitle}</DialogTitle>
           <DialogDescription>
-            Cuéntanos qué pasa. Respuesta en máx 24h hábiles.
+            {t.soporte.dialogDescription}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <Label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Categoría
+              {t.soporte.categoryLabel}
             </Label>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {CATEGORIES.map((c) => {
@@ -118,7 +124,7 @@ export function NewTicketDialog({
                       )}
                       strokeWidth={1.75}
                     />
-                    <span>{c.label}</span>
+                    <span>{t.soporte[c.labelKey]}</span>
                   </button>
                 );
               })}
@@ -127,30 +133,30 @@ export function NewTicketDialog({
 
           <div>
             <Label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Asunto
+              {t.soporte.subjectLabel}
             </Label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder='Ej: "Error al subir fotos en /studio/staging"'
+              placeholder={t.soporte.subjectPlaceholder}
               maxLength={200}
             />
           </div>
 
           <div>
             <Label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Describe el problema
+              {t.soporte.describeLabel}
             </Label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
-              placeholder="Describe paso a paso qué pasó, qué esperabas, y agrega cualquier mensaje de error que viste..."
+              placeholder={t.soporte.describePlaceholder}
               className="resize-none"
               maxLength={8000}
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
-              {message.length} / 8000 caracteres
+              {message.length} / 8000 {t.soporte.characters}
             </p>
           </div>
         </div>
@@ -161,7 +167,7 @@ export function NewTicketDialog({
             onClick={() => setOpen(false)}
             disabled={sending}
           >
-            Cancelar
+            {t.soporte.cancelBtn}
           </Button>
           <Button onClick={submit} disabled={sending}>
             {sending ? (
@@ -169,7 +175,7 @@ export function NewTicketDialog({
             ) : (
               <Send className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Enviar ticket
+            {t.soporte.sendTicketBtn}
           </Button>
         </DialogFooter>
       </DialogContent>

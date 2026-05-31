@@ -2,11 +2,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { FinanzasClient } from "@/components/finanzas/finanzas-client";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinanzasPage() {
   const user = await requireUser();
+  const t = await getDict();
 
   const [txs, properties] = await Promise.all([
     prisma.transaction.findMany({
@@ -38,8 +40,8 @@ export default async function FinanzasPage() {
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Finanzas"
-        description="Registra ingresos y gastos por propiedad o generales."
+        title={t.finanzas.title}
+        description={t.finanzas.description}
       />
       <FinanzasClient transactions={transactions} properties={properties} />
     </div>

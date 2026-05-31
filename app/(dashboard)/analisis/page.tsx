@@ -19,6 +19,7 @@ import { NumberTicker } from "@/components/shared/number-ticker";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { cn, formatCurrency } from "@/lib/utils";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ const PREV_MONTH_END = new Date(NOW.getFullYear(), NOW.getMonth(), 0, 23, 59, 59
 export default async function AnalisisPage() {
   const user = await requireUser();
   const uid = user.id;
+  const [t, locale] = await Promise.all([getDict(), getLocale()]);
 
   const [
     propsTotal,
@@ -172,37 +174,37 @@ export default async function AnalisisPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Análisis"
-        description="Funnel completo de tu CRM: del share al cierre."
+        title={t.analisis.title}
+        description={t.analisis.description}
       />
 
       {/* KPI ROW */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
-          label="Propiedades activas"
+          label={t.analisis.kpiActiveProps}
           value={propsActive}
-          sub={`${propsPublic} con landing pública`}
+          sub={`${propsPublic} ${t.analisis.kpiActivePropsSub}`}
           icon={<Building2 className="h-4 w-4" />}
         />
         <KpiCard
-          label="Leads este mes"
+          label={t.analisis.kpiLeadsMonth}
           value={leadsMonth}
-          sub={`${totalLeads} acumulado · ${convertedLeads} convertidos`}
+          sub={`${totalLeads} ${t.analisis.kpiLeadsSubAccum} · ${convertedLeads} ${t.analisis.kpiLeadsSubConverted}`}
           icon={<Users className="h-4 w-4" />}
           accent="primary"
           delta={leadsChange}
         />
         <KpiCard
-          label="Shares este mes"
+          label={t.analisis.kpiSharesMonth}
           value={sharesMonth}
-          sub={`${totalClicks} clicks totales`}
+          sub={`${totalClicks} ${t.analisis.kpiSharesSub}`}
           icon={<Send className="h-4 w-4" />}
           delta={sharesChange}
         />
         <KpiCard
-          label="Balance del mes"
+          label={t.analisis.kpiBalanceMonth}
           stringValue={formatCurrency(balance)}
-          sub={`Anterior ${formatCurrency(balancePrev)}`}
+          sub={`${t.analisis.kpiBalanceSubPrev} ${formatCurrency(balancePrev)}`}
           icon={<Wallet className="h-4 w-4" />}
           accent={balance >= 0 ? "success" : "destructive"}
           delta={balanceChange}
@@ -214,37 +216,37 @@ export default async function AnalisisPage() {
         <div className="mb-5 flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Funnel de conversión
+              {t.analisis.funnelEyebrow}
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight">
-              De compartir a cerrar
+              {t.analisis.funnelTitle}
             </h2>
           </div>
         </div>
         <FunnelBar
           steps={[
             {
-              label: "Shares",
+              label: t.analisis.funnelShares,
               value: totalShares,
               icon: <Send className="h-3.5 w-3.5" />,
             },
             {
-              label: "Clicks",
+              label: t.analisis.funnelClicks,
               value: totalClicks,
               icon: <MousePointerClick className="h-3.5 w-3.5" />,
             },
             {
-              label: "Vistas",
+              label: t.analisis.funnelViews,
               value: totalViews,
               icon: <Eye className="h-3.5 w-3.5" />,
             },
             {
-              label: "Leads",
+              label: t.analisis.funnelLeads,
               value: totalLeads,
               icon: <MessageCircle className="h-3.5 w-3.5" />,
             },
             {
-              label: "Convertidos",
+              label: t.analisis.funnelConverted,
               value: convertedLeads,
               icon: <TrendingUp className="h-3.5 w-3.5" />,
             },
@@ -258,21 +260,21 @@ export default async function AnalisisPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Top performing
+                {t.analisis.topEyebrow}
               </p>
               <h2 className="mt-1 text-base font-semibold tracking-tight">
-                Propiedades con más tracción
+                {t.analisis.topTitle}
               </h2>
             </div>
             <Link
               href="/propiedades"
               className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium hover:bg-secondary/80"
             >
-              Ver todas
+              {t.analisis.seeAll}
             </Link>
           </div>
           {topProperties.length === 0 ? (
-            <EmptyMini text="Sin propiedades aún. Crea la primera." />
+            <EmptyMini text={t.analisis.topEmpty} />
           ) : (
             <ul className="space-y-2">
               {topProperties.map((p) => (
@@ -301,9 +303,9 @@ export default async function AnalisisPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-4 text-right">
-                      <Stat label="vistas" value={p.publicViews} />
-                      <Stat label="shares" value={p._count.shares} />
-                      <Stat label="leads" value={p._count.leads} accent="primary" />
+                      <Stat label={t.analisis.statViews} value={p.publicViews} />
+                      <Stat label={t.analisis.statShares} value={p._count.shares} />
+                      <Stat label={t.analisis.statLeads} value={p._count.leads} accent="primary" />
                     </div>
                   </Link>
                 </li>
@@ -316,14 +318,14 @@ export default async function AnalisisPage() {
         <Card className="rounded-2xl border-border p-6">
           <div className="mb-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Canales
+              {t.analisis.channelsEyebrow}
             </p>
             <h2 className="mt-1 text-base font-semibold tracking-tight">
-              Shares por canal
+              {t.analisis.channelsTitle}
             </h2>
           </div>
           {sharesByChannel.length === 0 ? (
-            <EmptyMini text="Aún no has compartido propiedades." />
+            <EmptyMini text={t.analisis.channelsEmpty} />
           ) : (
             <ul className="space-y-2.5">
               {[...sharesByChannel]
@@ -337,7 +339,7 @@ export default async function AnalisisPage() {
                     <li key={c.channel}>
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium">
-                          {channelLabel(c.channel)}
+                          {channelLabel(c.channel, t.analisis.channelCopyLink)}
                         </span>
                         <span className="font-mono tabular-nums text-muted-foreground">
                           {c._count} · {pct}%
@@ -361,31 +363,31 @@ export default async function AnalisisPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                Pipeline
+                {t.analisis.pipelineEyebrow}
               </p>
               <h2 className="mt-1 text-base font-semibold tracking-tight">
-                Leads recientes
+                {t.analisis.recentLeadsTitle}
               </h2>
             </div>
             <Link
               href="/pipeline"
               className="rounded-full bg-secondary px-3 py-1.5 text-xs font-medium hover:bg-secondary/80"
             >
-              Ir a pipeline
+              {t.analisis.goToPipeline}
             </Link>
           </div>
           {recentLeads.length === 0 ? (
-            <EmptyMini text="Cuando alguien llene el formulario de una landing aparece aquí." />
+            <EmptyMini text={t.analisis.recentLeadsEmpty} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-                    <th className="px-3 py-2 text-left font-medium">Nombre</th>
-                    <th className="px-3 py-2 text-left font-medium">Contacto</th>
-                    <th className="px-3 py-2 text-left font-medium">Propiedad</th>
-                    <th className="px-3 py-2 text-left font-medium">Estado</th>
-                    <th className="px-3 py-2 text-right font-medium">Fecha</th>
+                    <th className="px-3 py-2 text-left font-medium">{t.analisis.thName}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t.analisis.thContact}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t.analisis.thProperty}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t.analisis.thStatus}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t.analisis.thDate}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -422,14 +424,17 @@ export default async function AnalisisPage() {
                               "border-primary/30 bg-primary/10 text-primary"
                           )}
                         >
-                          {l.status}
+                          {leadStatusLabel(l.status, t)}
                         </Badge>
                       </td>
                       <td className="px-3 py-2.5 text-right font-mono text-xs tabular-nums text-muted-foreground">
-                        {new Date(l.createdAt).toLocaleDateString("es-ES", {
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {new Date(l.createdAt).toLocaleDateString(
+                          locale === "en" ? "en-US" : "es-ES",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          }
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -445,7 +450,21 @@ export default async function AnalisisPage() {
 
 // ===========================================================================
 
-function channelLabel(c: string) {
+type Dict = Awaited<ReturnType<typeof getDict>>;
+
+function leadStatusLabel(status: string, t: Dict) {
+  return (
+    {
+      NUEVO: t.analisis.leadStatusNew,
+      CONTACTADO: t.analisis.leadStatusContacted,
+      CALIFICADO: t.analisis.leadStatusQualified,
+      DESCARTADO: t.analisis.leadStatusDiscarded,
+      CONVERTIDO: t.analisis.leadStatusConverted,
+    }[status] ?? status
+  );
+}
+
+function channelLabel(c: string, copyLinkLabel: string) {
   return (
     {
       WHATSAPP: "WhatsApp",
@@ -453,7 +472,7 @@ function channelLabel(c: string) {
       FACEBOOK: "Facebook",
       INSTAGRAM: "Instagram",
       LINKEDIN: "LinkedIn",
-      COPY_LINK: "Link directo",
+      COPY_LINK: copyLinkLabel,
       QR: "QR",
     }[c] ?? c
   );

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { findDuplicates, mergeContacts, type DuplicateGroup } from "@/lib/actions/contact-duplicates";
 
 /**
@@ -22,6 +23,7 @@ import { findDuplicates, mergeContacts, type DuplicateGroup } from "@/lib/action
  * Click → opens a merge dialog.
  */
 export function DuplicatesBanner() {
+  const { t } = useT();
   const [groups, setGroups] = useState<DuplicateGroup[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -56,16 +58,16 @@ export function DuplicatesBanner() {
           </div>
           <div>
             <p className="text-sm font-medium">
-              Detectamos{" "}
+              {t.contactos.dupDetected}{" "}
               <span className="font-mono font-semibold tabular-nums">
                 {groups.length}
               </span>{" "}
-              {groups.length === 1 ? "duplicado" : "duplicados"} ·{" "}
-              <span className="font-mono tabular-nums">{total}</span> contactos
-              afectados
+              {groups.length === 1 ? t.contactos.dupSingular : t.contactos.dupPlural} ·{" "}
+              <span className="font-mono tabular-nums">{total}</span>{" "}
+              {t.contactos.dupAffected}
             </p>
             <p className="text-[11px] text-muted-foreground">
-              Revisa y fusiona para mantener tu directorio limpio.
+              {t.contactos.dupReviewHint}
             </p>
           </div>
         </div>
@@ -75,7 +77,7 @@ export function DuplicatesBanner() {
             onClick={() => setDialogOpen(true)}
             className="h-8"
           >
-            Revisar
+            {t.contactos.dupReview}
             <ArrowRight className="ml-1 h-3 w-3" />
           </Button>
           <Button
@@ -83,7 +85,7 @@ export function DuplicatesBanner() {
             variant="ghost"
             className="h-8 w-8 text-muted-foreground"
             onClick={handleDismiss}
-            aria-label="Descartar"
+            aria-label={t.contactos.dismiss}
           >
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -129,6 +131,7 @@ function MergeDialog({
   onMerged: () => void;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
   const [targetId, setTargetId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -154,7 +157,7 @@ function MergeDialog({
     setPending(true);
     try {
       const r = await mergeContacts({ targetId, sourceIds: sources });
-      toast.success(`${r.merged} contactos fusionados`);
+      toast.success(`${r.merged} ${t.contactos.toastMerged}`);
       onMerged();
       startTransition(() => router.refresh());
     } catch (e) {
@@ -170,12 +173,12 @@ function MergeDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users2 className="h-4 w-4 text-amber-500" />
-            Fusionar contactos duplicados
+            {t.contactos.mergeTitle}
           </DialogTitle>
           <DialogDescription>
             {activeGroup
-              ? "Selecciona el contacto que se mantiene. Los demás se absorben (datos, tags, propiedades, citas y pipeline cards se mueven al elegido)."
-              : "Elige un grupo para revisar."}
+              ? t.contactos.mergeDescGroup
+              : t.contactos.mergeDescPick}
           </DialogDescription>
         </DialogHeader>
 
@@ -197,7 +200,7 @@ function MergeDialog({
                   </Badge>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">
-                      {g.contacts.length} contactos con mismo {g.reason}
+                      {g.contacts.length} {t.contactos.mergeSameReason} {g.reason}
                     </p>
                     <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                       {g.contacts.map((c) => c.name).join(" · ")}
@@ -212,7 +215,7 @@ function MergeDialog({
           // Group detail
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              ¿Cuál se mantiene? ({activeGroup.contacts.length} contactos)
+              {t.contactos.mergeWhichKeep} ({activeGroup.contacts.length} {t.contactos.contactsWord})
             </p>
             <ul className="space-y-2">
               {activeGroup.contacts.map((c) => {
@@ -247,7 +250,7 @@ function MergeDialog({
                           </Badge>
                           {isTarget && (
                             <Badge className="bg-primary text-primary-foreground text-[9px] uppercase">
-                              Mantener
+                              {t.contactos.mergeKeep}
                             </Badge>
                           )}
                         </div>
@@ -259,11 +262,14 @@ function MergeDialog({
                           )}
                         </div>
                         <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          Actualizado{" "}
-                          {new Date(c.updatedAt).toLocaleDateString("es", {
-                            day: "numeric",
-                            month: "short",
-                          })}
+                          {t.contactos.updatedLabel}{" "}
+                          {new Date(c.updatedAt).toLocaleDateString(
+                            locale === "en" ? "en-US" : "es",
+                            {
+                              day: "numeric",
+                              month: "short",
+                            }
+                          )}
                         </p>
                       </div>
                     </label>
@@ -281,7 +287,7 @@ function MergeDialog({
               variant="ghost"
               onClick={() => onSelectGroup(null)}
             >
-              ← Otro grupo
+              ← {t.contactos.mergeOtherGroup}
             </Button>
           )}
           <Button
@@ -289,7 +295,7 @@ function MergeDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Cerrar
+            {t.contactos.close}
           </Button>
           {activeGroup && (
             <Button
@@ -302,7 +308,7 @@ function MergeDialog({
               ) : (
                 <Users2 className="mr-1.5 h-3.5 w-3.5" />
               )}
-              Fusionar {activeGroup.contacts.length - 1} →{" "}
+              {t.contactos.mergeButton} {activeGroup.contacts.length - 1} →{" "}
               {activeGroup.contacts.find((c) => c.id === targetId)?.name ?? "?"}
             </Button>
           )}

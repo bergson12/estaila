@@ -35,6 +35,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
 import { updateCardStage } from "@/lib/actions/pipeline";
+import { PIPELINE_STAGES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
+import type { Dict, Locale } from "@/lib/i18n/dictionary";
 import {
   ACTIVE_STAGES,
   STAGE_ORDER,
@@ -67,6 +70,7 @@ export function KanbanBoard({
   properties: { id: string; title: string }[];
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
   const [cards, setCards] = useState(initialCards);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -173,7 +177,7 @@ export function KanbanBoard({
     startTransition(async () => {
       try {
         await updateCardStage(cardId, newStage);
-        toast.success(`Movido a "${metaFor(newStage).label}"`);
+        toast.success(`${t.pipeline.toastMovedTo} "${labelFor(PIPELINE_STAGES, newStage, locale)}"`);
         router.refresh();
       } catch (err) {
         toast.error((err as Error).message);
@@ -201,13 +205,13 @@ export function KanbanBoard({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Pipeline
+              {t.pipeline.title}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {view === "kanban" && `Arrastra leads entre columnas · ${cards.length} totales`}
-              {view === "list" && `${cards.length} leads en total`}
-              {view === "forecast" && `Proyección por fecha de próxima acción`}
-              {view === "stats" && `Funnel de conversión y métricas`}
+              {view === "kanban" && `${t.pipeline.subtitleKanban} · ${cards.length} ${t.pipeline.totalSuffix}`}
+              {view === "list" && `${cards.length} ${t.pipeline.subtitleList}`}
+              {view === "forecast" && t.pipeline.subtitleForecast}
+              {view === "stats" && t.pipeline.subtitleStats}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -215,25 +219,25 @@ export function KanbanBoard({
             <div className="inline-flex items-center rounded-full border border-border bg-card/60 p-1 text-xs shadow-sm">
               <ViewTab
                 icon={KanbanSquare}
-                label="Kanban"
+                label={t.pipeline.viewKanban}
                 active={view === "kanban"}
                 onClick={() => setView("kanban")}
               />
               <ViewTab
                 icon={LayoutList}
-                label="Lista"
+                label={t.pipeline.viewList}
                 active={view === "list"}
                 onClick={() => setView("list")}
               />
               <ViewTab
                 icon={CalendarRange}
-                label="Forecast"
+                label={t.pipeline.viewForecast}
                 active={view === "forecast"}
                 onClick={() => setView("forecast")}
               />
               <ViewTab
                 icon={BarChart3}
-                label="Stats"
+                label={t.pipeline.viewStats}
                 active={view === "stats"}
                 onClick={() => setView("stats")}
               />
@@ -246,12 +250,12 @@ export function KanbanBoard({
                 onClick={() => setHideTerminal((v) => !v)}
               >
                 <EyeOff className="mr-1.5 h-3.5 w-3.5" />
-                {hideTerminal ? "Ver cerrados" : "Solo activos"}
+                {hideTerminal ? t.pipeline.showClosed : t.pipeline.onlyActive}
               </Button>
             )}
             <Button size="sm" onClick={() => openNewLead("NUEVO")}>
               <Plus className="mr-1.5 h-4 w-4" />
-              Nuevo lead
+              {t.pipeline.newLead}
             </Button>
           </div>
         </div>
@@ -260,29 +264,29 @@ export function KanbanBoard({
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <KpiCard
             icon={Activity}
-            label="Leads activos"
+            label={t.pipeline.kpiActiveLeads}
             value={metrics.activeCount}
             tone="primary"
           />
           <KpiCard
             icon={Wallet}
-            label="Pipeline activo"
+            label={t.pipeline.kpiActivePipeline}
             value={formatCurrency(metrics.totalActive)}
             tone="sky"
           />
           <KpiCard
             icon={CheckCircle2}
-            label="Cerrado"
+            label={t.pipeline.kpiClosed}
             value={formatCurrency(metrics.totalClosed)}
             tone="emerald"
-            sub={`${metrics.winRate}% conversión`}
+            sub={`${metrics.winRate}% ${t.pipeline.conversionSuffix}`}
           />
           <KpiCard
             icon={Flame}
-            label="Atención hoy"
+            label={t.pipeline.kpiAttentionToday}
             value={metrics.hot}
             tone={metrics.hot > 0 ? "amber" : "muted"}
-            sub={metrics.hot > 0 ? "Tareas pendientes" : "Todo al día"}
+            sub={metrics.hot > 0 ? t.pipeline.pendingTasks : t.pipeline.allCaughtUp}
           />
         </div>
       </div>
@@ -323,12 +327,19 @@ export function KanbanBoard({
       )}
 
       {view === "list" && (
-        <ListView cards={cards} onMove={(id, stage) => moveCard(id, stage)} />
+        <ListView
+          cards={cards}
+          onMove={(id, stage) => moveCard(id, stage)}
+          t={t}
+          locale={locale}
+        />
       )}
 
-      {view === "forecast" && <ForecastView cards={cards} />}
+      {view === "forecast" && <ForecastView cards={cards} t={t} locale={locale} />}
 
-      {view === "stats" && <StatsView cards={cards} metrics={metrics} />}
+      {view === "stats" && (
+        <StatsView cards={cards} metrics={metrics} t={t} locale={locale} />
+      )}
 
       <NewLeadDialog
         open={dialogOpen}
@@ -430,9 +441,13 @@ function ViewTab({
 function ListView({
   cards,
   onMove,
+  t,
+  locale,
 }: {
   cards: PipelineCardData[];
   onMove: (cardId: string, newStage: string) => void;
+  t: Dict;
+  locale: Locale;
 }) {
   const [sortKey, setSortKey] = useState<"contact" | "value" | "stage" | "updated">(
     "updated"
@@ -493,7 +508,7 @@ function ListView({
               : "bg-card border border-border text-muted-foreground hover:text-foreground"
           )}
         >
-          Todos · {cards.length}
+          {t.pipeline.filterAll} · {cards.length}
         </button>
         {STAGE_ORDER.map((s) => {
           const n = cards.filter((c) => c.stage === s).length;
@@ -512,7 +527,7 @@ function ListView({
               style={active ? undefined : { borderColor: "transparent" }}
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.hex }} />
-              {meta.label}
+              {labelFor(PIPELINE_STAGES, s, locale)}
               <span className="font-mono opacity-60">{n}</span>
             </button>
           );
@@ -528,28 +543,28 @@ function ListView({
                   onClick={() => toggleSort("contact")}
                   className="cursor-pointer px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
-                  Lead {sortKey === "contact" && (sortDir === "asc" ? "↑" : "↓")}
+                  {t.pipeline.colLead} {sortKey === "contact" && (sortDir === "asc" ? "↑" : "↓")}
                 </th>
                 <th
                   onClick={() => toggleSort("stage")}
                   className="cursor-pointer px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
-                  Etapa
+                  {t.pipeline.colStage}
                 </th>
                 <th
                   onClick={() => toggleSort("value")}
                   className="cursor-pointer px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
-                  Valor {sortKey === "value" && (sortDir === "asc" ? "↑" : "↓")}
+                  {t.pipeline.colValue} {sortKey === "value" && (sortDir === "asc" ? "↑" : "↓")}
                 </th>
                 <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Próximo paso
+                  {t.pipeline.colNextStep}
                 </th>
                 <th
                   onClick={() => toggleSort("updated")}
                   className="cursor-pointer px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
-                  Actualizado
+                  {t.pipeline.colUpdated}
                 </th>
               </tr>
             </thead>
@@ -557,7 +572,7 @@ function ListView({
               {sorted.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                    Sin leads en este filtro.
+                    {t.pipeline.emptyFilter}
                   </td>
                 </tr>
               ) : (
@@ -610,7 +625,7 @@ function ListView({
                         >
                           {STAGE_ORDER.map((s) => (
                             <option key={s} value={s} className="bg-background text-foreground">
-                              {metaFor(s).label}
+                              {labelFor(PIPELINE_STAGES, s, locale)}
                             </option>
                           ))}
                         </select>
@@ -635,7 +650,7 @@ function ListView({
                                       : "text-muted-foreground"
                                 )}
                               >
-                                {overdue ? "Vencido" : isToday ? "Hoy" : new Date(c.nextActionDate).toLocaleDateString("es", { day: "numeric", month: "short" })}
+                                {overdue ? t.pipeline.overdue : isToday ? t.pipeline.today : new Date(c.nextActionDate).toLocaleDateString(locale, { day: "numeric", month: "short" })}
                               </p>
                             )}
                           </div>
@@ -645,7 +660,7 @@ function ListView({
                       </td>
                       <td className="px-3 py-3 text-right text-[11px] text-muted-foreground">
                         <p className="font-mono tabular-nums">{daysIn(c)}d</p>
-                        <p className="text-[10px]">en pipeline</p>
+                        <p className="text-[10px]">{t.pipeline.inPipeline}</p>
                       </td>
                     </motion.tr>
                   );
@@ -663,7 +678,15 @@ function ListView({
 // FORECAST VIEW — group by month of next action date
 // ============================================================
 
-function ForecastView({ cards }: { cards: PipelineCardData[] }) {
+function ForecastView({
+  cards,
+  t,
+  locale,
+}: {
+  cards: PipelineCardData[];
+  t: Dict;
+  locale: Locale;
+}) {
   // Group by YYYY-MM of nextActionDate (or "Sin fecha")
   const groups = useMemo(() => {
     const map = new Map<string, PipelineCardData[]>();
@@ -686,16 +709,16 @@ function ForecastView({ cards }: { cards: PipelineCardData[] }) {
     return (
       <Card className="p-12 text-center">
         <CalendarRange className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground">Sin leads activos para proyectar.</p>
+        <p className="text-sm text-muted-foreground">{t.pipeline.forecastEmpty}</p>
       </Card>
     );
   }
 
   function monthLabel(key: string): string {
-    if (key === "no-date") return "Sin fecha";
+    if (key === "no-date") return t.pipeline.noDate;
     const [y, m] = key.split("-");
     const d = new Date(Number(y), Number(m) - 1, 1);
-    return d.toLocaleDateString("es", { month: "long", year: "numeric" });
+    return d.toLocaleDateString(locale, { month: "long", year: "numeric" });
   }
 
   return (
@@ -714,11 +737,11 @@ function ForecastView({ cards }: { cards: PipelineCardData[] }) {
               <div className="flex items-baseline gap-3">
                 <h3 className="text-sm font-semibold capitalize">{monthLabel(key)}</h3>
                 <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {items.length} {items.length === 1 ? "lead" : "leads"}
+                  {items.length} {items.length === 1 ? t.pipeline.leadSingular : t.pipeline.leadPlural}
                 </span>
                 {isOverdue && (
                   <Badge variant="outline" className="border-rose-500/40 text-[9px] text-rose-500">
-                    Vencido
+                    {t.pipeline.overdue}
                   </Badge>
                 )}
               </div>
@@ -757,7 +780,7 @@ function ForecastView({ cards }: { cards: PipelineCardData[] }) {
                         meta.chip
                       )}
                     >
-                      {meta.label}
+                      {labelFor(PIPELINE_STAGES, c.stage, locale)}
                     </span>
                     {c.value != null && Number(c.value) > 0 && (
                       <p className="shrink-0 font-mono text-sm font-semibold tabular-nums">
@@ -782,9 +805,13 @@ function ForecastView({ cards }: { cards: PipelineCardData[] }) {
 function StatsView({
   cards,
   metrics,
+  t,
+  locale,
 }: {
   cards: PipelineCardData[];
   metrics: { activeCount: number; totalActive: number; totalClosed: number; winRate: number; hot: number; maxValue: number };
+  t: Dict;
+  locale: Locale;
 }) {
   // Per-stage stats
   const byStage = STAGE_ORDER.map((s) => {
@@ -817,7 +844,7 @@ function StatsView({
     <div className="space-y-6">
       {/* Bar chart per stage */}
       <Card className="p-6">
-        <h3 className="mb-5 text-sm font-semibold">Distribución por etapa</h3>
+        <h3 className="mb-5 text-sm font-semibold">{t.pipeline.statsDistribution}</h3>
         <div className="space-y-3">
           {byStage.map((b) => {
             const pct = (b.count / maxCount) * 100;
@@ -828,7 +855,7 @@ function StatsView({
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: b.meta.hex }}
                   />
-                  {b.meta.label}
+                  {labelFor(PIPELINE_STAGES, b.stage, locale)}
                 </span>
                 <div className="relative h-7 overflow-hidden rounded-md bg-foreground/[0.04]">
                   <motion.div
@@ -856,9 +883,9 @@ function StatsView({
       {/* Conversion funnel */}
       <Card className="p-6">
         <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Funnel de conversión</h3>
+          <h3 className="text-sm font-semibold">{t.pipeline.statsFunnel}</h3>
           <span className="text-[11px] text-muted-foreground">
-            % vs etapa inicial
+            {t.pipeline.statsVsFirstStage}
           </span>
         </div>
         <div className="space-y-2">
@@ -867,7 +894,7 @@ function StatsView({
             return (
               <div key={f.stage} className="relative">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium">{f.meta.label}</span>
+                  <span className="font-medium">{labelFor(PIPELINE_STAGES, f.stage, locale)}</span>
                   <span className="font-mono tabular-nums">
                     {f.count} <span className="text-muted-foreground">·</span> {f.rate}%
                   </span>
@@ -887,19 +914,19 @@ function StatsView({
         </div>
         <div className="mt-5 grid grid-cols-3 gap-3 border-t border-border pt-5">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Win rate</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.pipeline.statWinRate}</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">
               {metrics.winRate}%
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total leads</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.pipeline.statTotalLeads}</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">
               {totalCount}
             </p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Promedio</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t.pipeline.statAverage}</p>
             <p className="mt-1 font-mono text-xl font-bold tabular-nums">
               {formatCurrency(
                 metrics.activeCount > 0 ? metrics.totalActive / metrics.activeCount : 0

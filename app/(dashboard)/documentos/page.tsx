@@ -17,19 +17,21 @@ import { prisma } from "@/lib/db";
 import { ensureUploadedDocSchema } from "@/lib/documents";
 import { DocumentsManager } from "@/components/documentos/documents-manager";
 import { cn, formatDate } from "@/lib/utils";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-const TEMPLATE_META: Record<string, { label: string; color: string }> = {
-  BROCHURE: { label: "Brochure", color: "bg-primary/15 text-primary border-primary/30" },
-  FINANCIAL: { label: "Financiero", color: "bg-success/15 text-success border-success/30" },
-  INVESTMENT: { label: "Inversión", color: "bg-warning/15 text-warning border-warning/30" },
-  MINIMAL: { label: "Minimal", color: "bg-secondary text-foreground border-border" },
-  PROPOSAL: { label: "Propuesta IA", color: "bg-primary/15 text-primary border-primary/30" },
+const TEMPLATE_META: Record<string, { labelKey: string; color: string }> = {
+  BROCHURE: { labelKey: "tmplBrochure", color: "bg-primary/15 text-primary border-primary/30" },
+  FINANCIAL: { labelKey: "tmplFinancial", color: "bg-success/15 text-success border-success/30" },
+  INVESTMENT: { labelKey: "tmplInvestment", color: "bg-warning/15 text-warning border-warning/30" },
+  MINIMAL: { labelKey: "tmplMinimal", color: "bg-secondary text-foreground border-border" },
+  PROPOSAL: { labelKey: "tmplProposal", color: "bg-primary/15 text-primary border-primary/30" },
 };
 
 export default async function DocumentosPage() {
   const user = await requireUser();
+  const t = await getDict();
 
   await ensureUploadedDocSchema();
   const [pdfsRecent, pdfStats, propsWithDocs, uploadedDocs, contactList] =
@@ -78,8 +80,8 @@ export default async function DocumentosPage() {
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Documentos"
-        description="PDFs generados, plantillas legales y archivos de cada propiedad."
+        title={t.documentos.title}
+        description={t.documentos.subtitle}
         actions={
           <div className="flex items-center gap-2">
             <Link
@@ -87,14 +89,14 @@ export default async function DocumentosPage() {
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Sparkles className="h-4 w-4" />
-              Propuesta con IA
+              {t.documentos.aiProposalBtn}
             </Link>
             <Link
               href="/propiedades"
               className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-ink-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="h-4 w-4" />
-              Generar nuevo
+              {t.documentos.generateNewBtn}
             </Link>
           </div>
         }
@@ -103,26 +105,26 @@ export default async function DocumentosPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile
-          label="PDFs generados"
+          label={t.documentos.kpiPdfsGenerated}
           value={totalPdfs}
           icon={<FileText className="h-4 w-4" />}
         />
         <KpiTile
-          label="Brochures"
+          label={t.documentos.kpiBrochures}
           value={pdfStats.find((s) => s.template === "BROCHURE")?._count ?? 0}
           icon={<Sparkles className="h-4 w-4" />}
           accent="primary"
         />
         <KpiTile
-          label="Propiedades activas"
+          label={t.documentos.kpiActiveProperties}
           value={propsWithDocs.length}
           icon={<Folder className="h-4 w-4" />}
         />
         <KpiTile
-          label="Plantillas disponibles"
+          label={t.documentos.kpiTemplatesAvailable}
           value={4}
           icon={<FileText className="h-4 w-4" />}
-          sub="Brochure · Financiero · Inversión · Minimal"
+          sub={t.documentos.kpiTemplatesSub}
         />
       </div>
 
@@ -138,30 +140,30 @@ export default async function DocumentosPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              Historial
+              {t.documentos.historyLabel}
             </p>
             <h2 className="mt-1 text-base font-semibold tracking-tight">
-              PDFs generados recientes
+              {t.documentos.recentPdfsTitle}
             </h2>
           </div>
         </div>
 
         {pdfsRecent.length === 0 ? (
           <EmptyState
-            text="Aún no has generado documentos. Genera tu primer brochure desde una propiedad."
+            text={t.documentos.recentPdfsEmpty}
             ctaHref="/propiedades"
-            ctaLabel="Ir a propiedades"
+            ctaLabel={t.documentos.goToPropertiesBtn}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-3 py-2 text-left font-medium">Documento</th>
-                  <th className="px-3 py-2 text-left font-medium">Propiedad</th>
-                  <th className="px-3 py-2 text-left font-medium">Destinatario</th>
-                  <th className="px-3 py-2 text-left font-medium">Tipo</th>
-                  <th className="px-3 py-2 text-right font-medium">Fecha</th>
+                  <th className="px-3 py-2 text-left font-medium">{t.documentos.thDocument}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t.documentos.thProperty}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t.documentos.thRecipient}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t.documentos.thType}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t.documentos.thDate}</th>
                   <th className="w-20 px-3 py-2"></th>
                 </tr>
               </thead>
@@ -179,7 +181,8 @@ export default async function DocumentosPage() {
                             <FileText className="h-3.5 w-3.5" />
                           </span>
                           <span className="font-medium">
-                            {meta.label} · {p.property?.title ?? "Propiedad"}
+                            {t.documentos[meta.labelKey]} ·{" "}
+                            {p.property?.title ?? t.documentos.propertyFallback}
                           </span>
                         </div>
                       </td>
@@ -202,7 +205,7 @@ export default async function DocumentosPage() {
                             <span>{p.recipientName}</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">Genérico</span>
+                          <span className="text-muted-foreground">{t.documentos.genericRecipient}</span>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -210,7 +213,7 @@ export default async function DocumentosPage() {
                           variant="outline"
                           className={cn("rounded-full text-[10px]", meta.color)}
                         >
-                          {meta.label}
+                          {t.documentos[meta.labelKey]}
                         </Badge>
                       </td>
                       <td className="px-3 py-3 text-right font-mono text-xs tabular-nums text-muted-foreground">
@@ -224,7 +227,7 @@ export default async function DocumentosPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-emerald-500/15 hover:text-emerald-600"
-                              title="WhatsApp"
+                              title={t.documentos.whatsappTooltip}
                             >
                               <MessageCircle className="h-3.5 w-3.5" />
                             </a>
@@ -233,7 +236,7 @@ export default async function DocumentosPage() {
                             <a
                               href={`mailto:${p.recipientEmail}`}
                               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                              title="Email"
+                              title={t.documentos.emailTooltip}
                             >
                               <Mail className="h-3.5 w-3.5" />
                             </a>
@@ -253,22 +256,21 @@ export default async function DocumentosPage() {
       <Card className="mt-4 rounded-2xl border-border p-6">
         <div className="mb-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-            Por propiedad
+            {t.documentos.byPropertyLabel}
           </p>
           <h2 className="mt-1 text-base font-semibold tracking-tight">
-            Genera documentos
+            {t.documentos.generateDocsTitle}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Click en cualquier propiedad para abrir el tab Documentos y generar
-            contratos, brochures, recibos.
+            {t.documentos.generateDocsHint}
           </p>
         </div>
 
         {propsWithDocs.length === 0 ? (
           <EmptyState
-            text="Crea tu primera propiedad para empezar a generar documentos."
+            text={t.documentos.byPropertyEmpty}
             ctaHref="/propiedades/nueva"
-            ctaLabel="Nueva propiedad"
+            ctaLabel={t.documentos.newPropertyBtn}
           />
         ) : (
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

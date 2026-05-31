@@ -2,11 +2,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { AgendaClient } from "@/components/agenda/agenda-client";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AgendaPage() {
   const user = await requireUser();
+  const t = await getDict();
 
   const [appointments, properties] = await Promise.all([
     prisma.appointment.findMany({
@@ -40,8 +42,8 @@ export default async function AgendaPage() {
   return (
     <div className="mx-auto w-full max-w-[1500px]">
       <PageHeader
-        title="Agenda"
-        description={`${items.length} citas · ${pending} pendientes · ${inProgress} en curso`}
+        title={t.agenda.title}
+        description={`${items.length} ${t.agenda.appointmentsCount} · ${pending} ${t.agenda.pendingCount} · ${inProgress} ${t.agenda.inProgressCount}`}
       />
       <AgendaClient appointments={items} properties={properties} />
     </div>

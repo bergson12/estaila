@@ -20,7 +20,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,7 @@ import {
 } from "@/lib/actions/transaction";
 import { compressImage } from "@/lib/compress-image";
 import { TransactionDetailDialog } from "./transaction-detail-dialog";
+import { useT } from "@/lib/i18n/provider";
 
 type Tx = {
   id: string;
@@ -72,27 +73,49 @@ type Tx = {
   propertyTitle: string | null;
 };
 
-const TYPES = [
-  { value: "RESERVA", label: "Reserva" },
-  { value: "COMISION", label: "Comisión" },
-  { value: "MANTENIMIENTO", label: "Mantenimiento" },
-  { value: "PUBLICIDAD", label: "Publicidad" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "SUSCRIPCION", label: "Suscripción" },
-  { value: "LEGAL", label: "Legal" },
-  { value: "OTRO", label: "Otro" },
-];
+// Valores de subtipo (DB enum). Las etiquetas visibles salen del diccionario
+// i18n vía `typeLabel(t, value)` dentro de cada componente.
+const TYPE_VALUES = [
+  "RESERVA",
+  "COMISION",
+  "MANTENIMIENTO",
+  "PUBLICIDAD",
+  "MARKETING",
+  "SUSCRIPCION",
+  "LEGAL",
+  "OTRO",
+] as const;
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDIENTE: "Pendiente",
-  EN_PROGRESO: "En progreso",
-  PAGADO: "Pagado",
-};
 const STATUS_COLOR: Record<string, string> = {
   PENDIENTE: "bg-muted text-muted-foreground",
   EN_PROGRESO: "bg-amber-500/15 text-amber-400",
   PAGADO: "bg-emerald-500/15 text-emerald-400",
 };
+
+type Dict = ReturnType<typeof useT>["t"];
+
+// Mapea el VALUE del subtipo (DB enum) a su etiqueta i18n. Claves planas.
+function financeTypeLabels(t: Dict): Record<string, string> {
+  return {
+    RESERVA: t.finanzas.typeReserva,
+    COMISION: t.finanzas.typeComision,
+    MANTENIMIENTO: t.finanzas.typeMantenimiento,
+    PUBLICIDAD: t.finanzas.typePublicidad,
+    MARKETING: t.finanzas.typeMarketing,
+    SUSCRIPCION: t.finanzas.typeSuscripcion,
+    LEGAL: t.finanzas.typeLegal,
+    OTRO: t.finanzas.typeOtro,
+  };
+}
+
+// Mapea el VALUE del estado (DB enum) a su etiqueta i18n. Claves planas.
+function financeStatusLabels(t: Dict): Record<string, string> {
+  return {
+    PENDIENTE: t.finanzas.statusPending,
+    EN_PROGRESO: t.finanzas.statusInProgress,
+    PAGADO: t.finanzas.statusPaid,
+  };
+}
 
 export function FinanzasClient({
   transactions,
@@ -101,6 +124,7 @@ export function FinanzasClient({
   transactions: Tx[];
   properties: { id: string; title: string }[];
 }) {
+  const { t } = useT();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filterCat, setFilterCat] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -129,27 +153,27 @@ export function FinanzasClient({
       {/* KPI row */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard
-          label="Ingresos"
+          label={t.finanzas.kpiIncome}
           value={formatCurrency(stats.ingresos)}
           icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
           accent="emerald"
         />
         <KpiCard
-          label="Gastos"
+          label={t.finanzas.kpiExpenses}
           value={formatCurrency(stats.gastos)}
           icon={<TrendingDown className="h-4 w-4 text-destructive" />}
           accent="rose"
         />
         <KpiCard
-          label="Balance"
+          label={t.finanzas.kpiBalance}
           value={formatCurrency(stats.balance)}
           icon={<Wallet className="h-4 w-4 text-primary" />}
           accent="primary"
         />
         <KpiCard
-          label="Pendientes"
+          label={t.finanzas.kpiPending}
           value={stats.pending.toString()}
-          sub="por cobrar/pagar"
+          sub={t.finanzas.kpiPendingSub}
           icon={<CheckCircle2 className="h-4 w-4 text-amber-500" />}
         />
       </div>
@@ -159,9 +183,9 @@ export function FinanzasClient({
         <div className="flex flex-wrap items-center gap-1.5">
           {(
             [
-              { val: "ALL", label: "Todos", count: transactions.length, Icon: Layers },
-              { val: "INGRESO", label: "Ingresos", count: transactions.filter(t=>t.category==="INGRESO").length, Icon: ArrowDownLeft, color: "emerald" as const },
-              { val: "GASTO", label: "Gastos", count: transactions.filter(t=>t.category==="GASTO").length, Icon: ArrowUpRight, color: "rose" as const },
+              { val: "ALL", label: t.finanzas.filterAll, count: transactions.length, Icon: Layers },
+              { val: "INGRESO", label: t.finanzas.filterIncome, count: transactions.filter(t=>t.category==="INGRESO").length, Icon: ArrowDownLeft, color: "emerald" as const },
+              { val: "GASTO", label: t.finanzas.filterExpenses, count: transactions.filter(t=>t.category==="GASTO").length, Icon: ArrowUpRight, color: "rose" as const },
             ]
           ).map(({ val, label, count, Icon, color }) => {
             const active = filterCat === val;
@@ -207,16 +231,16 @@ export function FinanzasClient({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Todos los estados</SelectItem>
-              <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-              <SelectItem value="EN_PROGRESO">En progreso</SelectItem>
-              <SelectItem value="PAGADO">Pagado</SelectItem>
+              <SelectItem value="ALL">{t.finanzas.statusAll}</SelectItem>
+              <SelectItem value="PENDIENTE">{t.finanzas.statusPending}</SelectItem>
+              <SelectItem value="EN_PROGRESO">{t.finanzas.statusInProgress}</SelectItem>
+              <SelectItem value="PAGADO">{t.finanzas.statusPaid}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Nueva transacción
+          {t.finanzas.newTransaction}
         </Button>
       </div>
 
@@ -224,16 +248,16 @@ export function FinanzasClient({
       {filtered.length === 0 ? (
         <EmptyState
           icon={Wallet}
-          title="Sin transacciones"
+          title={t.finanzas.emptyTitle}
           description={
             transactions.length === 0
-              ? "Empieza registrando tus ingresos y gastos."
-              : "Ninguna transacción coincide con los filtros."
+              ? t.finanzas.emptyDescNone
+              : t.finanzas.emptyDescFiltered
           }
           action={
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Nueva transacción
+              {t.finanzas.newTransaction}
             </Button>
           }
         />
@@ -243,21 +267,21 @@ export function FinanzasClient({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-card/50 text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3 text-left font-medium">Concepto</th>
-                  <th className="px-4 py-3 text-left font-medium">Propiedad</th>
-                  <th className="px-4 py-3 text-left font-medium">Tipo</th>
-                  <th className="px-4 py-3 text-left font-medium">Estado</th>
-                  <th className="px-4 py-3 text-left font-medium">Fecha</th>
-                  <th className="px-4 py-3 text-right font-medium">Monto</th>
+                  <th className="px-4 py-3 text-left font-medium">{t.finanzas.colConcept}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t.finanzas.colProperty}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t.finanzas.colCategory}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t.finanzas.colStatus}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t.finanzas.colDate}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t.finanzas.colAmount}</th>
                   <th className="w-8 px-2 py-3"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => (
+                {filtered.map((tx) => (
                   <TransactionRow
-                    key={t.id}
-                    t={t}
-                    onClick={() => setDetailTx(t)}
+                    key={tx.id}
+                    t={tx}
+                    onClick={() => setDetailTx(tx)}
                   />
                 ))}
               </tbody>
@@ -321,14 +345,15 @@ function KpiCard({
   );
 }
 
-function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
+function TransactionRow({ t: tx, onClick }: { t: Tx; onClick: () => void }) {
+  const { t, locale } = useT();
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   function changeStatus(status: string) {
     startTransition(async () => {
       try {
-        await updateTransactionStatus(t.id, status);
+        await updateTransactionStatus(tx.id, status);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -337,11 +362,11 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
   }
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar "${t.concept}"?`)) return;
+    if (!confirm(t.finanzas.confirmDelete.replace("{concept}", tx.concept))) return;
     startTransition(async () => {
       try {
-        await deleteTransaction(t.id);
-        toast.success("Transacción eliminada");
+        await deleteTransaction(tx.id);
+        toast.success(t.finanzas.toastDeleted);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -349,7 +374,9 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
     });
   }
 
-  const isIncome = t.category === "INGRESO";
+  const isIncome = tx.category === "INGRESO";
+  const typeLabels = financeTypeLabels(t);
+  const statusLabels = financeStatusLabels(t);
 
   return (
     <tr
@@ -377,29 +404,29 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
               <ArrowUpRight className="h-3.5 w-3.5" />
             )}
           </div>
-          <span className="font-medium">{t.concept}</span>
+          <span className="font-medium">{tx.concept}</span>
         </div>
       </td>
       <td className="px-4 py-3 text-muted-foreground">
-        {t.propertyTitle ?? "—"}
+        {tx.propertyTitle ?? "—"}
       </td>
       <td className="px-4 py-3">
         <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          {t.type.replace(/_/g, " ").toLowerCase()}
+          {typeLabels[tx.type] ?? tx.type}
         </span>
       </td>
       <td className="px-4 py-3">
         <span
           className={cn(
             "inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium",
-            STATUS_COLOR[t.status]
+            STATUS_COLOR[tx.status]
           )}
         >
-          {STATUS_LABEL[t.status]}
+          {statusLabels[tx.status] ?? tx.status}
         </span>
       </td>
       <td className="px-4 py-3 font-mono text-xs text-muted-foreground tabular-nums">
-        {format(new Date(t.date), "d MMM yyyy", { locale: es })}
+        {format(new Date(tx.date), "d MMM yyyy", { locale: locale === "en" ? enUS : es })}
       </td>
       <td
         className={cn(
@@ -408,7 +435,7 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
         )}
       >
         {isIncome ? "+" : "−"}
-        {formatCurrency(t.amount, t.currency as "USD" | "DOP")}
+        {formatCurrency(tx.amount, tx.currency as "USD" | "DOP")}
       </td>
       <td className="px-2 py-3" data-row-action>
         <DropdownMenu>
@@ -418,15 +445,15 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" data-row-action>
-            {t.status !== "PAGADO" && (
+            {tx.status !== "PAGADO" && (
               <DropdownMenuItem onClick={() => changeStatus("PAGADO")}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Marcar pagado
+                {t.finanzas.markPaid}
               </DropdownMenuItem>
             )}
-            {t.status === "PENDIENTE" && (
+            {tx.status === "PENDIENTE" && (
               <DropdownMenuItem onClick={() => changeStatus("EN_PROGRESO")}>
-                Marcar en progreso
+                {t.finanzas.markInProgress}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -435,7 +462,7 @@ function TransactionRow({ t, onClick }: { t: Tx; onClick: () => void }) {
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Eliminar
+              {t.finanzas.delete}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -453,6 +480,8 @@ function NewTransactionDialog({
   onOpenChange: (b: boolean) => void;
   properties: { id: string; title: string }[];
 }) {
+  const { t } = useT();
+  const typeLabels = financeTypeLabels(t);
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [concept, setConcept] = useState("");
@@ -494,7 +523,7 @@ function NewTransactionDialog({
       fd.append("file", compressed);
       const up = await fetch("/api/upload", { method: "POST", body: fd });
       const upData = await up.json();
-      if (!up.ok) throw new Error(upData.error ?? "Error al subir la imagen");
+      if (!up.ok) throw new Error(upData.error ?? t.finanzas.toastUploadError);
       setReceiptUrl(upData.url as string);
 
       const r = await scanReceipt(upData.url as string);
@@ -506,7 +535,7 @@ function NewTransactionDialog({
         if (r.data.fecha) setDate(r.data.fecha);
         if (r.data.categoria) setType(r.data.categoria);
         if (r.data.notes) setNotes(r.data.notes);
-        toast.success("Comprobante leído — revisa los campos antes de guardar");
+        toast.success(t.finanzas.toastReceiptScanned);
       } else {
         toast.error(r.error);
       }
@@ -519,11 +548,11 @@ function NewTransactionDialog({
 
   async function onSubmit() {
     if (!concept.trim()) {
-      toast.error("El concepto es requerido");
+      toast.error(t.finanzas.toastConceptRequired);
       return;
     }
     if (!amount || Number(amount) <= 0) {
-      toast.error("Ingresa un monto mayor a 0");
+      toast.error(t.finanzas.toastAmountRequired);
       return;
     }
     setSubmitting(true);
@@ -541,7 +570,7 @@ function NewTransactionDialog({
         // Mediodía local para evitar que el huso horario corra el día.
         date: date ? new Date(`${date}T12:00:00`) : undefined,
       });
-      toast.success("Transacción creada");
+      toast.success(t.finanzas.toastCreated);
       onOpenChange(false);
       resetForm();
       router.refresh();
@@ -558,7 +587,7 @@ function NewTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
-          <DialogTitle>Nueva transacción</DialogTitle>
+          <DialogTitle>{t.finanzas.newTransaction}</DialogTitle>
         </DialogHeader>
 
         {/* Cuerpo con scroll interno: el footer nunca queda inaccesible */}
@@ -573,12 +602,12 @@ function NewTransactionDialog({
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">
-                    {scanning ? "Leyendo factura…" : "Factura adjunta"}
+                    {scanning ? t.finanzas.scanReadingTitle : t.finanzas.scanAttachedTitle}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     {scanning
-                      ? "El Modelo Pro está extrayendo los datos"
-                      : "Revisa los campos autocompletados"}
+                      ? t.finanzas.scanReadingSub
+                      : t.finanzas.scanAttachedSub}
                   </p>
                   {scanning && <GeneratingBar durationMs={9000} className="mt-2" />}
                 </div>
@@ -587,7 +616,7 @@ function NewTransactionDialog({
                   onClick={() => setReceiptUrl(null)}
                   disabled={scanning}
                   className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-card disabled:opacity-50"
-                  aria-label="Quitar factura"
+                  aria-label={t.finanzas.removeReceipt}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -615,10 +644,9 @@ function NewTransactionDialog({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium">Escanear factura con IA</p>
+                  <p className="text-xs font-medium">{t.finanzas.scanTitle}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Toma una foto o sube una imagen y autocompleto los campos · 1
-                    crédito
+                    {t.finanzas.scanHint}
                   </p>
                 </div>
               </label>
@@ -626,7 +654,7 @@ function NewTransactionDialog({
           </div>
 
           {/* Tipo: segmentado Ingreso / Gasto */}
-          <Field label="Tipo">
+          <Field label={t.finanzas.fieldType}>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -640,7 +668,7 @@ function NewTransactionDialog({
                 )}
               >
                 <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
-                Ingreso
+                {t.finanzas.income}
               </button>
               <button
                 type="button"
@@ -654,21 +682,21 @@ function NewTransactionDialog({
                 )}
               >
                 <ArrowDownLeft className="h-4 w-4" strokeWidth={2} />
-                Gasto
+                {t.finanzas.expense}
               </button>
             </div>
           </Field>
 
-          <Field label="Concepto *">
+          <Field label={t.finanzas.fieldConcept}>
             <Input
               value={concept}
               onChange={(e) => setConcept(e.target.value)}
-              placeholder="Ej: Reserva Casa Miraflores"
+              placeholder={t.finanzas.conceptPlaceholder}
             />
           </Field>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Monto *">
+            <Field label={t.finanzas.fieldAmount}>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -693,7 +721,7 @@ function NewTransactionDialog({
                 </Select>
               </div>
             </Field>
-            <Field label="Fecha">
+            <Field label={t.finanzas.fieldDate}>
               <Input
                 type="date"
                 value={date}
@@ -704,44 +732,44 @@ function NewTransactionDialog({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Categoría">
+            <Field label={t.finanzas.fieldCategory}>
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
+                  {TYPE_VALUES.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {typeLabels[v]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Estado">
+            <Field label={t.finanzas.fieldStatus}>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-                  <SelectItem value="EN_PROGRESO">En progreso</SelectItem>
-                  <SelectItem value="PAGADO">Pagado</SelectItem>
+                  <SelectItem value="PENDIENTE">{t.finanzas.statusPending}</SelectItem>
+                  <SelectItem value="EN_PROGRESO">{t.finanzas.statusInProgress}</SelectItem>
+                  <SelectItem value="PAGADO">{t.finanzas.statusPaid}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
           </div>
 
-          <Field label="Propiedad (opcional)">
+          <Field label={t.finanzas.fieldProperty}>
             <Select
               value={propertyId || "__none"}
               onValueChange={(v) => setPropertyId(v === "__none" ? "" : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Sin propiedad" />
+                <SelectValue placeholder={t.finanzas.noProperty} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">Sin propiedad</SelectItem>
+                <SelectItem value="__none">{t.finanzas.noProperty}</SelectItem>
                 {properties.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.title}
@@ -751,12 +779,12 @@ function NewTransactionDialog({
             </Select>
           </Field>
 
-          <Field label="Notas">
+          <Field label={t.finanzas.fieldNotes}>
             <Textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalles internos (opcional)"
+              placeholder={t.finanzas.notesPlaceholder}
             />
           </Field>
         </div>
@@ -767,11 +795,11 @@ function NewTransactionDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancelar
+            {t.finanzas.cancel}
           </Button>
           <Button onClick={onSubmit} disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear transacción
+            {t.finanzas.createTransaction}
           </Button>
         </DialogFooter>
       </DialogContent>

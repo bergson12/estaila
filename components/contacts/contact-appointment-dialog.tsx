@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createAppointment } from "@/lib/actions/appointment";
+import { useT } from "@/lib/i18n/provider";
 
 /** Default start = next full hour from now, formatted for <input datetime-local>. */
 function nextHourLocal() {
@@ -36,11 +37,11 @@ function nextHourLocal() {
   return format(d, "yyyy-MM-dd'T'HH:mm");
 }
 
-const REMINDERS = [
-  { value: "NONE", label: "Sin recordatorio" },
-  { value: "10 min antes", label: "10 minutos antes" },
-  { value: "1 hora antes", label: "1 hora antes" },
-  { value: "1 día antes", label: "1 día antes" },
+const REMINDER_VALUES = [
+  { value: "NONE", labelKey: "reminderNone" as const },
+  { value: "10 min antes", labelKey: "reminder10min" as const },
+  { value: "1 hora antes", labelKey: "reminder1hour" as const },
+  { value: "1 día antes", labelKey: "reminder1day" as const },
 ];
 
 export function ContactAppointmentDialog({
@@ -57,6 +58,7 @@ export function ContactAppointmentDialog({
   contactPhone?: string | null;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState(nextHourLocal);
@@ -65,24 +67,30 @@ export function ContactAppointmentDialog({
   const [notes, setNotes] = useState("");
   const [reminder, setReminder] = useState("1 hora antes");
 
+  const reminderLabel = (value: string) => {
+    const r = REMINDER_VALUES.find((x) => x.value === value);
+    return r ? t.contactos[r.labelKey] : value;
+  };
+
   // Reset + prefill each time the dialog opens.
   useEffect(() => {
     if (!open) return;
-    setTitle(`Cita con ${contactName}`);
+    setTitle(`${t.contactos.apptWithPrefix} ${contactName}`);
     setStartDate(nextHourLocal());
     setEndDate("");
     setLocation("");
     setNotes("");
     setReminder("1 hora antes");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, contactName]);
 
   async function onSubmit() {
     if (!title.trim()) {
-      toast.error("Título requerido");
+      toast.error(t.contactos.toastTitleRequired);
       return;
     }
     if (!startDate) {
-      toast.error("Fecha de inicio requerida");
+      toast.error(t.contactos.toastStartRequired);
       return;
     }
     setSubmitting(true);
@@ -90,8 +98,8 @@ export function ContactAppointmentDialog({
       const composedNotes =
         reminder !== "NONE"
           ? notes.trim()
-            ? `${notes.trim()}\n\n🔔 Recordatorio: ${reminder}`
-            : `🔔 Recordatorio: ${reminder}`
+            ? `${notes.trim()}\n\n🔔 ${t.contactos.reminderPrefix}: ${reminderLabel(reminder)}`
+            : `🔔 ${t.contactos.reminderPrefix}: ${reminderLabel(reminder)}`
           : notes.trim() || undefined;
 
       // attendees: dejamos rastro del contacto para la vista de agenda.
@@ -109,10 +117,10 @@ export function ContactAppointmentDialog({
         notes: composedNotes,
       });
 
-      toast.success("Cita creada", {
+      toast.success(t.contactos.toastApptCreated, {
         description: `${format(new Date(startDate), "EEE d MMM, h:mm a", {
-          locale: es,
-        })}${reminder !== "NONE" ? ` · ${reminder}` : ""}`,
+          locale: locale === "en" ? undefined : es,
+        })}${reminder !== "NONE" ? ` · ${reminderLabel(reminder)}` : ""}`,
       });
       onOpenChange(false);
       router.refresh();
@@ -131,27 +139,26 @@ export function ContactAppointmentDialog({
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <CalendarIcon className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            Nueva cita
+            {t.contactos.apptNewTitle}
           </DialogTitle>
           <DialogDescription>
-            Se vincula automáticamente a {contactName} y aparece en su pestaña
-            de citas y en tu agenda.
+            {t.contactos.apptDescPrefix} {contactName} {t.contactos.apptDescSuffix}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Título</Label>
+            <Label className="text-xs font-medium">{t.contactos.apptTitle}</Label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: Visita a propiedad"
+              placeholder={t.contactos.apptTitlePlaceholder}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Inicio</Label>
+              <Label className="text-xs font-medium">{t.contactos.apptStart}</Label>
               <Input
                 type="datetime-local"
                 value={startDate}
@@ -160,7 +167,7 @@ export function ContactAppointmentDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
-                Fin (opcional)
+                {t.contactos.apptEnd}
               </Label>
               <Input
                 type="datetime-local"
@@ -171,24 +178,24 @@ export function ContactAppointmentDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Lugar</Label>
+            <Label className="text-xs font-medium">{t.contactos.apptPlace}</Label>
             <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Oficina, propiedad, videollamada…"
+              placeholder={t.contactos.apptPlacePlaceholder}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Recordatorio</Label>
+            <Label className="text-xs font-medium">{t.contactos.apptReminder}</Label>
             <Select value={reminder} onValueChange={setReminder}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {REMINDERS.map((r) => (
+                {REMINDER_VALUES.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
-                    {r.label}
+                    {t.contactos[r.labelKey]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -197,13 +204,13 @@ export function ContactAppointmentDialog({
 
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">
-              Notas (opcional)
+              {t.contactos.apptNotes}
             </Label>
             <Textarea
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalles, agenda de la reunión…"
+              placeholder={t.contactos.apptNotesPlaceholder}
             />
           </div>
         </div>
@@ -214,7 +221,7 @@ export function ContactAppointmentDialog({
             onClick={() => onOpenChange(false)}
             disabled={submitting}
           >
-            Cancelar
+            {t.contactos.cancel}
           </Button>
           <Button onClick={onSubmit} disabled={submitting} variant="ink">
             {submitting ? (
@@ -222,7 +229,7 @@ export function ContactAppointmentDialog({
             ) : (
               <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
             )}
-            Crear cita
+            {t.contactos.apptCreateButton}
           </Button>
         </DialogFooter>
       </DialogContent>

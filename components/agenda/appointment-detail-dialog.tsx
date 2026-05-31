@@ -42,6 +42,7 @@ import {
   updateAppointmentStatus,
 } from "@/lib/actions/appointment";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 // Local type — mirrors the Appointment shape from agenda-client.tsx.
 // Date | string for cross-component compatibility (server passes strings).
@@ -102,7 +103,16 @@ export function AppointmentDetailDialog({
   onEdit: () => void;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [pending, startTransition] = useTransition();
+
+  const statusLabel = (status: string) =>
+    ({
+      PENDIENTE: t.agenda.statusPending,
+      EN_CURSO: t.agenda.statusInProgress,
+      COMPLETADO: t.agenda.statusCompleted,
+      CANCELADO: t.agenda.statusCancelled,
+    })[status] ?? status;
 
   if (!appointment) return null;
   const a = appointment;
@@ -127,7 +137,7 @@ export function AppointmentDetailDialog({
       try {
         await updateAppointmentStatus(a.id, newStatus);
         toast.success(
-          `Marcada como ${STATUS_META[newStatus]?.label.toLowerCase() ?? newStatus.toLowerCase()}`
+          `${t.agenda.toastMarkedAs} ${statusLabel(newStatus).toLowerCase()}`
         );
         router.refresh();
       } catch (e) {
@@ -137,11 +147,11 @@ export function AppointmentDetailDialog({
   }
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar "${a.title}"?`)) return;
+    if (!confirm(`${t.agenda.deleteConfirm} "${a.title}"?`)) return;
     startTransition(async () => {
       try {
         await deleteAppointment(a.id);
-        toast.success("Cita eliminada");
+        toast.success(t.agenda.toastDeleted);
         onOpenChange(false);
         router.refresh();
       } catch (e) {
@@ -179,7 +189,7 @@ export function AppointmentDetailDialog({
             </div>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Detalle de la cita
+            {t.agenda.detailSrTitle}
           </DialogDescription>
         </DialogHeader>
 
@@ -193,7 +203,7 @@ export function AppointmentDetailDialog({
               )}
             >
               <StatusIcon className="h-3 w-3" strokeWidth={2} />
-              {meta.label}
+              {statusLabel(a.status)}
             </span>
             <Select
               value={a.status}
@@ -201,7 +211,7 @@ export function AppointmentDetailDialog({
               disabled={pending}
             >
               <SelectTrigger className="h-7 w-40 text-xs">
-                <SelectValue placeholder="Cambiar estado" />
+                <SelectValue placeholder={t.agenda.changeStatus} />
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((s) => (
@@ -210,7 +220,7 @@ export function AppointmentDetailDialog({
                     value={s}
                     disabled={s === a.status}
                   >
-                    {STATUS_META[s]?.label ?? s}
+                    {statusLabel(s)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -221,7 +231,7 @@ export function AppointmentDetailDialog({
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background/40 p-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Inicio
+                {t.agenda.startLabel}
               </p>
               <p className="mt-1 font-mono text-lg font-semibold tabular-nums">
                 {format(start, "HH:mm")}
@@ -232,7 +242,7 @@ export function AppointmentDetailDialog({
             </div>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Fin
+                {t.agenda.endLabel}
               </p>
               <p className="mt-1 font-mono text-lg font-semibold tabular-nums">
                 {format(end, "HH:mm")}
@@ -254,10 +264,10 @@ export function AppointmentDetailDialog({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Propiedad
+                  {t.agenda.property}
                 </p>
                 <p className="mt-0.5 truncate text-sm font-medium">
-                  {a.propertyTitle ?? "Ver propiedad"}
+                  {a.propertyTitle ?? t.agenda.viewProperty}
                 </p>
               </div>
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -272,7 +282,7 @@ export function AppointmentDetailDialog({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Ubicación
+                  {t.agenda.location}
                 </p>
                 <p className="mt-0.5 text-sm">{a.location}</p>
               </div>
@@ -287,7 +297,7 @@ export function AppointmentDetailDialog({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Asistentes
+                  {t.agenda.attendees}
                 </p>
                 <p className="mt-0.5 text-sm">{a.attendees}</p>
               </div>
@@ -297,7 +307,7 @@ export function AppointmentDetailDialog({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-7 items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400"
-                  title="Abrir WhatsApp"
+                  title={t.agenda.openWhatsApp}
                 >
                   <MessageCircle className="h-3 w-3" />
                   WhatsApp
@@ -311,7 +321,7 @@ export function AppointmentDetailDialog({
             <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2 text-xs">
               <span className="text-base">🔔</span>
               <span className="font-medium text-amber-700 dark:text-amber-400">
-                Recordatorio: {reminder}
+                {t.agenda.reminder}: {reminder}
               </span>
             </div>
           )}
@@ -320,7 +330,7 @@ export function AppointmentDetailDialog({
           {cleanNotes && (
             <div>
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Notas
+                {t.agenda.notes}
               </p>
               <p className="whitespace-pre-line rounded-xl border border-border bg-background/40 p-3 text-sm leading-relaxed">
                 {cleanNotes}
@@ -338,7 +348,7 @@ export function AppointmentDetailDialog({
             className="text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-            Eliminar
+            {t.agenda.delete}
           </Button>
           <div className="flex items-center gap-2">
             <Button
@@ -346,12 +356,12 @@ export function AppointmentDetailDialog({
               size="sm"
               onClick={() => onOpenChange(false)}
             >
-              Cerrar
+              {t.agenda.close}
             </Button>
             <Button variant="ink" size="sm" onClick={onEdit}>
               {pending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              Editar
+              {t.agenda.edit}
             </Button>
           </div>
         </DialogFooter>

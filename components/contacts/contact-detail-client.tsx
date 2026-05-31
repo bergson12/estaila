@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn, initials, formatCurrency, formatDate } from "@/lib/utils";
 import { CONTACT_TYPES, labelFor, PIPELINE_STAGES } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import {
   deleteContact,
   toggleContactFavorite,
@@ -153,6 +154,7 @@ export function ContactDetailClient({
   documents?: DocumentRef[];
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -185,7 +187,7 @@ export function ContactDetailClient({
     startTransition(async () => {
       try {
         await toggleContactFavorite(contact.id);
-        toast.success(contact.favorite ? "Quitado de favoritos" : "Agregado a favoritos");
+        toast.success(contact.favorite ? t.contactos.toastFavRemoved : t.contactos.toastFavAdded);
         router.refresh();
       } catch (e) {
         toast.error((e as Error).message);
@@ -194,12 +196,12 @@ export function ContactDetailClient({
   }
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar a ${contact.name}? Esta acción no se puede deshacer.`))
+    if (!confirm(t.contactos.confirmDeleteContactLong.replace("{name}", contact.name)))
       return;
     startTransition(async () => {
       try {
         await deleteContact(contact.id);
-        toast.success("Contacto eliminado");
+        toast.success(t.contactos.toastDeleted);
         router.push("/contactos");
       } catch (e) {
         toast.error((e as Error).message);
@@ -257,13 +259,13 @@ export function ContactDetailClient({
             <div className="absolute -top-px left-8">
               <span className="inline-flex items-center gap-1 rounded-b-md bg-emerald-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white shadow-md shadow-emerald-500/30">
                 <KeyRound className="h-3 w-3" />
-                Propietario
+                {labelFor(CONTACT_TYPES, "PROPIETARIO", locale)}
               </span>
             </div>
           )}
 
           <p className="mb-1 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Contacto · {labelFor(CONTACT_TYPES, contact.type)}
+            {t.contactos.contactLabel} · {labelFor(CONTACT_TYPES, contact.type, locale)}
           </p>
 
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
@@ -320,25 +322,25 @@ export function ContactDetailClient({
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <InfoChip
               icon={Briefcase}
-              label="Tipo"
-              value={labelFor(CONTACT_TYPES, contact.type)}
+              label={t.contactos.type}
+              value={labelFor(CONTACT_TYPES, contact.type, locale)}
             />
             {contact.location && (
-              <InfoChip icon={MapPin} label="Ubicación" value={contact.location} />
+              <InfoChip icon={MapPin} label={t.contactos.fieldLocation} value={contact.location} />
             )}
             {contact.phone && (
-              <InfoChip icon={Phone} label="Teléfono" value={contact.phone} mono />
+              <InfoChip icon={Phone} label={t.contactos.fieldPhone} value={contact.phone} mono />
             )}
             {contact.email && (
               <InfoChip
                 icon={Mail}
-                label="Email"
+                label={t.contactos.fieldEmail}
                 value={contact.email}
                 link={`mailto:${contact.email}`}
               />
             )}
             {contact.rnc && (
-              <InfoChip icon={Briefcase} label="RNC / Cédula" value={contact.rnc} mono />
+              <InfoChip icon={Briefcase} label={t.contactos.fieldTaxId} value={contact.rnc} mono />
             )}
           </div>
 
@@ -350,13 +352,13 @@ export function ContactDetailClient({
                 onClick={() => setApptOpen(true)}
               >
                 <Video className="mr-1.5 h-4 w-4" />
-                Crear cita
+                {t.contactos.createAppt}
               </Button>
               {wa && (
                 <Button variant="outline" asChild>
                   <a href={wa} target="_blank" rel="noreferrer">
                     <MessageCircle className="mr-1.5 h-4 w-4 text-emerald-500" />
-                    WhatsApp
+                    {t.contactos.whatsapp}
                   </a>
                 </Button>
               )}
@@ -365,7 +367,7 @@ export function ContactDetailClient({
             <div className="flex items-center gap-3">
               <div className="hidden flex-col items-end text-right sm:flex">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  Asignado a
+                  {t.contactos.thAssignedTo}
                 </p>
                 <div className="mt-0.5 flex items-center gap-2">
                   <Avatar className="h-6 w-6 ring-1 ring-border">
@@ -380,7 +382,7 @@ export function ContactDetailClient({
               <div className="flex items-center gap-1">
                 {contact.phone && (
                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-card" asChild>
-                    <a href={`tel:${contact.phone}`} title="Llamar">
+                    <a href={`tel:${contact.phone}`} title={t.contactos.call}>
                       <Phone className="h-4 w-4" />
                     </a>
                   </Button>
@@ -391,7 +393,7 @@ export function ContactDetailClient({
                     size="icon"
                     className="h-9 w-9 rounded-full bg-card"
                     onClick={() => setEmailOpen(true)}
-                    title="Enviar email"
+                    title={t.contactos.sendEmail}
                   >
                     <Mail className="h-4 w-4" />
                   </Button>
@@ -405,16 +407,16 @@ export function ContactDetailClient({
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setApptOpen(true)}>
                       <Calendar className="mr-2 h-4 w-4" />
-                      Agendar cita
+                      {t.contactos.scheduleAppt}
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Plus className="mr-2 h-4 w-4" />
-                      Agregar al pipeline
+                      {t.contactos.addToPipeline}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setEditOpen(true)}>
                       <Edit3 className="mr-2 h-4 w-4" />
-                      Editar contacto
+                      {t.contactos.editContact}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -447,33 +449,33 @@ export function ContactDetailClient({
                   {isOwner ? (
                     <>
                       <Building2 className="h-5 w-5 text-emerald-500" />
-                      Propiedades del propietario
+                      {t.contactos.ownerProperties}
                     </>
                   ) : isClient ? (
                     <>
                       <Heart className="h-5 w-5 text-blue-500" />
-                      Propiedades de interés
+                      {t.contactos.interestProperties}
                     </>
                   ) : (
                     <>
                       <Building2 className="h-5 w-5 text-muted-foreground" />
-                      Propiedades relacionadas
+                      {t.contactos.relatedProperties}
                     </>
                   )}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {isOwner
-                    ? `${ownedProperties.length} ${ownedProperties.length === 1 ? "propiedad" : "propiedades"} bajo gestión`
+                    ? `${ownedProperties.length} ${ownedProperties.length === 1 ? t.contactos.propertySingular : t.contactos.propertyPlural} ${t.contactos.underManagement}`
                     : isClient
-                      ? `${pipelineProperties.length} en pipeline`
-                      : "Vinculadas a este contacto"}
+                      ? `${pipelineProperties.length} ${t.contactos.inPipeline}`
+                      : t.contactos.linkedToContact}
                 </p>
               </div>
               {isOwner && (
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/propiedades/nueva?ownerId=${contact.id}`}>
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Vincular propiedad
+                    {t.contactos.linkProperty}
                   </Link>
                 </Button>
               )}
@@ -483,10 +485,10 @@ export function ContactDetailClient({
               properties={isOwner ? ownedProperties : pipelineProperties}
               fallbackLabel={
                 isOwner
-                  ? "Este propietario aún no tiene propiedades vinculadas."
+                  ? t.contactos.fallbackOwnerProps
                   : isClient
-                    ? "Este cliente aún no tiene propiedades en pipeline."
-                    : "Sin propiedades vinculadas."
+                    ? t.contactos.fallbackClientProps
+                    : t.contactos.fallbackNoProps
               }
               showPipelineStage={!isOwner}
               contactId={contact.id}
@@ -536,7 +538,7 @@ export function ContactDetailClient({
       {contact.notes && (
         <Card className="mt-6 p-6">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Notas
+            {t.contactos.notesHeading}
           </h2>
           <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/90">
             {contact.notes}
@@ -545,7 +547,7 @@ export function ContactDetailClient({
       )}
 
       <p className="mt-4 text-center text-xs text-muted-foreground">
-        Creado {formatDate(contact.createdAt)} · Actualizado{" "}
+        {t.contactos.createdLabel} {formatDate(contact.createdAt)} · {t.contactos.updatedLabel}{" "}
         {formatDate(contact.updatedAt)}
       </p>
 
@@ -699,6 +701,7 @@ function PropertyObjectCard({
   showStage: boolean;
   contactId: string;
 }) {
+  const { t, locale } = useT();
   const stageMeta = p.stage
     ? PIPELINE_STAGES.find((s) => s.value === p.stage)
     : null;
@@ -749,7 +752,7 @@ function PropertyObjectCard({
                   stageColor
                 )}
               >
-                {stageMeta.label}
+                {labelFor(PIPELINE_STAGES, p.stage, locale)}
               </span>
             )}
           </div>
@@ -815,13 +818,13 @@ function PropertyObjectCard({
           {/* Specs row */}
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
             {p.bedrooms != null && (
-              <SpecPill icon={Bed} value={`${p.bedrooms} hab`} />
+              <SpecPill icon={Bed} value={`${p.bedrooms} ${t.contactos.specBeds}`} />
             )}
             {p.parking != null && (
-              <SpecPill icon={Car} value={`${p.parking} parq`} />
+              <SpecPill icon={Car} value={`${p.parking} ${t.contactos.specParking}`} />
             )}
             {p.bathrooms != null && (
-              <SpecPill icon={Bath} value={`${p.bathrooms} bañ`} />
+              <SpecPill icon={Bath} value={`${p.bathrooms} ${t.contactos.specBaths}`} />
             )}
             {p.metersSquared != null && (
               <SpecPill icon={Maximize2} value={`${p.metersSquared}m²`} />
@@ -833,7 +836,7 @@ function PropertyObjectCard({
             <Button asChild variant="outline" size="sm" className="flex-1">
               <Link href={`/propiedades/${p.id}`}>
                 <ExternalLink className="mr-1.5 h-3 w-3" />
-                Ver detalle
+                {t.contactos.viewDetail}
               </Link>
             </Button>
             <DropdownMenu>
@@ -841,8 +844,8 @@ function PropertyObjectCard({
                 <Button variant="outline" size="sm" className="flex-1 justify-between">
                   <span className="text-xs">
                     {p.stage
-                      ? PIPELINE_STAGES.find((s) => s.value === p.stage)?.label
-                      : OP_LABEL[p.operation] ?? "Activo"}
+                      ? labelFor(PIPELINE_STAGES, p.stage, locale)
+                      : OP_LABEL[p.operation] ?? t.contactos.activeWord}
                   </span>
                   <Sparkles className="h-3 w-3 text-primary" />
                 </Button>
@@ -853,13 +856,13 @@ function PropertyObjectCard({
                     href={`/pipeline?contactId=${contactId}&propertyId=${p.id}`}
                   >
                     <Plus className="mr-2 h-3.5 w-3.5" />
-                    Mover en pipeline
+                    {t.contactos.moveInPipeline}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href={`/propiedades/${p.id}`}>
                     <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                    Ver detalle
+                    {t.contactos.viewDetail}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -914,17 +917,18 @@ function DetailTabs({
   onChange: (v: "overview" | "timeline" | "citas" | "data" | "docs") => void;
   counts: { props: number; timeline: number; citas: number; docs: number };
 }) {
+  const { t } = useT();
   const tabs: {
     key: "overview" | "timeline" | "citas" | "data" | "docs";
     label: string;
     icon: LucideIcon;
     count?: number;
   }[] = [
-    { key: "overview", label: "Resumen", icon: LayoutGrid, count: counts.props },
-    { key: "timeline", label: "Timeline", icon: ListTodo, count: counts.timeline },
-    { key: "citas", label: "Citas", icon: Calendar, count: counts.citas },
-    { key: "data", label: "Datos", icon: TagIcon },
-    { key: "docs", label: "Documentos", icon: FileText, count: counts.docs },
+    { key: "overview", label: t.contactos.tabOverview, icon: LayoutGrid, count: counts.props },
+    { key: "timeline", label: t.contactos.tabTimeline, icon: ListTodo, count: counts.timeline },
+    { key: "citas", label: t.contactos.tabAppts, icon: Calendar, count: counts.citas },
+    { key: "data", label: t.contactos.tabData, icon: TagIcon },
+    { key: "docs", label: t.contactos.tabDocs, icon: FileText, count: counts.docs },
   ];
   return (
     <div className="mt-6 overflow-x-auto">
@@ -974,16 +978,16 @@ function DetailTabs({
 // TIMELINE FEED
 // ============================================================
 
-const ACTIVITY_META: Record<string, { label: string; icon: LucideIcon; color: string }> = {
-  CALL: { label: "Llamada", icon: Phone, color: "text-blue-500" },
-  WHATSAPP_SENT: { label: "WhatsApp enviado", icon: MessageCircle, color: "text-emerald-500" },
-  WHATSAPP_RECEIVED: { label: "WhatsApp recibido", icon: MessageCircle, color: "text-emerald-500" },
-  EMAIL: { label: "Email", icon: Mail, color: "text-violet-500" },
-  NOTE: { label: "Nota", icon: Pencil, color: "text-muted-foreground" },
-  VISIT: { label: "Visita", icon: MapPin, color: "text-amber-500" },
-  PROPERTY_VIEWED: { label: "Propiedad vista", icon: Building2, color: "text-foreground" },
-  STATUS_CHANGE: { label: "Cambio de estado", icon: CheckCircle2, color: "text-foreground" },
-  TAG_ADDED: { label: "Tag añadido", icon: TagIcon, color: "text-foreground" },
+const ACTIVITY_META: Record<string, { icon: LucideIcon; color: string }> = {
+  CALL: { icon: Phone, color: "text-blue-500" },
+  WHATSAPP_SENT: { icon: MessageCircle, color: "text-emerald-500" },
+  WHATSAPP_RECEIVED: { icon: MessageCircle, color: "text-emerald-500" },
+  EMAIL: { icon: Mail, color: "text-violet-500" },
+  NOTE: { icon: Pencil, color: "text-muted-foreground" },
+  VISIT: { icon: MapPin, color: "text-amber-500" },
+  PROPERTY_VIEWED: { icon: Building2, color: "text-foreground" },
+  STATUS_CHANGE: { icon: CheckCircle2, color: "text-foreground" },
+  TAG_ADDED: { icon: TagIcon, color: "text-foreground" },
 };
 
 function TimelineFeed({
@@ -993,6 +997,7 @@ function TimelineFeed({
   contactId: string;
   activities: Activity[];
 }) {
+  const { t, locale } = useT();
   const [, startTransition] = useTransition();
   const [note, setNote] = useState("");
   const [callDuration, setCallDuration] = useState("");
@@ -1006,7 +1011,7 @@ function TimelineFeed({
       const { addNote } = await import("@/lib/actions/contact-polish");
       await addNote(contactId, note.trim());
       setNote("");
-      toast.success("Nota agregada");
+      toast.success(t.contactos.toastNoteAdded);
       startTransition(() => router.refresh());
     } catch (e) {
       toast.error((e as Error).message);
@@ -1022,7 +1027,7 @@ function TimelineFeed({
       const min = callDuration ? parseInt(callDuration, 10) : undefined;
       await logCall({ contactId, durationMin: min });
       setCallDuration("");
-      toast.success("Llamada registrada");
+      toast.success(t.contactos.toastCallLogged);
       startTransition(() => router.refresh());
     } catch (e) {
       toast.error((e as Error).message);
@@ -1037,11 +1042,11 @@ function TimelineFeed({
       <Card className="p-6">
         <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <ListTodo className="h-3.5 w-3.5" />
-          Timeline · {activities.length}
+          {t.contactos.tabTimeline} · {activities.length}
         </h2>
         {activities.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            Sin actividad aún. Agrega una nota o registra una llamada.
+            {t.contactos.timelineEmpty}
           </p>
         ) : (
           <ol className="relative space-y-5 border-l border-border pl-5">
@@ -1061,7 +1066,7 @@ function TimelineFeed({
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="text-sm font-semibold">{a.title}</p>
                     <span className="font-mono text-[10px] tabular-nums text-muted-foreground">
-                      {formatRelative(a.createdAt)}
+                      {formatRelative(a.createdAt, locale, t.contactos.relNow)}
                     </span>
                   </div>
                   {a.content && (
@@ -1079,14 +1084,14 @@ function TimelineFeed({
       {/* Side: quick actions */}
       <Card className="p-5 lg:sticky lg:top-24 lg:self-start">
         <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Registrar interacción
+          {t.contactos.logInteraction}
         </h3>
 
         <div className="space-y-2">
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Nueva nota..."
+            placeholder={t.contactos.newNotePlaceholder}
             rows={3}
             className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
           />
@@ -1097,7 +1102,7 @@ function TimelineFeed({
             disabled={submitting || !note.trim()}
           >
             <Pencil className="mr-1.5 h-3.5 w-3.5" />
-            Agregar nota
+            {t.contactos.addNote}
           </Button>
         </div>
 
@@ -1109,7 +1114,7 @@ function TimelineFeed({
               max={300}
               value={callDuration}
               onChange={(e) => setCallDuration(e.target.value)}
-              placeholder="min"
+              placeholder={t.contactos.minAbbr}
               className="w-16 rounded-md border bg-background px-2 py-1.5 font-mono text-sm tabular-nums focus:border-primary focus:outline-none"
             />
             <Button
@@ -1120,7 +1125,7 @@ function TimelineFeed({
               disabled={submitting}
             >
               <Phone className="mr-1.5 h-3.5 w-3.5" />
-              Registrar llamada
+              {t.contactos.logCall}
             </Button>
           </div>
         </div>
@@ -1147,27 +1152,29 @@ function AppointmentsList({
   appointments: AppointmentItem[];
   onNew: () => void;
 }) {
+  const { t, locale } = useT();
+  const dateLocale = locale === "en" ? "en-US" : "es";
   return (
     <Card className="p-6">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
-          Citas · {appointments.length}
+          {t.contactos.tabAppts} · {appointments.length}
         </h2>
         <Button size="sm" variant="outline" onClick={onNew}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
-          Nueva cita
+          {t.contactos.apptNewTitle}
         </Button>
       </div>
 
       {appointments.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Sin citas registradas con este contacto.
+            {t.contactos.apptsEmpty}
           </p>
           <Button size="sm" variant="outline" onClick={onNew}>
             <Plus className="mr-1.5 h-3.5 w-3.5" />
-            Agendar primera cita
+            {t.contactos.scheduleFirstAppt}
           </Button>
         </div>
       ) : (
@@ -1181,7 +1188,7 @@ function AppointmentsList({
               >
                 <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-primary/10 text-primary">
                   <span className="text-[9px] font-semibold uppercase">
-                    {d.toLocaleDateString("es", { month: "short" }).replace(".", "")}
+                    {d.toLocaleDateString(dateLocale, { month: "short" }).replace(".", "")}
                   </span>
                   <span className="font-mono text-sm font-bold tabular-nums leading-none">
                     {d.getDate()}
@@ -1192,7 +1199,7 @@ function AppointmentsList({
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1 font-mono tabular-nums">
                       <Clock className="h-3 w-3" />
-                      {d.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
+                      {d.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     {a.propertyTitle && (
                       <span className="inline-flex items-center gap-1 truncate">
@@ -1215,7 +1222,7 @@ function AppointmentsList({
                     APPT_STATUS_COLOR[a.status] ?? ""
                   )}
                 >
-                  {a.status.replace(/_/g, " ").toLowerCase()}
+                  {apptStatusLabel(a.status, t)}
                 </Badge>
               </li>
             );
@@ -1239,6 +1246,7 @@ function CustomFieldsPanel({
   fields: CustomField[];
   tags: DetailTag[];
 }) {
+  const { t } = useT();
   const [key, setKey] = useState("");
   const [value, setValue] = useState("");
   const [pending, setPending] = useState(false);
@@ -1252,7 +1260,7 @@ function CustomFieldsPanel({
       await setCustomField(contactId, key.trim(), value.trim());
       setKey("");
       setValue("");
-      toast.success("Campo guardado");
+      toast.success(t.contactos.toastFieldSaved);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1266,7 +1274,7 @@ function CustomFieldsPanel({
     try {
       const { deleteCustomField } = await import("@/lib/actions/contact-polish");
       await deleteCustomField(contactId, k);
-      toast.success("Campo eliminado");
+      toast.success(t.contactos.toastFieldDeleted);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -1280,13 +1288,12 @@ function CustomFieldsPanel({
       <Card className="p-6">
         <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <TagIcon className="h-3.5 w-3.5" />
-          Campos personalizados
+          {t.contactos.customFields}
         </h2>
 
         {fields.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Sin campos personalizados. Agrega presupuesto, fecha de
-            cumpleaños, lead source, etc.
+            {t.contactos.customFieldsEmpty}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -1319,13 +1326,13 @@ function CustomFieldsPanel({
           <input
             value={key}
             onChange={(e) => setKey(e.target.value)}
-            placeholder="Campo (ej. presupuesto)"
+            placeholder={t.contactos.customFieldKeyPlaceholder}
             className="rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
           />
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Valor"
+            placeholder={t.contactos.customFieldValuePlaceholder}
             className="rounded-md border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
           />
           <Button size="sm" onClick={handleSet} disabled={pending || !key || !value}>
@@ -1336,11 +1343,11 @@ function CustomFieldsPanel({
 
       <Card className="p-5 lg:sticky lg:top-24 lg:self-start">
         <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tags asignados
+          {t.contactos.assignedTags}
         </h3>
         {tags.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Sin tags. Asignar desde la lista de contactos.
+            {t.contactos.assignedTagsEmpty}
           </p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
@@ -1378,19 +1385,20 @@ function DocumentsList({
   documents: DocumentRef[];
   contactId: string;
 }) {
+  const { t } = useT();
   return (
     <Card className="p-6">
       <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         <FileText className="h-3.5 w-3.5" />
-        Documentos
+        {t.contactos.tabDocs}
       </h2>
       {documents.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Sin documentos generados con este contacto aún.
+            {t.contactos.docsEmpty}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Los contratos firmados aparecerán aquí automáticamente.
+            {t.contactos.docsEmptyHint}
           </p>
         </div>
       ) : (
@@ -1419,15 +1427,31 @@ function DocumentsList({
 // HELPERS
 // ============================================================
 
-function formatRelative(iso: string): string {
+function apptStatusLabel(
+  status: string,
+  t: ReturnType<typeof useT>["t"]
+): string {
+  const map: Record<string, string> = {
+    PENDIENTE: t.contactos.apptStatusPending,
+    EN_CURSO: t.contactos.apptStatusInProgress,
+    COMPLETADO: t.contactos.apptStatusCompleted,
+    CANCELADO: t.contactos.apptStatusCancelled,
+  };
+  return map[status] ?? status.replace(/_/g, " ").toLowerCase();
+}
+
+function formatRelative(iso: string, locale: "es" | "en" = "es", nowLabel = "ahora"): string {
   const date = new Date(iso);
   const diff = Date.now() - date.getTime();
   const min = 60 * 1000;
   const hour = 60 * min;
   const day = 24 * hour;
-  if (diff < min) return "ahora";
+  if (diff < min) return nowLabel;
   if (diff < hour) return `${Math.floor(diff / min)}m`;
   if (diff < day) return `${Math.floor(diff / hour)}h`;
   if (diff < 7 * day) return `${Math.floor(diff / day)}d`;
-  return date.toLocaleDateString("es", { day: "numeric", month: "short" });
+  return date.toLocaleDateString(locale === "en" ? "en-US" : "es", {
+    day: "numeric",
+    month: "short",
+  });
 }

@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn, formatCurrency, initials, formatDate } from "@/lib/utils";
 import { deletePipelineCard } from "@/lib/actions/pipeline";
+import { PIPELINE_STAGES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import { metaFor } from "./pipeline-meta";
 import type { PipelineCardData } from "./kanban-board";
 
@@ -31,6 +33,7 @@ export function LeadCard({
   isOverlay?: boolean;
 }) {
   const [, startTransition] = useTransition();
+  const { t, locale } = useT();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: card.id, disabled: isOverlay });
 
@@ -55,11 +58,11 @@ export function LeadCard({
   );
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar lead de "${card.contactName}"?`)) return;
+    if (!confirm(`${t.pipeline.confirmDeletePrefix} "${card.contactName}"?`)) return;
     startTransition(async () => {
       try {
         await deletePipelineCard(card.id);
-        toast.success("Lead eliminado");
+        toast.success(t.pipeline.toastLeadDeleted);
       } catch (e) {
         toast.error((e as Error).message);
       }
@@ -99,10 +102,10 @@ export function LeadCard({
                 ? "bg-rose-500/15 text-rose-500 ring-rose-500/30"
                 : "bg-amber-500/15 text-amber-500 ring-amber-500/30"
             )}
-            title={isOverdue ? "Vencido" : "Hoy"}
+            title={isOverdue ? t.pipeline.overdue : t.pipeline.today}
           >
             <Flame className="h-2.5 w-2.5" />
-            {isOverdue ? "Vencido" : "Hoy"}
+            {isOverdue ? t.pipeline.overdue : t.pipeline.today}
           </span>
         </div>
       )}
@@ -138,7 +141,7 @@ export function LeadCard({
               <button
                 className="absolute right-2 top-2 rounded-md p-1 opacity-0 transition-all hover:bg-foreground/[0.06] group-hover:opacity-100"
                 onClick={(e) => e.stopPropagation()}
-                aria-label="Acciones"
+                aria-label={t.pipeline.actions}
               >
                 <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
@@ -150,7 +153,7 @@ export function LeadCard({
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Eliminar
+                {t.pipeline.delete}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -198,7 +201,7 @@ export function LeadCard({
         {!["CERRADO", "PERDIDO"].includes(card.stage) && daysSinceCreated >= 1 && (
           <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground">
             <span className="font-mono tabular-nums">
-              {daysSinceCreated}d en pipeline
+              {daysSinceCreated}{t.pipeline.daysInPipeline}
             </span>
             <span
               className={cn(
@@ -206,7 +209,7 @@ export function LeadCard({
                 meta.chip
               )}
             >
-              {meta.label}
+              {labelFor(PIPELINE_STAGES, card.stage, locale)}
             </span>
           </div>
         )}

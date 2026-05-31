@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { InvoiceView } from "@/components/finanzas/invoice-view";
+import { getDict, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function PublicInvoicePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const [t, locale] = await Promise.all([getDict(), getLocale()]);
 
   const tx = await prisma.transaction.findUnique({
     where: { id },
@@ -63,6 +65,8 @@ export default async function PublicInvoicePage({
         location: tx.user.agentLocation ?? null,
         avatar: tx.user.image ?? null,
       }}
+      t={t}
+      locale={locale}
     />
   );
 }
@@ -73,11 +77,16 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tx = await prisma.transaction.findUnique({
-    where: { id },
-    select: { concept: true },
-  });
+  const [tx, t] = await Promise.all([
+    prisma.transaction.findUnique({
+      where: { id },
+      select: { concept: true },
+    }),
+    getDict(),
+  ]);
   return {
-    title: tx ? `Recibo · ${tx.concept}` : "Recibo",
+    title: tx
+      ? `${t.finanzas.receiptWord} · ${tx.concept}`
+      : t.finanzas.receiptWord,
   };
 }

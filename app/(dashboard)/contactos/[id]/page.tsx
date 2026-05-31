@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ContactDetailClient } from "@/components/contacts/contact-detail-client";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function ContactDetailPage({
 }) {
   const { id } = await params;
   const user = await requireUser();
+  const t = await getDict();
 
   const [
     contact,
@@ -111,7 +113,7 @@ export default async function ContactDetailPage({
         className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" />
-        Volver a contactos
+        {t.contactos.backToContacts}
       </Link>
       <ContactDetailClient
         contact={{

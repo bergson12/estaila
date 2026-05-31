@@ -7,10 +7,12 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useT } from "@/lib/i18n/provider";
 import { createOrganization } from "@/lib/actions/organization";
 
 export function CreateOrgForm() {
   const router = useRouter();
+  const { t } = useT();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,7 @@ export function CreateOrgForm() {
     setSubmitting(true);
     try {
       await createOrganization({ name, slug: slug || auto });
-      toast.success("Organización creada");
+      toast.success(t.empresa.toastOrgCreated);
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -41,17 +43,17 @@ export function CreateOrgForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <Label className="text-xs">Nombre comercial</Label>
+        <Label className="text-xs">{t.empresa.commercialName}</Label>
         <Input
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="ej. Atelier Estates"
+          placeholder={t.empresa.commercialNamePlaceholder}
           className="mt-1"
         />
       </div>
       <div>
-        <Label className="text-xs">Slug (URL)</Label>
+        <Label className="text-xs">{t.empresa.slugUrl}</Label>
         <div className="mt-1 flex items-center gap-2">
           <span className="text-xs text-muted-foreground">/p/</span>
           <Input
@@ -61,19 +63,19 @@ export function CreateOrgForm() {
           />
         </div>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Solo letras, números y guiones. Si está disponible.
+          {t.empresa.slugHint}
         </p>
       </div>
       <div className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
         <p className="font-medium text-foreground">
-          Empezarás con plan TEAM (5 asientos)
+          {t.empresa.startWithTeamPlan}
         </p>
         <p className="mt-1">
-          Más asientos y dominio propio están en plan Agency. Puedes actualizar después.
+          {t.empresa.startWithTeamPlanHint}
         </p>
       </div>
       <Button type="submit" disabled={submitting || !name.trim()} className="w-full">
-        Crear organización
+        {t.empresa.createOrgBtn}
         <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
       </Button>
     </form>

@@ -8,6 +8,16 @@
  * build falla (parity check vía `typeof es`).
  */
 
+import contactos from "./ns/contactos";
+import agenda from "./ns/agenda";
+import pipeline from "./ns/pipeline";
+import finanzas from "./ns/finanzas";
+import documentos from "./ns/documentos";
+import analisis from "./ns/analisis";
+import empresa from "./ns/empresa";
+import soporte from "./ns/soporte";
+import propForm from "./ns/propForm";
+
 export type Locale = "es" | "en";
 export const LOCALES: Locale[] = ["es", "en"];
 export const LOCALE_COOKIE = "locale";
@@ -159,6 +169,15 @@ const es = {
     noPropsHint: "Empieza creando tu primera propiedad.",
     create: "Crear",
   },
+  contactos: contactos.es,
+  agenda: agenda.es,
+  pipeline: pipeline.es,
+  finanzas: finanzas.es,
+  documentos: documentos.es,
+  analisis: analisis.es,
+  empresa: empresa.es,
+  soporte: soporte.es,
+  propForm: propForm.es,
 };
 
 const en: typeof es = {
@@ -304,6 +323,15 @@ const en: typeof es = {
     noPropsHint: "Start by creating your first property.",
     create: "Create",
   },
+  contactos: contactos.en,
+  agenda: agenda.en,
+  pipeline: pipeline.en,
+  finanzas: finanzas.en,
+  documentos: documentos.en,
+  analisis: analisis.en,
+  empresa: empresa.en,
+  soporte: soporte.en,
+  propForm: propForm.en,
 };
 
 export const DICT: Record<Locale, typeof es> = { es, en };

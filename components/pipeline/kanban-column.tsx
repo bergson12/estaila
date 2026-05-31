@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import { motion, AnimatePresence } from "motion/react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { PIPELINE_STAGES, labelFor } from "@/lib/constants";
+import { useT } from "@/lib/i18n/provider";
 import { LeadCard } from "./lead-card";
 import { metaFor, type StageKey } from "./pipeline-meta";
 import type { PipelineCardData } from "./kanban-board";
@@ -20,6 +22,7 @@ export function KanbanColumn({
   onAddCard: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const { t, locale } = useT();
   const meta = metaFor(stage);
   const Icon = meta.icon;
 
@@ -59,10 +62,10 @@ export function KanbanColumn({
           </div>
           <div className="min-w-0">
             <p className="truncate text-[11px] font-semibold uppercase tracking-wider">
-              {meta.label}
+              {labelFor(PIPELINE_STAGES, stage, locale)}
             </p>
             <p className="font-mono text-[10px] tabular-nums text-muted-foreground">
-              {cards.length} {cards.length === 1 ? "lead" : "leads"}
+              {cards.length} {cards.length === 1 ? t.pipeline.leadSingular : t.pipeline.leadPlural}
             </p>
           </div>
         </div>
@@ -73,7 +76,7 @@ export function KanbanColumn({
             "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-all hover:scale-105",
             "hover:bg-foreground/[0.04] hover:text-foreground"
           )}
-          aria-label="Agregar lead"
+          aria-label={t.pipeline.addLead}
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -118,7 +121,7 @@ export function KanbanColumn({
             >
               <span className="flex items-center gap-1.5">
                 <Plus className="h-3 w-3" />
-                Arrastra aquí o agrega
+                {t.pipeline.dropHere}
               </span>
             </motion.button>
           ) : (

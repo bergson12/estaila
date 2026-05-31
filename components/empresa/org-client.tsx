@@ -15,6 +15,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 import { BrandingForm } from "./branding-form";
 import { MembersTable } from "./members-table";
 import { BillingTab } from "./billing-tab";
@@ -89,16 +90,17 @@ export function OrgClient({
   teams?: TeamRow[];
   myRole: string;
 }) {
+  const { t } = useT();
   const [tab, setTab] = useState<Tab>("branding");
   const acceptedCount = members.filter((m) => m.acceptedAt).length;
   const canEdit = myRole === "OWNER" || myRole === "ADMIN";
 
   const TABS: { key: Tab; label: string; icon: typeof Palette; count?: number }[] = [
-    { key: "branding", label: "Marca", icon: Palette },
-    { key: "members", label: "Miembros", icon: Users, count: members.length },
-    { key: "teams", label: "Equipos", icon: UsersRound, count: teams.length },
-    { key: "domain", label: "Dominio", icon: Globe },
-    { key: "billing", label: "Facturación", icon: Receipt },
+    { key: "branding", label: t.empresa.tabBranding, icon: Palette },
+    { key: "members", label: t.empresa.tabMembers, icon: Users, count: members.length },
+    { key: "teams", label: t.empresa.tabTeams, icon: UsersRound, count: teams.length },
+    { key: "domain", label: t.empresa.tabDomain, icon: Globe },
+    { key: "billing", label: t.empresa.tabBilling, icon: Receipt },
   ];
 
   return (
@@ -137,7 +139,7 @@ export function OrgClient({
             )}
           </div>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {org.slug} · {org.plan} · {acceptedCount} / {org.maxSeats} asientos
+            {org.slug} · {org.plan} · {acceptedCount} / {org.maxSeats} {t.empresa.seats}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -149,7 +151,7 @@ export function OrgClient({
           )}
           {!org.planActive && (
             <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-              Plan inactivo
+              {t.empresa.planInactive}
             </Badge>
           )}
         </div>

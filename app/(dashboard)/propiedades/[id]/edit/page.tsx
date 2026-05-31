@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PropertyForm } from "@/components/properties/property-form";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { getDict } from "@/lib/i18n/server";
 
 export default async function EditPropiedadPage({
   params,
@@ -13,6 +14,7 @@ export default async function EditPropiedadPage({
 }) {
   const { id } = await params;
   const user = await requireUser();
+  const t = await getDict();
 
   const [property, owners, currentUser] = await Promise.all([
     prisma.property.findFirst({
@@ -49,11 +51,11 @@ export default async function EditPropiedadPage({
         className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-3 w-3" />
-        Volver al detalle
+        {t.propForm.backToDetail}
       </Link>
       <PageHeader
-        title={`Editar: ${property.title}`}
-        description="Actualiza la información de tu propiedad."
+        title={`${t.propForm.editPagePrefix} ${property.title}`}
+        description={t.propForm.editPageDesc}
       />
       <PropertyForm
         userPlan={currentUser?.plan ?? "FREE"}

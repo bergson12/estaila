@@ -6,11 +6,13 @@ import { Card } from "@/components/ui/card";
 import { CreateOrgForm } from "@/components/empresa/create-org-form";
 import { OrgClient } from "@/components/empresa/org-client";
 import { InvitationsList } from "@/components/empresa/invitations-list";
+import { getDict } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmpresaPage() {
   await requireUser();
+  const t = await getDict();
   const myOrg = await getMyOrganization();
 
   if (!myOrg) {
@@ -18,15 +20,15 @@ export default async function EmpresaPage() {
     return (
       <div className="mx-auto max-w-3xl">
         <PageHeader
-          title="Crea tu empresa"
-          description="Configura tu marca, invita a tu equipo y trabaja como agencia. Disponible en planes Team y Agency."
+          title={t.empresa.createTitle}
+          description={t.empresa.createDescription}
         />
 
         {invites.length > 0 && (
           <Card className="mb-6 p-5">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5" />
-              Invitaciones pendientes
+              {t.empresa.pendingInvitations}
             </h3>
             <InvitationsList invites={invites.map((i) => ({
               id: i.id,
@@ -46,9 +48,9 @@ export default async function EmpresaPage() {
               <Building2 className="h-5 w-5" strokeWidth={1.75} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold">Nueva organización</h2>
+              <h2 className="text-lg font-semibold">{t.empresa.newOrgTitle}</h2>
               <p className="text-xs text-muted-foreground">
-                Convierte tu cuenta en agencia con equipo y branding propio.
+                {t.empresa.newOrgSubtitle}
               </p>
             </div>
           </div>
@@ -61,7 +63,7 @@ export default async function EmpresaPage() {
   const detail = await getOrgFull(myOrg.id);
   if (!detail) {
     return (
-      <div className="text-sm text-muted-foreground">No tienes acceso a esta organización.</div>
+      <div className="text-sm text-muted-foreground">{t.empresa.noAccess}</div>
     );
   }
 

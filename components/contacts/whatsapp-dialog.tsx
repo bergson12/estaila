@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 /**
  * Compositor de mensaje WhatsApp con templates pre-cargados.
@@ -31,49 +32,11 @@ import { cn } from "@/lib/utils";
 
 type Template = {
   id: string;
-  label: string;
+  labelKey: "tplGreeting" | "tplNewProperty" | "tplConfirmVisit" | "tplFollowUp" | "tplDocReady";
   icon: LucideIcon;
   /** {name} y {agente} se reemplazan. Otros placeholders se dejan literal. */
   body: (ctx: { name: string; agent: string }) => string;
 };
-
-const TEMPLATES: Template[] = [
-  {
-    id: "saludo",
-    label: "Saludo inicial",
-    icon: HandHeart,
-    body: ({ name, agent }) =>
-      `Hola ${name}, soy ${agent}. Gracias por interesarte en nuestras propiedades. ¿En qué puedo ayudarte hoy?`,
-  },
-  {
-    id: "propiedad",
-    label: "Propiedad nueva",
-    icon: Home,
-    body: ({ name }) =>
-      `Hola ${name}, tengo una propiedad que creo te puede interesar. ¿Te envío los detalles y fotos?`,
-  },
-  {
-    id: "visita",
-    label: "Confirmar visita",
-    icon: Calendar,
-    body: ({ name }) =>
-      `Hola ${name}, te confirmo nuestra visita para [fecha] a las [hora] en [dirección]. Cualquier cambio me avisas. ¡Nos vemos!`,
-  },
-  {
-    id: "seguimiento",
-    label: "Seguimiento",
-    icon: Sparkles,
-    body: ({ name }) =>
-      `Hola ${name}, espero estés muy bien. Quería darle seguimiento a nuestra conversación. ¿Sigue activo tu interés en la propiedad?`,
-  },
-  {
-    id: "documento",
-    label: "Documento listo",
-    icon: FileText,
-    body: ({ name }) =>
-      `Hola ${name}, ya tengo listo el documento que te comenté. ¿Te lo envío por aquí o prefieres por correo?`,
-  },
-];
 
 export function WhatsAppDialog({
   open,
@@ -88,19 +51,29 @@ export function WhatsAppDialog({
   contact: { name: string; whatsapp: string | null; phone: string | null };
   agentName: string;
 }) {
+  const { t } = useT();
   const firstName = contact.name.split(/\s+/)[0] || contact.name;
   const phone = (contact.whatsapp ?? contact.phone ?? "").replace(/\D/g, "");
 
+  const fill = (tpl: string) =>
+    tpl.replace(/\{name\}/g, firstName).replace(/\{agent\}/g, agentName);
+
+  const TEMPLATES: Template[] = [
+    { id: "saludo", labelKey: "tplGreeting", icon: HandHeart, body: () => fill(t.contactos.tplGreetingBody) },
+    { id: "propiedad", labelKey: "tplNewProperty", icon: Home, body: () => fill(t.contactos.tplNewPropertyBody) },
+    { id: "visita", labelKey: "tplConfirmVisit", icon: Calendar, body: () => fill(t.contactos.tplConfirmVisitBody) },
+    { id: "seguimiento", labelKey: "tplFollowUp", icon: Sparkles, body: () => fill(t.contactos.tplFollowUpBody) },
+    { id: "documento", labelKey: "tplDocReady", icon: FileText, body: () => fill(t.contactos.tplDocReadyBody) },
+  ];
+
   const [selectedId, setSelectedId] = useState<string>("saludo");
-  const [draft, setDraft] = useState<string>(() =>
-    TEMPLATES[0].body({ name: firstName, agent: agentName })
-  );
+  const [draft, setDraft] = useState<string>(() => fill(t.contactos.tplGreetingBody));
 
   function pickTemplate(id: string) {
-    const t = TEMPLATES.find((x) => x.id === id);
-    if (!t) return;
+    const tpl = TEMPLATES.find((x) => x.id === id);
+    if (!tpl) return;
     setSelectedId(id);
-    setDraft(t.body({ name: firstName, agent: agentName }));
+    setDraft(tpl.body({ name: firstName, agent: agentName }));
   }
 
   const canSend = phone.length >= 7 && draft.trim().length > 0;
@@ -134,10 +107,10 @@ export function WhatsAppDialog({
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-600">
               <MessageCircle className="h-4 w-4" strokeWidth={2} />
             </span>
-            Enviar a {firstName} por WhatsApp
+            {t.contactos.waSendTo} {firstName} {t.contactos.waViaWhatsapp}
           </DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-2">
-            <span>Personaliza el mensaje antes de enviarlo.</span>
+            <span>{t.contactos.waCustomize}</span>
             {phone ? (
               <Badge
                 variant="outline"
@@ -147,7 +120,7 @@ export function WhatsAppDialog({
               </Badge>
             ) : (
               <Badge variant="destructive" className="text-[10px]">
-                Sin número
+                {t.contactos.waNoNumber}
               </Badge>
             )}
           </DialogDescription>
@@ -156,17 +129,17 @@ export function WhatsAppDialog({
         {/* Templates */}
         <div>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Plantillas rápidas
+            {t.contactos.waQuickTemplates}
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {TEMPLATES.map((t) => {
-              const Icon = t.icon;
-              const active = selectedId === t.id;
+            {TEMPLATES.map((tpl) => {
+              const Icon = tpl.icon;
+              const active = selectedId === tpl.id;
               return (
                 <button
-                  key={t.id}
+                  key={tpl.id}
                   type="button"
-                  onClick={() => pickTemplate(t.id)}
+                  onClick={() => pickTemplate(tpl.id)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all",
                     active
@@ -175,7 +148,7 @@ export function WhatsAppDialog({
                   )}
                 >
                   <Icon className="h-3 w-3" strokeWidth={1.75} />
-                  {t.label}
+                  {t.contactos[tpl.labelKey]}
                 </button>
               );
             })}
@@ -185,7 +158,7 @@ export function WhatsAppDialog({
         {/* Editor */}
         <div>
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
-            <span className="font-semibold">Mensaje</span>
+            <span className="font-semibold">{t.contactos.waMessage}</span>
             <span
               className={cn(
                 "font-mono tabular-nums",
@@ -193,14 +166,14 @@ export function WhatsAppDialog({
                 charCount > 4000 && "text-destructive"
               )}
             >
-              {charCount} car.
+              {charCount} {t.contactos.waCharsAbbr}
             </span>
           </div>
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={6}
-            placeholder="Escribe tu mensaje..."
+            placeholder={t.contactos.waMessagePlaceholder}
             className="resize-none font-sans text-sm leading-relaxed"
           />
         </div>
@@ -209,13 +182,13 @@ export function WhatsAppDialog({
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
           <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
             <MessageCircle className="h-3 w-3" strokeWidth={2} />
-            Vista previa
+            {t.contactos.waPreview}
           </p>
           <div className="rounded-lg rounded-tl-sm bg-card p-3 shadow-sm">
             <p className="whitespace-pre-wrap text-sm leading-relaxed">
               {draft || (
                 <span className="italic text-muted-foreground">
-                  Vacío — escribe algo arriba
+                  {t.contactos.waEmptyHint}
                 </span>
               )}
             </p>
@@ -228,7 +201,7 @@ export function WhatsAppDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
-            Cancelar
+            {t.contactos.cancel}
           </Button>
           <Button
             type="button"
@@ -237,7 +210,7 @@ export function WhatsAppDialog({
             className="bg-emerald-500 hover:bg-emerald-500/90 text-white"
           >
             <Send className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
-            Enviar por WhatsApp
+            {t.contactos.waSendButton}
           </Button>
         </DialogFooter>
       </DialogContent>

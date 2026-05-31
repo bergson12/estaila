@@ -19,6 +19,7 @@ import {
   getActiveAppointment,
   completeAppointment,
 } from "@/lib/actions/appointment";
+import { useT } from "@/lib/i18n/provider";
 
 type ActiveAppt = {
   id: string;
@@ -42,6 +43,7 @@ function fmtTime(d: string | Date) {
  * Persiste en todos los módulos del dashboard. Se minimiza a un pill. */
 export function ActiveAppointmentBanner() {
   const router = useRouter();
+  const { t } = useT();
   const [appt, setAppt] = useState<ActiveAppt | null>(null);
   const [minimized, setMinimized] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
@@ -79,7 +81,7 @@ export function ActiveAppointmentBanner() {
     setSaving(true);
     try {
       await completeAppointment(appt.id, notes);
-      toast.success("Cita finalizada");
+      toast.success(t.agenda.toastFinished);
       setEndOpen(false);
       setNotes("");
       setAppt(null);
@@ -111,7 +113,7 @@ export function ActiveAppointmentBanner() {
             className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-4 z-40 flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-medium text-amber-700 shadow-lg backdrop-blur-md dark:text-amber-300 md:bottom-6"
           >
             <PulseDot />
-            En cita
+            {t.agenda.inAppointment}
           </motion.button>
         ) : (
           <motion.div
@@ -126,7 +128,7 @@ export function ActiveAppointmentBanner() {
               <PulseDot />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  En cita ahora · {timeRange}
+                  {t.agenda.inAppointmentNow} · {timeRange}
                 </p>
                 <p className="truncate text-sm font-medium text-foreground">
                   {appt.title}
@@ -145,7 +147,7 @@ export function ActiveAppointmentBanner() {
                   size="sm"
                   className="hidden h-8 px-2 text-xs sm:inline-flex"
                 >
-                  <Link href="/agenda">Ver</Link>
+                  <Link href="/agenda">{t.agenda.view}</Link>
                 </Button>
                 <Button
                   size="sm"
@@ -153,13 +155,13 @@ export function ActiveAppointmentBanner() {
                   onClick={() => setEndOpen(true)}
                 >
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                  Finalizar
+                  {t.agenda.finish}
                 </Button>
                 <button
                   type="button"
                   onClick={() => setMinimized(true)}
                   className="rounded-md p-1 text-amber-700/70 transition-colors hover:bg-amber-500/20 dark:text-amber-300/70"
-                  aria-label="Minimizar"
+                  aria-label={t.agenda.minimize}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -172,7 +174,7 @@ export function ActiveAppointmentBanner() {
       <Dialog open={endOpen} onOpenChange={setEndOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Finalizar cita</DialogTitle>
+            <DialogTitle>{t.agenda.finishDialogTitle}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="rounded-lg border border-border bg-card/50 p-3">
@@ -190,13 +192,13 @@ export function ActiveAppointmentBanner() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                ¿Cómo fue la cita?
+                {t.agenda.howWasItLabel}
               </label>
               <Textarea
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas, próximos pasos, interés del cliente…"
+                placeholder={t.agenda.howWasItPlaceholder}
               />
             </div>
           </div>
@@ -206,7 +208,7 @@ export function ActiveAppointmentBanner() {
               onClick={() => setEndOpen(false)}
               disabled={saving}
             >
-              Cancelar
+              {t.agenda.cancel}
             </Button>
             <Button
               onClick={onFinish}
@@ -214,7 +216,7 @@ export function ActiveAppointmentBanner() {
               className="bg-amber-600 text-white hover:bg-amber-600/90"
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Marcar completada
+              {t.agenda.markCompleted}
             </Button>
           </DialogFooter>
         </DialogContent>

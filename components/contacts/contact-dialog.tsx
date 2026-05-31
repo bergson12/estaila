@@ -42,9 +42,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ContactSchema, type ContactInput } from "@/lib/validations";
-import { CONTACT_TYPES } from "@/lib/constants";
+import { CONTACT_TYPES, labelFor } from "@/lib/constants";
 import { createContact, updateContact } from "@/lib/actions/contact";
 import { cn, initials } from "@/lib/utils";
+import { useT } from "@/lib/i18n/provider";
 
 export type ContactDialogValue = {
   id?: string;
@@ -96,6 +97,7 @@ export function ContactDialog({
   initial?: ContactDialogValue;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const isEdit = !!initial?.id;
   const [submitting, setSubmitting] = useState(false);
 
@@ -151,10 +153,10 @@ export function ContactDialog({
     try {
       if (isEdit && initial?.id) {
         await updateContact(initial.id, values);
-        toast.success("Contacto actualizado");
+        toast.success(t.contactos.toastUpdated);
       } else {
         await createContact(values);
-        toast.success("Contacto creado");
+        toast.success(t.contactos.toastCreated);
       }
       onOpenChange(false);
       router.refresh();
@@ -225,7 +227,7 @@ export function ContactDialog({
 
               <div className="min-w-0 flex-1 pt-1">
                 <DialogTitle className="text-xl font-semibold tracking-tight">
-                  {isEdit ? "Editar contacto" : "Nuevo contacto"}
+                  {isEdit ? t.contactos.dialogEditTitle : t.contactos.dialogNewTitle}
                 </DialogTitle>
                 <DialogDescription className="mt-0.5 text-xs">
                   {watchedName ? (
@@ -233,7 +235,7 @@ export function ContactDialog({
                       {watchedName}
                     </span>
                   ) : (
-                    "Completa los datos del nuevo contacto"
+                    t.contactos.dialogFillData
                   )}
                   {watchedType && (
                     <>
@@ -243,7 +245,7 @@ export function ContactDialog({
                           const Icon = TYPE_ICONS[watchedType];
                           return Icon ? <Icon className="h-3 w-3" strokeWidth={1.75} /> : null;
                         })()}
-                        {CONTACT_TYPES.find((c) => c.value === watchedType)?.label}
+                        {labelFor(CONTACT_TYPES, watchedType, locale)}
                       </span>
                     </>
                   )}
@@ -260,14 +262,14 @@ export function ContactDialog({
           className="max-h-[60vh] overflow-y-auto px-6 py-5 space-y-6"
         >
           {/* Identity section */}
-          <Section title="Identidad" icon={User}>
-            <Field label="Nombre completo" required error={errors.name?.message}>
-              <IconInput icon={User} {...form.register("name")} placeholder="Ej. Carlos Almonte" />
+          <Section title={t.contactos.secIdentity} icon={User}>
+            <Field label={t.contactos.fieldFullName} required error={errors.name?.message}>
+              <IconInput icon={User} {...form.register("name")} placeholder={t.contactos.fullNamePlaceholder} />
             </Field>
 
             <div>
               <Label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                Tipo de contacto <span className="text-destructive">*</span>
+                {t.contactos.fieldContactType} <span className="text-destructive">*</span>
               </Label>
               <Controller
                 control={form.control}
@@ -314,7 +316,7 @@ export function ContactDialog({
                             />
                           )}
                           <span className="relative z-10 truncate text-[10px] font-medium leading-tight">
-                            {c.label}
+                            {labelFor(CONTACT_TYPES, c.value, locale)}
                           </span>
                         </motion.button>
                       );
@@ -331,9 +333,9 @@ export function ContactDialog({
           </Section>
 
           {/* Contact section */}
-          <Section title="Contacto" icon={Phone}>
+          <Section title={t.contactos.secContact} icon={Phone}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Teléfono">
+              <Field label={t.contactos.fieldPhone}>
                 <IconInput
                   icon={Phone}
                   {...form.register("phone")}
@@ -341,7 +343,7 @@ export function ContactDialog({
                   className="font-mono tabular-nums"
                 />
               </Field>
-              <Field label="WhatsApp">
+              <Field label={t.contactos.fieldWhatsapp}>
                 <IconInput
                   icon={MessageCircle}
                   iconClass="text-emerald-500"
@@ -351,7 +353,7 @@ export function ContactDialog({
                 />
               </Field>
             </div>
-            <Field label="Email" error={errors.email?.message}>
+            <Field label={t.contactos.fieldEmail} error={errors.email?.message}>
               <IconInput
                 icon={AtSign}
                 type="email"
@@ -362,16 +364,16 @@ export function ContactDialog({
           </Section>
 
           {/* Location + identification */}
-          <Section title="Ubicación e identificación" icon={MapPin}>
+          <Section title={t.contactos.secLocationId} icon={MapPin}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Ubicación">
+              <Field label={t.contactos.fieldLocation}>
                 <IconInput
                   icon={MapPin}
                   {...form.register("location")}
-                  placeholder="Sector, ciudad"
+                  placeholder={t.contactos.locationPlaceholder}
                 />
               </Field>
-              <Field label="RNC / Cédula">
+              <Field label={t.contactos.fieldTaxId}>
                 <IconInput
                   icon={FileText}
                   {...form.register("rnc")}
@@ -380,21 +382,21 @@ export function ContactDialog({
                 />
               </Field>
             </div>
-            <Field label="¿Quién lo refirió?">
+            <Field label={t.contactos.fieldReferredBy}>
               <IconInput
                 icon={Sparkles}
                 {...form.register("reference")}
-                placeholder="Origen del lead (opcional)"
+                placeholder={t.contactos.referredByPlaceholder}
               />
             </Field>
           </Section>
 
           {/* Notes */}
-          <Section title="Notas internas" icon={FileText}>
+          <Section title={t.contactos.secInternalNotes} icon={FileText}>
             <Textarea
               {...form.register("notes")}
               rows={3}
-              placeholder="Detalles, contexto, recordatorios... (solo tú los ves)"
+              placeholder={t.contactos.notesPlaceholder}
               className="resize-none"
             />
           </Section>
@@ -439,12 +441,12 @@ export function ContactDialog({
                 </motion.div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">
-                    {field.value ? "Marcado como favorito" : "Marcar como favorito"}
+                    {field.value ? t.contactos.favOnTitle : t.contactos.favOffTitle}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     {field.value
-                      ? "Aparece primero en tu listado"
-                      : "Acceso rápido a contactos clave"}
+                      ? t.contactos.favOnHint
+                      : t.contactos.favOffHint}
                   </p>
                 </div>
                 <div
@@ -471,8 +473,8 @@ export function ContactDialog({
         <DialogFooter className="border-t border-border bg-card/30 px-6 py-4 sm:justify-between">
           <p className="hidden text-[11px] text-muted-foreground sm:block">
             {isEdit
-              ? "Los cambios se guardan al confirmar."
-              : "Podrás añadir tags y notas después."}
+              ? t.contactos.footerEditHint
+              : t.contactos.footerNewHint}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -481,7 +483,7 @@ export function ContactDialog({
               onClick={() => onOpenChange(false)}
               disabled={submitting}
             >
-              Cancelar
+              {t.contactos.cancel}
             </Button>
             <Button
               type="submit"
@@ -499,7 +501,7 @@ export function ContactDialog({
                     className="inline-flex items-center"
                   >
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando...
+                    {t.contactos.saving}
                   </motion.span>
                 ) : (
                   <motion.span
@@ -508,7 +510,7 @@ export function ContactDialog({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                   >
-                    {isEdit ? "Guardar cambios" : "Crear contacto"}
+                    {isEdit ? t.contactos.saveChanges : t.contactos.createContact}
                   </motion.span>
                 )}
               </AnimatePresence>

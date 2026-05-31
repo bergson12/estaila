@@ -48,6 +48,7 @@ import {
   inviteMember,
   removeMember,
 } from "@/lib/actions/organization";
+import { useT } from "@/lib/i18n/provider";
 
 type MemberRow = {
   id: string;
@@ -80,6 +81,7 @@ export function MembersTable({
   canEdit: boolean;
 }) {
   const router = useRouter();
+  const { t, locale } = useT();
   const [pending, startTransition] = useTransition();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [tokenJustCreated, setTokenJustCreated] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function MembersTable({
       {/* Seats overview */}
       <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
-          <p className="text-xs text-muted-foreground">Asientos en uso</p>
+          <p className="text-xs text-muted-foreground">{t.empresa.seatsInUse}</p>
           <p className="mt-0.5 font-mono text-2xl font-semibold tabular-nums">
             {seatsUsed} <span className="text-base font-normal text-muted-foreground">/ {maxSeats}</span>
           </p>
@@ -118,7 +120,7 @@ export function MembersTable({
             />
           </div>
           <p className="mt-1.5 text-[10px] text-muted-foreground">
-            Plan {plan} · {atLimit ? "Has alcanzado el límite. Actualiza para invitar más miembros." : `${maxSeats - seatsUsed} asientos disponibles`}
+            {t.empresa.planWord} {plan} · {atLimit ? t.empresa.seatsLimitReached : `${maxSeats - seatsUsed} ${t.empresa.seatsAvailable}`}
           </p>
         </div>
         {canEdit && (
@@ -126,14 +128,14 @@ export function MembersTable({
             <DialogTrigger asChild>
               <Button disabled={atLimit}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Invitar miembro
+                {t.empresa.inviteMember}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Invitar a tu equipo</DialogTitle>
+                <DialogTitle>{t.empresa.inviteTeamTitle}</DialogTitle>
                 <DialogDescription>
-                  Enviaremos un enlace para que acepte la invitación.
+                  {t.empresa.inviteTeamDesc}
                 </DialogDescription>
               </DialogHeader>
               {tokenJustCreated ? (
@@ -161,10 +163,10 @@ export function MembersTable({
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-              <th className="px-4 py-2.5 font-semibold">Miembro</th>
-              <th className="px-3 py-2.5 font-semibold">Rol</th>
-              <th className="px-3 py-2.5 font-semibold">Estado</th>
-              <th className="px-3 py-2.5 font-semibold">Desde</th>
+              <th className="px-4 py-2.5 font-semibold">{t.empresa.thMember}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.empresa.thRole}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.empresa.thStatus}</th>
+              <th className="px-3 py-2.5 font-semibold">{t.empresa.thSince}</th>
               <th className="px-3 py-2.5"></th>
             </tr>
           </thead>
@@ -191,7 +193,7 @@ export function MembersTable({
                       )}
                       <div className="min-w-0">
                         <p className="truncate font-medium">
-                          {m.user?.name ?? m.invitedEmail ?? "Invitado"}
+                          {m.user?.name ?? m.invitedEmail ?? t.empresa.invitedFallback}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
                           {m.user?.email ?? m.invitedEmail ?? "—"}
@@ -207,17 +209,17 @@ export function MembersTable({
                   <td className="px-3 py-3">
                     {isPending ? (
                       <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                        <Clock className="mr-1 h-2.5 w-2.5" /> Pendiente
+                        <Clock className="mr-1 h-2.5 w-2.5" /> {t.empresa.statusPending}
                       </Badge>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Activo
+                        {t.empresa.statusActive}
                       </span>
                     )}
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">
-                    {new Date(m.createdAt).toLocaleDateString("es", {
+                    {new Date(m.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "es", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
@@ -228,19 +230,19 @@ export function MembersTable({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={pending}>
-                            Acciones
+                            {t.empresa.actions}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuLabel className="text-[10px] uppercase tracking-wider">
-                            Cambiar rol
+                            {t.empresa.changeRole}
                           </DropdownMenuLabel>
                           {(["ADMIN", "MEMBER", "VIEWER"] as const).map((r) => (
                             <DropdownMenuItem
                               key={r}
                               disabled={m.role === r}
                               onClick={() =>
-                                withToast(changeMemberRole(orgId, m.id, r), `Rol → ${r}`)
+                                withToast(changeMemberRole(orgId, m.id, r), `${t.empresa.roleArrow} ${r}`)
                               }
                             >
                               {ROLE_META[r].label}
@@ -248,11 +250,11 @@ export function MembersTable({
                           ))}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => withToast(removeMember(orgId, m.id), "Miembro eliminado")}
+                            onClick={() => withToast(removeMember(orgId, m.id), t.empresa.toastMemberRemoved)}
                             className="text-rose-600 focus:text-rose-600"
                           >
                             <X className="mr-2 h-3.5 w-3.5" />
-                            Eliminar
+                            {t.empresa.delete}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -264,7 +266,7 @@ export function MembersTable({
             {members.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-16 text-center text-sm text-muted-foreground">
-                  No hay miembros aún
+                  {t.empresa.noMembersYet}
                 </td>
               </tr>
             )}
@@ -284,6 +286,7 @@ function InviteForm({
   pending: boolean;
   onSuccess: (token: string) => void;
 }) {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"ADMIN" | "MEMBER" | "VIEWER">("MEMBER");
   const [submitting, setSubmitting] = useState(false);
@@ -308,33 +311,33 @@ function InviteForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <Label className="text-xs">Email</Label>
+        <Label className="text-xs">{t.empresa.email}</Label>
         <Input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="agente@empresa.com"
+          placeholder={t.empresa.emailPlaceholder}
           className="mt-1"
         />
       </div>
       <div>
-        <Label className="text-xs">Rol</Label>
+        <Label className="text-xs">{t.empresa.role}</Label>
         <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
           <SelectTrigger className="mt-1">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ADMIN">Admin — gestiona miembros y marca</SelectItem>
-            <SelectItem value="MEMBER">Member — gestiona sus propiedades</SelectItem>
-            <SelectItem value="VIEWER">Viewer — solo lectura</SelectItem>
+            <SelectItem value="ADMIN">{t.empresa.roleAdminDesc}</SelectItem>
+            <SelectItem value="MEMBER">{t.empresa.roleMemberDesc}</SelectItem>
+            <SelectItem value="VIEWER">{t.empresa.roleViewerDesc}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <DialogFooter>
         <Button type="submit" disabled={submitting || pending}>
           <Mail className="mr-1.5 h-3.5 w-3.5" />
-          {submitting ? "Generando…" : "Generar invitación"}
+          {submitting ? t.empresa.generating : t.empresa.generateInvite}
         </Button>
       </DialogFooter>
     </form>
@@ -348,12 +351,13 @@ function InvitationLinkPanel({
   token: string;
   onClose: () => void;
 }) {
+  const { t } = useT();
   const url = typeof window !== "undefined" ? `${window.location.origin}/invitacion?token=${token}` : `/invitacion?token=${token}`;
   return (
     <div className="space-y-4">
       <div className="rounded-lg border bg-muted/30 p-4">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Enlace de invitación
+          {t.empresa.inviteLink}
         </p>
         <p className="mt-2 break-all font-mono text-xs">{url}</p>
         <Button
@@ -362,18 +366,18 @@ function InvitationLinkPanel({
           className="mt-3"
           onClick={() => {
             navigator.clipboard.writeText(url);
-            toast.success("Enlace copiado");
+            toast.success(t.empresa.toastLinkCopied);
           }}
         >
           <Copy className="mr-1.5 h-3.5 w-3.5" />
-          Copiar enlace
+          {t.empresa.copyLink}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Comparte este enlace con el miembro. Al abrirlo desde su cuenta podrá aceptar la invitación.
+        {t.empresa.inviteLinkHint}
       </p>
       <DialogFooter>
-        <Button onClick={onClose}>Listo</Button>
+        <Button onClick={onClose}>{t.empresa.done}</Button>
       </DialogFooter>
     </div>
   );
