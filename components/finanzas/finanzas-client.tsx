@@ -15,6 +15,7 @@ import {
   ScanLine,
   X,
 } from "lucide-react";
+import { GeneratingBar } from "@/components/shared/generating-bar";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -579,6 +580,7 @@ function NewTransactionDialog({
                       ? "El Modelo Pro está extrayendo los datos"
                       : "Revisa los campos autocompletados"}
                   </p>
+                  {scanning && <GeneratingBar durationMs={9000} className="mt-2" />}
                 </div>
                 <button
                   type="button"

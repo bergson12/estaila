@@ -7,6 +7,7 @@ import {
   User as UserIcon,
   Users,
 } from "lucide-react";
+import { GeneratingBar } from "@/components/shared/generating-bar";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -308,6 +309,14 @@ export function BrochureDialog({
             </p>
           </div>
         </div>
+
+        {generating && (
+          <GeneratingBar
+            durationMs={20000}
+            label="Generando tu brochure PDF…"
+            className="px-6 pb-1"
+          />
+        )}
 
         <DialogFooter className="border-t border-border bg-card/40 px-6 py-3">
           <Button

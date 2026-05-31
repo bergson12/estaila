@@ -12,6 +12,7 @@ import {
   Check,
   Wand2,
 } from "lucide-react";
+import { GeneratingBar } from "@/components/shared/generating-bar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -379,6 +380,13 @@ export function ProposalWizard({
               </>
             )}
           </Button>
+          {generating && (
+            <GeneratingBar
+              durationMs={15000}
+              label="Redactando tu propuesta…"
+              className="mt-3"
+            />
+          )}
         </div>
       </Card>
     );
