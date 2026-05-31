@@ -260,7 +260,7 @@ export default async function PricingPage({
                   {p.name}
                 </span>
               </div>
-              <div className="mt-3 flex items-baseline gap-1.5">
+              <div className="mt-3">
                 {isCustom ? (
                   <span className="font-mono text-3xl font-bold tracking-tight">
                     Custom
@@ -268,14 +268,19 @@ export default async function PricingPage({
                 ) : (
                   <>
                     {regular != null && (
-                      <span className="font-mono text-lg font-medium text-muted-foreground line-through">
+                      <span className="block font-mono text-sm font-medium leading-none text-muted-foreground line-through">
                         US${regular}
+                        {priceLabel}
                       </span>
                     )}
-                    <span className="font-mono text-4xl font-bold tabular-nums">
-                      US${price}
-                    </span>
-                    <span className="text-sm text-muted-foreground">{priceLabel}</span>
+                    <div className="mt-1 flex items-baseline gap-1">
+                      <span className="font-mono text-4xl font-bold tabular-nums">
+                        US${price}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {priceLabel}
+                      </span>
+                    </div>
                   </>
                 )}
               </div>

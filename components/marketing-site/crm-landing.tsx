@@ -967,20 +967,23 @@ function PricingCard({
           )}
         </div>
       </div>
-      <div className="mt-6 flex items-baseline gap-2">
+      <div className="mt-6">
         {isCustom ? (
           <span className="text-4xl font-semibold tracking-tight">Custom</span>
         ) : (
           <>
             {FOUNDER_REGULAR[plan.name] != null && (
-              <span className="text-xl font-medium text-muted-foreground line-through">
+              <span className="block text-base font-medium leading-none text-muted-foreground line-through">
                 ${FOUNDER_REGULAR[plan.name]}
+                <span className="ml-1 text-xs">/mes</span>
               </span>
             )}
-            <span className="text-5xl font-semibold tracking-tight">
-              ${plan.price}
-            </span>
-            <span className="text-xs text-muted-foreground">USD / mes</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-5xl font-semibold tracking-tight">
+                ${plan.price}
+              </span>
+              <span className="text-xs text-muted-foreground">USD / mes</span>
+            </div>
           </>
         )}
       </div>
