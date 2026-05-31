@@ -13,7 +13,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, isTrustedStorageUrl } from "@/lib/storage";
 import { editAgentPhoto } from "@/lib/ai/openai-image";
 import { AGENT_PHOTO_COST, type AgentPhotoInput } from "@/lib/ai/agent-photo-options";
 
@@ -135,6 +135,12 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
   const user = await requireUser();
   const data = Input.parse(input);
 
+  // Anti-SSRF (NEXT-SSRF-001): la foto de origen debe ser de nuestro
+  // almacenamiento; no hacemos fetch a URLs externas arbitrarias del cliente.
+  if (!isTrustedStorageUrl(data.inputUrl)) {
+    return { ok: false, error: "Imagen de origen inválida.", code: "UNKNOWN" };
+  }
+
   // --- Créditos / cuenta ---
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
@@ -200,7 +206,7 @@ export async function generateAgentPhoto(input: AgentPhotoInput): Promise<AgentP
     ];
 
     // --- Foto de referencia (best-effort) → 2da imagen para gpt-image-2 ---
-    if (referenceUrl) {
+    if (referenceUrl && isTrustedStorageUrl(referenceUrl)) {
       try {
         const rRes = await fetch(referenceUrl);
         if (rRes.ok) {

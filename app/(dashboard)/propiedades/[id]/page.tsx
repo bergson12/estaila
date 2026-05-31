@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { PropertyGallery } from "@/components/properties/property-gallery";
 import { PropertyHubTabs } from "@/components/properties/property-hub-tabs";
 import { PropertyShareButton } from "@/components/properties/property-share-button";
+import { PropertyQrButton } from "@/components/properties/property-qr-dialog";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth-server";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -38,7 +39,7 @@ export default async function PropertyDetailPage({
 }) {
   const { id } = await params;
   const user = await requireUser();
-  const [property, site] = await Promise.all([
+  const [property, site, agent] = await Promise.all([
     prisma.property.findFirst({
       where: { id, userId: user.id },
       include: {
@@ -52,15 +53,30 @@ export default async function PropertyDetailPage({
           orderBy: { updatedAt: "desc" },
           take: 50,
         },
+        shares: { select: { clicks: true } },
+        _count: { select: { leads: true } },
       },
     }),
     prisma.site.findUnique({
       where: { userId: user.id },
       select: { slug: true, published: true },
     }),
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { agentPhone: true },
+    }),
   ]);
 
   if (!property) notFound();
+
+  // Analytics reales de esta propiedad (no inventados): vistas públicas,
+  // veces compartida, clics en enlaces de difusión y leads generados.
+  const analytics = {
+    views: property.publicViews ?? 0,
+    shares: property.shareCount ?? 0,
+    clicks: property.shares.reduce((sum, s) => sum + (s.clicks ?? 0), 0),
+    leads: property._count.leads,
+  };
 
   const poiData = property.pois.map((p) => ({
     id: p.id,
@@ -336,6 +352,15 @@ export default async function PropertyDetailPage({
               }}
               agentName={user.name}
             />
+            <PropertyQrButton
+              propertyId={property.id}
+              title={property.title}
+              priceUSD={property.priceUSD ? Number(property.priceUSD) : null}
+              agentId={user.id}
+              agentName={user.name}
+              agentPhone={agent?.agentPhone ?? null}
+              agentEmail={user.email}
+            />
             <Button variant="outline" asChild>
               <Link
                 href={
@@ -365,6 +390,7 @@ export default async function PropertyDetailPage({
         mapProperty={mapProperty}
         pois={poiData}
         marketingKits={property.marketingKits}
+        analytics={analytics}
       >
         {overview}
       </PropertyHubTabs>

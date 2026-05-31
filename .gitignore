@@ -67,3 +67,9 @@ vercel-*.txt
 
 # Cerebro — base de conocimiento Obsidian del proyecto (memoria local, no parte de la app)
 /cerebro/
+
+# Assets locales / fuentes de diseño (no parte del build de la app)
+/archivos/
+
+# Skills de agente instaladas (tooling, no código de la app)
+/.agents/

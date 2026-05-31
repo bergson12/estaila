@@ -96,6 +96,28 @@ export async function uploadFile(
 }
 
 /**
+ * Seguridad (anti-SSRF): valida que una URL de imagen pertenezca a NUESTRO
+ * almacenamiento — Vercel Blob (https://*.blob.vercel-storage.com) o un upload
+ * local relativo (/uploads/...). El servidor NUNCA debe hacer fetch a URLs
+ * externas arbitrarias provistas por el cliente (evita pedir metadata cloud,
+ * servicios internos/localhost, o usar el server como proxy).
+ */
+export function isTrustedStorageUrl(raw: string): boolean {
+  if (typeof raw !== "string" || !raw) return false;
+  if (raw.startsWith("/uploads/")) return true; // upload local (solo dev)
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    return (
+      u.hostname === "blob.vercel-storage.com" ||
+      u.hostname.endsWith(".blob.vercel-storage.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Delete a file by URL or key. No-op safe.
  */
 export async function deleteFile(keyOrUrl: string): Promise<void> {

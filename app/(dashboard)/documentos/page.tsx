@@ -23,6 +23,7 @@ const TEMPLATE_META: Record<string, { label: string; color: string }> = {
   FINANCIAL: { label: "Financiero", color: "bg-success/15 text-success border-success/30" },
   INVESTMENT: { label: "Inversión", color: "bg-warning/15 text-warning border-warning/30" },
   MINIMAL: { label: "Minimal", color: "bg-secondary text-foreground border-border" },
+  PROPOSAL: { label: "Propuesta IA", color: "bg-primary/15 text-primary border-primary/30" },
 };
 
 export default async function DocumentosPage() {
@@ -65,13 +66,22 @@ export default async function DocumentosPage() {
         title="Documentos"
         description="PDFs generados, plantillas legales y archivos de cada propiedad."
         actions={
-          <Link
-            href="/propiedades"
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-ink-foreground transition-opacity hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" />
-            Generar nuevo
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/documentos/propuesta-ia"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <Sparkles className="h-4 w-4" />
+              Propuesta con IA
+            </Link>
+            <Link
+              href="/propiedades"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-ink-foreground transition-opacity hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" />
+              Generar nuevo
+            </Link>
+          </div>
         }
       />
 
@@ -147,7 +157,7 @@ export default async function DocumentosPage() {
                             <FileText className="h-3.5 w-3.5" />
                           </span>
                           <span className="font-medium">
-                            Brochure · {p.property?.title ?? "Propiedad"}
+                            {meta.label} · {p.property?.title ?? "Propiedad"}
                           </span>
                         </div>
                       </td>

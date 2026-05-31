@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Camera,
-  ChartArea,
   CheckCircle2,
   Copy,
   Eye,
@@ -13,23 +12,18 @@ import {
   ExternalLink,
   FileText,
   Hash,
-  Heart,
   Home,
   ImagePlus,
   Info,
   Key,
   Loader2,
   MapPin,
-  MessageCircle,
   MousePointer,
-  PieChart,
   Save,
   Send,
   Settings2,
   Share2,
   Sparkles,
-  Target,
-  TrendingUp,
   Trash2,
   Upload,
   Users,
@@ -73,6 +67,15 @@ type PropertyForHub = {
   metersSquared: number | null;
 };
 
+type PropertyAnalytics = {
+  views: number;
+  shares: number;
+  clicks: number;
+  leads: number;
+};
+
+const ZERO_ANALYTICS: PropertyAnalytics = { views: 0, shares: 0, clicks: 0, leads: 0 };
+
 const TABS: { value: string; label: string; icon: LucideIcon; soon?: boolean; rentalOnly?: boolean }[] = [
   { value: "overview", label: "Vista general", icon: Info },
   { value: "map", label: "Mapa & POIs", icon: MapPin },
@@ -106,6 +109,7 @@ export function PropertyHubTabs({
   mapProperty,
   pois,
   marketingKits = [],
+  analytics = ZERO_ANALYTICS,
   children,
 }: {
   property: PropertyForHub;
@@ -120,6 +124,7 @@ export function PropertyHubTabs({
   };
   pois: POIData[];
   marketingKits?: MarketingKitRow[];
+  analytics?: PropertyAnalytics;
   /** Overview content rendered by parent (existing sections) */
   children: React.ReactNode;
 }) {
@@ -195,7 +200,7 @@ export function PropertyHubTabs({
           {tab === "landing" && (
             <LandingTab property={property} hasSite={hasSite} siteSlug={siteSlug} />
           )}
-          {tab === "analytics" && <AnalyticsTab property={property} />}
+          {tab === "analytics" && <AnalyticsTab analytics={analytics} hasSite={hasSite} />}
           {tab === "documents" && <DocumentsTab property={property} />}
           {tab === "rental" && <RentalTab propertyId={property.id} />}
         </motion.div>
@@ -875,134 +880,155 @@ function LandingTab({
 // ANALYTICS TAB
 // ============================================================
 
-function AnalyticsTab({ property }: { property: PropertyForHub }) {
-  // Mock deterministic metrics — derive from property id hash for stability
-  const hash = property.id.charCodeAt(0) + property.id.charCodeAt(1);
-  const views = 850 + (hash * 13) % 2000;
-  const leads = 12 + (hash * 7) % 35;
-  const calls = 4 + (hash * 3) % 12;
-  const waClicks = 18 + (hash * 11) % 50;
-  const saves = 22 + (hash * 5) % 45;
+function AnalyticsTab({
+  analytics,
+  hasSite,
+}: {
+  analytics: PropertyAnalytics;
+  hasSite: boolean;
+}) {
+  const { views, shares, clicks, leads } = analytics;
+  const hasData = views > 0 || shares > 0 || clicks > 0 || leads > 0;
 
-  // Mock chart data — last 14 days
-  const days = Array.from({ length: 14 }).map((_, i) => {
-    const base = 30 + (hash * (i + 3)) % 80;
-    return {
-      day: i + 1,
-      views: base,
-      leads: Math.floor(base * 0.08),
-    };
-  });
-  const maxViews = Math.max(...days.map((d) => d.views));
+  // Métricas derivadas de datos reales (sin inventar nada).
+  const convRate = views > 0 ? (leads / views) * 100 : 0;
+  const clickRate = shares > 0 ? (clicks / shares) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      {/* KPI Row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      {/* KPIs reales de esta propiedad */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard icon={Eye} label="Visitas" value={views} accent="primary" />
-        <MetricCard icon={Target} label="Leads" value={leads} accent="emerald" />
-        <MetricCard icon={MessageCircle} label="WhatsApp" value={waClicks} accent="emerald" />
-        <MetricCard icon={MousePointer} label="Llamadas" value={calls} accent="amber" />
-        <MetricCard icon={Heart} label="Saves" value={saves} accent="rose" />
+        <MetricCard icon={Share2} label="Compartidos" value={shares} accent="emerald" />
+        <MetricCard icon={MousePointer} label="Clics en enlaces" value={clicks} accent="amber" />
+        <MetricCard icon={Users} label="Leads" value={leads} accent="rose" />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18rem]">
-        {/* Mini chart */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 text-sm font-semibold">
-              <ChartArea className="h-4 w-4 text-primary" />
-              Engagement últimos 14 días
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              <TrendingUp className="-mt-0.5 mr-0.5 inline h-3 w-3 text-emerald-500" />
-              <span className="font-mono text-emerald-500 tabular-nums">
-                +{Math.round((hash % 15) + 5)}%
-              </span>{" "}
-              vs anterior
-            </span>
+      {!hasData ? (
+        <Card className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Activity className="h-5 w-5" strokeWidth={1.75} />
           </div>
-          <div className="flex h-32 items-end gap-1">
-            {days.map((d) => (
-              <motion.div
-                key={d.day}
-                initial={{ height: 0 }}
-                animate={{ height: `${(d.views / maxViews) * 100}%` }}
-                transition={{
-                  duration: 0.5,
-                  delay: d.day * 0.03,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                className="flex-1 rounded-sm bg-gradient-to-t from-primary/30 to-primary/70 hover:from-primary/50 hover:to-primary cursor-pointer"
-                title={`Día ${d.day}: ${d.views} visitas`}
-              />
-            ))}
+          <div className="max-w-sm">
+            <h3 className="text-sm font-semibold">Aún sin datos de esta propiedad</h3>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Comparte la propiedad con el botón Compartir de arriba
+              {hasSite ? " o publícala en tu sitio" : ""}. En cuanto reciba
+              visitas y clics reales, las métricas aparecerán aquí
+              automáticamente.
+            </p>
           </div>
         </Card>
-
-        {/* Sources */}
+      ) : (
         <Card className="p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <PieChart className="h-4 w-4 text-primary" />
-            Fuentes de tráfico
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Activity className="h-4 w-4 text-primary" strokeWidth={1.75} />
+            Embudo de conversión
           </h3>
-          <div className="space-y-3">
-            {[
-              { label: "Instagram", value: 42, color: "from-pink-500 to-purple-500" },
-              { label: "WhatsApp Directo", value: 28, color: "from-emerald-500 to-emerald-400" },
-              { label: "Facebook", value: 18, color: "from-blue-500 to-blue-400" },
-              { label: "Búsqueda Web", value: 12, color: "from-amber-500 to-amber-400" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="mb-1 flex items-center justify-between text-xs">
-                  <span>{s.label}</span>
-                  <span className="font-mono tabular-nums">{s.value}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${s.value}%` }}
-                    transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                    className={cn("h-full bg-gradient-to-r", s.color)}
-                  />
-                </div>
-              </div>
-            ))}
+          <p className="mb-5 mt-1 text-xs text-muted-foreground">
+            Recorrido real desde la visita pública hasta el lead captado.
+          </p>
+          <div className="space-y-4">
+            <FunnelRow
+              icon={Eye}
+              label="Visitas a la página pública"
+              value={views}
+              pct={100}
+              accent="primary"
+            />
+            <FunnelRow
+              icon={Users}
+              label="Leads generados"
+              value={leads}
+              pct={convRate}
+              accent="rose"
+              hint={views > 0 ? `${convRate.toFixed(1)}% de conversión` : undefined}
+            />
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Veces compartida
+              </p>
+              <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
+                {formatNumber(shares)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Clics en enlaces compartidos
+              </p>
+              <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
+                {formatNumber(clicks)}
+                {shares > 0 && (
+                  <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">
+                    {clickRate.toFixed(0)}% CTR
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
         </Card>
-      </div>
+      )}
 
-      <Card className="p-5">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-          <Activity className="h-4 w-4 text-primary" />
-          Recomendaciones de la IA
-        </h3>
-        <ul className="space-y-3 text-sm">
-          {[
-            { tag: "Precio", text: "El CTR está 12% por encima del promedio. Considera mantener el precio actual.", color: "emerald" as const },
-            { tag: "Marketing", text: "Los Reels generan 3× más leads que posts. Crea uno para esta propiedad.", color: "amber" as const },
-            { tag: "Foto", text: "Una foto al atardecer puede aumentar saves en ~35%. Prueba con Studio IA → Atardecer.", color: "primary" as const },
-          ].map((r, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-3 rounded-lg border border-border bg-card/50 p-3"
-            >
-              <Badge
-                variant="outline"
-                className={cn(
-                  "shrink-0 text-[10px]",
-                  r.color === "emerald" && "border-emerald-500/40 text-emerald-500",
-                  r.color === "amber" && "border-amber-500/40 text-amber-500",
-                  r.color === "primary" && "border-primary/40 text-primary"
-                )}
-              >
-                {r.tag}
-              </Badge>
-              <p className="text-xs leading-relaxed">{r.text}</p>
-            </li>
-          ))}
-        </ul>
+      {/* Honesto: tracking que aún no existe (series por día, ciudades, fuentes) */}
+      <Card className="border-dashed p-5">
+        <div className="mb-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Próximamente
+        </div>
+        <h3 className="text-sm font-semibold">Tendencias y origen del tráfico</h3>
+        <p className="mt-1 max-w-md text-xs leading-relaxed text-muted-foreground">
+          Visitas por día, ciudades y dispositivos de los visitantes, y fuentes
+          (Instagram, WhatsApp, web). Requiere registrar cada visita como evento;
+          se activará en una próxima actualización.
+        </p>
       </Card>
+    </div>
+  );
+}
+
+function FunnelRow({
+  icon: Icon,
+  label,
+  value,
+  pct,
+  accent,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  pct: number;
+  accent: "primary" | "rose";
+  hint?: string;
+}) {
+  const barClass = accent === "primary" ? "bg-primary" : "bg-rose-500";
+  const iconClass = accent === "primary" ? "text-primary" : "text-rose-500";
+  // Asegura una barra visible cuando hay valor pero el % es diminuto.
+  const width = value > 0 ? Math.max(pct, 3) : 0;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Icon className={cn("h-3.5 w-3.5", iconClass)} strokeWidth={1.75} />
+          {label}
+        </span>
+        <span className="flex items-baseline gap-2">
+          {hint && <span className="text-[10px] text-muted-foreground">{hint}</span>}
+          <span className="font-mono text-sm font-semibold tabular-nums">
+            {formatNumber(value)}
+          </span>
+        </span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${width}%` }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className={cn("h-full rounded-full", barClass)}
+        />
+      </div>
     </div>
   );
 }

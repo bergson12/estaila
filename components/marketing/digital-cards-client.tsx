@@ -5,13 +5,13 @@
  * List + Create/Edit dialog + Link manager + theme picker + QR + copy public link.
  */
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
-  ArrowUpRight,
+  BarChart3,
   Building2,
   Calendar,
   Check,
@@ -38,7 +38,6 @@ import {
   Star,
   Trash2,
   Video,
-  Wand2,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -78,6 +77,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { CardQrFullscreen } from "@/components/marketing/card-qr-fullscreen";
+import { CardAnalyticsDialog } from "@/components/marketing/card-analytics-dialog";
 
 const ICONS: Record<string, LucideIcon> = {
   Link: LinkIcon,
@@ -258,6 +259,8 @@ function DigitalCardSummary({
   onDelete: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const publicUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/c/${card.slug}`
@@ -334,8 +337,14 @@ function DigitalCardSummary({
           </span>
         </div>
 
+        {/* Modo presentación — QR grande para mostrar en persona */}
+        <Button size="sm" className="mt-3 w-full" onClick={() => setQrOpen(true)}>
+          <QrCode className="mr-1.5 h-3.5 w-3.5" />
+          Pantalla completa
+        </Button>
+
         {/* Actions */}
-        <div className="mt-3 grid grid-cols-3 gap-1.5">
+        <div className="mt-2 grid grid-cols-4 gap-1.5">
           <Button asChild size="sm" variant="outline" className="h-8 text-xs">
             <Link href={`/c/${card.slug}`} target="_blank">
               <ExternalLink className="h-3 w-3" />
@@ -353,7 +362,17 @@ function DigitalCardSummary({
             size="sm"
             variant="outline"
             className="h-8 text-xs"
+            onClick={() => setStatsOpen(true)}
+            aria-label="Estadísticas"
+          >
+            <BarChart3 className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs"
             onClick={onEdit}
+            aria-label="Editar"
           >
             <Settings2 className="h-3 w-3" />
           </Button>
@@ -367,6 +386,23 @@ function DigitalCardSummary({
           <X className="h-3 w-3 text-destructive" />
         </button>
       </div>
+
+      <CardQrFullscreen
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        slug={card.slug}
+        title={card.title}
+        role={card.role}
+        avatarUrl={card.avatarUrl}
+        primaryColor={card.primaryColor}
+      />
+      <CardAnalyticsDialog
+        open={statsOpen}
+        onOpenChange={setStatsOpen}
+        title={card.title}
+        views={card._count.cardViews || card.views}
+        links={card.links}
+      />
     </motion.div>
   );
 }
@@ -389,20 +425,23 @@ function CreateCardDialog({
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
 
-  useEffect(() => {
-    if (!open) {
-      setTitle("");
-      setSlug("");
-    }
-  }, [open]);
-
   async function handleSubmit() {
     if (!title.trim()) return;
     await onCreate({ title: title.trim(), slug: slug.trim() || undefined });
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        // Reset al cerrar (cualquier vía: Esc, overlay, cancelar) — sin useEffect.
+        if (!v) {
+          setTitle("");
+          setSlug("");
+        }
+        onOpenChange(v);
+      }}
+    >
       <DialogContent aria-describedby={undefined} className="sm:max-w-[440px]">
         <DialogHeader>
           <DialogTitle>Nueva tarjeta digital</DialogTitle>

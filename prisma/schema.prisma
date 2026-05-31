@@ -945,6 +945,7 @@ model Transaction {
   currency   String   @default("USD") // USD | DOP
   notes      String?
   reference  String?
+  receiptUrl String? // imagen del comprobante (OCR con Gemini)
   date       DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

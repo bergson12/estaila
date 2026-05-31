@@ -12,6 +12,7 @@ import { getLayoutMode } from "@/lib/layout-prefs";
 import { EstailaChatbot } from "@/components/layout/estaila-chatbot";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { TesterFab } from "@/components/tester/tester-fab";
+import { ActiveAppointmentBanner } from "@/components/agenda/active-appointment-banner";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
 
 // Server actions invoked from this segment inherit this cap.
@@ -133,6 +134,7 @@ export default async function DashboardLayout({
         <EstailaChatbot plan={sidebarUser.plan ?? "FREE"} />
       )}
       <MobileTabBar role={sidebarUser.role} />
+      <ActiveAppointmentBanner />
       {sidebarUser.isTester && <TesterFab />}
     </div>
   );

@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   Wallet,
   Layers,
+  ScanLine,
+  X,
 } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -50,7 +52,9 @@ import {
   createTransaction,
   deleteTransaction,
   updateTransactionStatus,
+  scanReceipt,
 } from "@/lib/actions/transaction";
+import { compressImage } from "@/lib/compress-image";
 import { TransactionDetailDialog } from "./transaction-detail-dialog";
 
 type Tx = {
@@ -452,36 +456,92 @@ function NewTransactionDialog({
   const [submitting, setSubmitting] = useState(false);
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
+  // OJO: `category` mapea a la columna DB `category` (INGRESO|GASTO) pero en la
+  // UI se muestra como "Tipo". `type` mapea a la columna DB `type` (subtipo) y
+  // en la UI se muestra como "Categoría". Mapeo DB intacto, etiquetas intuitivas.
   const [category, setCategory] = useState("INGRESO");
   const [type, setType] = useState("RESERVA");
   const [currency, setCurrency] = useState<"USD" | "DOP">("USD");
   const [status, setStatus] = useState("PENDIENTE");
   const [propertyId, setPropertyId] = useState("");
   const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+
+  function resetForm() {
+    setConcept("");
+    setAmount("");
+    setNotes("");
+    setPropertyId("");
+    setCategory("INGRESO");
+    setType("RESERVA");
+    setStatus("PENDIENTE");
+    setDate(new Date().toISOString().slice(0, 10));
+    setReceiptUrl(null);
+    setScanning(false);
+  }
+
+  async function onPickReceipt(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setScanning(true);
+    try {
+      const compressed = await compressImage(file, "default");
+      const fd = new FormData();
+      fd.append("file", compressed);
+      const up = await fetch("/api/upload", { method: "POST", body: fd });
+      const upData = await up.json();
+      if (!up.ok) throw new Error(upData.error ?? "Error al subir la imagen");
+      setReceiptUrl(upData.url as string);
+
+      const r = await scanReceipt(upData.url as string);
+      if (r.ok) {
+        setCategory("GASTO"); // un recibo es, por defecto, un gasto
+        if (r.data.concepto) setConcept(r.data.concepto);
+        if (r.data.monto != null) setAmount(String(r.data.monto));
+        if (r.data.moneda) setCurrency(r.data.moneda);
+        if (r.data.fecha) setDate(r.data.fecha);
+        if (r.data.categoria) setType(r.data.categoria);
+        toast.success("Factura leída — revisa los campos antes de guardar");
+      } else {
+        toast.error(r.error);
+      }
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function onSubmit() {
-    if (!concept.trim() || !amount) {
-      toast.error("Concepto y monto son requeridos");
+    if (!concept.trim()) {
+      toast.error("El concepto es requerido");
+      return;
+    }
+    if (!amount || Number(amount) <= 0) {
+      toast.error("Ingresa un monto mayor a 0");
       return;
     }
     setSubmitting(true);
     try {
       await createTransaction({
-        concept,
+        concept: concept.trim(),
         amount: Number(amount),
         category,
         type,
         currency,
         status,
         propertyId: propertyId || undefined,
-        notes: notes || undefined,
+        notes: notes.trim() || undefined,
+        receiptUrl: receiptUrl || undefined,
+        // Mediodía local para evitar que el huso horario corra el día.
+        date: date ? new Date(`${date}T12:00:00`) : undefined,
       });
       toast.success("Transacción creada");
       onOpenChange(false);
-      setConcept("");
-      setAmount("");
-      setNotes("");
-      setPropertyId("");
+      resetForm();
       router.refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -490,13 +550,112 @@ function NewTransactionDialog({
     }
   }
 
+  const isIngreso = category === "INGRESO";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+        <DialogHeader className="border-b border-border px-6 pb-4 pt-6">
           <DialogTitle>Nueva transacción</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+
+        {/* Cuerpo con scroll interno: el footer nunca queda inaccesible */}
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          {/* OCR: escanear factura con IA (Gemini) → autocompleta campos */}
+          <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
+            {receiptUrl ? (
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-12 w-12 shrink-0 rounded-md border border-border bg-cover bg-center"
+                  style={{ backgroundImage: `url(${JSON.stringify(receiptUrl)})` }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium">
+                    {scanning ? "Leyendo factura…" : "Factura adjunta"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {scanning
+                      ? "Gemini está extrayendo los datos"
+                      : "Revisa los campos autocompletados"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReceiptUrl(null)}
+                  disabled={scanning}
+                  className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-card disabled:opacity-50"
+                  aria-label="Quitar factura"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3",
+                  scanning && "pointer-events-none opacity-60"
+                )}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={onPickReceipt}
+                  disabled={scanning}
+                />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+                  {scanning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ScanLine className="h-4 w-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">Escanear factura con IA</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Toma una foto o sube una imagen y autocompleto los campos · 1
+                    crédito
+                  </p>
+                </div>
+              </label>
+            )}
+          </div>
+
+          {/* Tipo: segmentado Ingreso / Gasto */}
+          <Field label="Tipo">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setCategory("INGRESO")}
+                aria-pressed={isIngreso}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
+                  isIngreso
+                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-500"
+                    : "border-border text-muted-foreground hover:bg-card/50"
+                )}
+              >
+                <ArrowUpRight className="h-4 w-4" strokeWidth={2} />
+                Ingreso
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategory("GASTO")}
+                aria-pressed={!isIngreso}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
+                  !isIngreso
+                    ? "border-rose-500/50 bg-rose-500/10 text-rose-500"
+                    : "border-border text-muted-foreground hover:bg-card/50"
+                )}
+              >
+                <ArrowDownLeft className="h-4 w-4" strokeWidth={2} />
+                Gasto
+              </button>
+            </div>
+          </Field>
+
           <Field label="Concepto *">
             <Input
               value={concept}
@@ -505,19 +664,44 @@ function NewTransactionDialog({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Categoría">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INGRESO">Ingreso</SelectItem>
-                  <SelectItem value="GASTO">Gasto</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Monto *">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  className="font-mono tabular-nums"
+                />
+                <Select
+                  value={currency}
+                  onValueChange={(v) => setCurrency(v as "USD" | "DOP")}
+                >
+                  <SelectTrigger className="w-[5.5rem] shrink-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="DOP">DOP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </Field>
-            <Field label="Tipo">
+            <Field label="Fecha">
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="font-mono tabular-nums"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Categoría">
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -528,33 +712,6 @@ function NewTransactionDialog({
                       {t.label}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Monto *">
-              <Input
-                type="number"
-                min={0}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                className="font-mono tabular-nums"
-              />
-            </Field>
-            <Field label="Moneda">
-              <Select
-                value={currency}
-                onValueChange={(v) => setCurrency(v as "USD" | "DOP")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="DOP">DOP</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -596,10 +753,12 @@ function NewTransactionDialog({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              placeholder="Detalles internos (opcional)"
             />
           </Field>
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="border-t border-border px-6 py-4">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
@@ -609,7 +768,7 @@ function NewTransactionDialog({
           </Button>
           <Button onClick={onSubmit} disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Crear
+            Crear transacción
           </Button>
         </DialogFooter>
       </DialogContent>
