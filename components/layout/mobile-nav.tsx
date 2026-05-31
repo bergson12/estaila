@@ -36,7 +36,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn, initials } from "@/lib/utils";
-import { authClient } from "@/lib/auth-client";
+import { signOutClean } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 const NAV = [
@@ -100,10 +100,10 @@ export function MobileNav({
 
   async function handleLogout() {
     setOpen(false);
-    await authClient.signOut();
     toast.success("Sesión cerrada");
-    router.push("/welcome");
-    router.refresh();
+    // signOutClean limpia sessionStorage + recarga dura → sin fuga de estado
+    // (Studio pipeline, etc.) al siguiente usuario en la misma pestaña.
+    await signOutClean();
   }
 
   function isActive(href: string) {

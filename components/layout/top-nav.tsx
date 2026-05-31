@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -42,7 +42,7 @@ import { CommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { LayoutModeToggle } from "./layout-mode-toggle";
 import { NotificationBell } from "./notification-bell";
-import { authClient } from "@/lib/auth-client";
+import { signOutClean } from "@/lib/auth-client";
 import { cn, initials } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -101,7 +101,6 @@ export function TopNav({
   layoutMode?: "sidebar" | "topbar";
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const adminMode = pathname.startsWith("/admin");
   const orgBrand = !adminMode && branding ? branding : null;
@@ -120,10 +119,10 @@ export function TopNav({
   }, []);
 
   async function handleLogout() {
-    await authClient.signOut();
     toast.success("Sesión cerrada");
-    router.push("/welcome");
-    router.refresh();
+    // signOutClean limpia sessionStorage + recarga dura → sin fuga de estado
+    // (Studio pipeline, etc.) al siguiente usuario en la misma pestaña.
+    await signOutClean();
   }
 
   return (

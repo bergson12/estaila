@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useSidebarCollapsed } from "@/lib/stores/sidebar-collapsed";
@@ -45,7 +45,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth-client";
+import { signOutClean } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { LayoutModeToggle } from "./layout-mode-toggle";
 
@@ -131,7 +131,6 @@ export function Sidebar({
   layoutMode?: "sidebar" | "topbar";
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const collapsed = useSidebarCollapsed((s) => s.collapsed);
   const setCollapsed = useSidebarCollapsed((s) => s.setCollapsed);
   const adminMode = pathname.startsWith("/admin");
@@ -149,10 +148,10 @@ export function Sidebar({
   }, [collapsed]);
 
   async function handleLogout() {
-    await authClient.signOut();
     toast.success("Sesión cerrada");
-    router.push("/welcome");
-    router.refresh();
+    // signOutClean limpia sessionStorage + recarga dura → sin fuga de estado
+    // (Studio pipeline, etc.) al siguiente usuario en la misma pestaña.
+    await signOutClean();
   }
 
   const width = collapsed ? 72 : 240;
