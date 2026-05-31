@@ -1077,9 +1077,13 @@ function LeadForm({
   const [done, setDone] = useState(false);
 
   const dark = tone === "dark";
+  // Página white-label SIEMPRE clara: neutralizamos las variantes `dark:` de
+  // los componentes shadcn (bg-input/30, border-input, muted placeholder) que
+  // se filtran cuando el visitante tiene el tema oscuro activo en <html>.
+  // `dark:bg-white` es clave: un `bg-white` simple NO gana a `dark:bg-input/30`.
   const inputCls = dark
     ? "border-white/15 bg-white/5 text-white placeholder:text-white/35 focus-visible:ring-white/25"
-    : undefined;
+    : "border-zinc-300 bg-white text-zinc-900 placeholder:text-zinc-400 dark:border-zinc-300 dark:bg-white dark:text-zinc-900 dark:placeholder:text-zinc-400 focus-visible:border-[var(--brand)] focus-visible:ring-[var(--brand)]/25";
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
