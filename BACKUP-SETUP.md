@@ -67,7 +67,7 @@ Andate a https://github.com/bergson12/estaila/settings/secrets/actions y crea:
 | `TURSO_AUTH_TOKEN` | (tu token Turso) |
 | `BLOB_READ_WRITE_TOKEN` | (lo sacas de Vercel env vars) |
 | `RCLONE_CONFIG` | (todo el contenido del rclone.conf que copiaste) |
-| `RESEND_API_KEY` | `re_Jtx5eo12_KuwNYZrPS7X9FBggjZHjg2tQ` (opcional, para alertas email) |
+| `RESEND_API_KEY` | (tu API key de Resend — sácala de resend.com → API Keys; NO la pegues en archivos versionados) |
 
 **IMPORTANTE — el rclone.conf**: pégalo TAL CUAL, con saltos de línea reales,
 empezando con `[drive]`. GitHub Secrets soporta multi-línea.
