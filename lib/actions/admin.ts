@@ -195,7 +195,17 @@ export async function resetMonthlyCredits(userId: string): Promise<void> {
     select: { plan: true },
   });
   if (!dbUser) return;
-  const credits = dbUser.plan === "TEAM" ? 200 : dbUser.plan === "PRO" ? 50 : 5;
+  // Sincronizado con lib/billing-config.ts (PLAN_CREDITS / FREE_MONTHLY_CREDITS).
+  const credits =
+    dbUser.plan === "AGENCY"
+      ? 2000
+      : dbUser.plan === "BUSINESS"
+        ? 500
+        : dbUser.plan === "TEAM"
+          ? 200
+          : dbUser.plan === "PRO"
+            ? 60
+            : 10;
   await prisma.$transaction([
     prisma.user.update({ where: { id: userId }, data: { credits } }),
     prisma.billingEvent.create({

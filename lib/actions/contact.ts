@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { ContactSchema, type ContactInput } from "@/lib/validations";
+import { assertWithinPlanLimit } from "@/lib/plan-limits";
 
 function clean<T extends Record<string, unknown>>(data: T) {
   const out: Record<string, unknown> = {};
@@ -16,6 +17,7 @@ function clean<T extends Record<string, unknown>>(data: T) {
 
 export async function createContact(input: ContactInput) {
   const user = await requireUser();
+  await assertWithinPlanLimit(user.id, "contact");
   const parsed = ContactSchema.parse(input);
   const c = await prisma.contact.create({
     data: {

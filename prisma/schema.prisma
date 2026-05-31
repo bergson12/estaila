@@ -24,6 +24,7 @@ model User {
   role          String   @default("USER") // USER | ADMIN
   plan          String   @default("FREE") // FREE | PRO | TEAM
   credits       Int      @default(5)
+  creditsResetAt DateTime? // top-up mensual de créditos del plan FREE
   // Billing — PayPal (legacy/fallback)
   paypalSubId      String?   @unique
   paypalCustomerId String?

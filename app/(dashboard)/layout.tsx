@@ -14,6 +14,7 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { TesterFab } from "@/components/tester/tester-fab";
 import { ActiveAppointmentBanner } from "@/components/agenda/active-appointment-banner";
 import { isDeepSeekConfigured } from "@/lib/ai/deepseek";
+import { ensureFreeMonthlyCredits } from "@/lib/plan-limits";
 
 // Server actions invoked from this segment inherit this cap.
 // Set to 60 — the Vercel Hobby ceiling — so AI tools can run free.
@@ -37,6 +38,7 @@ export default async function DashboardLayout({
         credits: true,
         role: true,
         isTester: true,
+        creditsResetAt: true,
       },
     }),
     getAppSettings(),
@@ -53,6 +55,16 @@ export default async function DashboardLayout({
     role: "USER",
     isTester: false,
   };
+
+  // Plan FREE: top-up mensual de créditos (10/mes) — lazy, no pisa comprados.
+  if (dbUser) {
+    sidebarUser.credits = await ensureFreeMonthlyCredits({
+      id: dbUser.id,
+      plan: dbUser.plan,
+      credits: dbUser.credits,
+      creditsResetAt: dbUser.creditsResetAt ?? null,
+    });
+  }
 
   // Maintenance mode — only admins bypass
   if (settings.maintenanceMode && sidebarUser.role !== "ADMIN") {

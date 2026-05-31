@@ -31,20 +31,22 @@ import { PricingCycleClient } from "./cycle-client";
 
 type PlanKey = "FREE" | "PRO" | "TEAM" | "AGENCY";
 
-// Display names align with landing: PRO key → "Solo", TEAM key → "Pro", AGENCY key → "Agency" (custom)
+// PRECIOS FUNDADOR. Display: PRO→"Solo", TEAM→"Equipo", AGENCY→"Agencia".
+// Anual = ~2 meses gratis. Mantener sincronizado con lib/billing-config.ts.
 const PLANS = [
   {
     key: "FREE" as const,
     name: "Free",
     priceMonthly: 0,
     priceYearly: 0,
-    credits: 5,
+    credits: 10,
     icon: Sparkles,
     description: "Para probar el CRM y Studio IA sin compromiso",
     features: [
       "CRM básico",
-      "5 créditos IA / mes",
-      "Hasta 10 propiedades",
+      "10 créditos IA / mes",
+      "Hasta 5 propiedades",
+      "Hasta 10 contactos",
       "1 plantilla de portal",
       "Marca de agua",
     ],
@@ -52,32 +54,32 @@ const PLANS = [
   {
     key: "PRO" as const,
     name: "Solo",
-    priceMonthly: 15,
-    priceYearly: 144, // ~20% off (12/mo annual equivalent)
+    priceMonthly: 12,
+    priceYearly: 120, // 2 meses gratis
     credits: 60,
     icon: Zap,
     description: "Agente independiente que cierra ventas cada mes",
     features: [
       "CRM completo",
       "60 créditos IA / mes",
-      "Propiedades ilimitadas",
-      "4 plantillas básicas",
+      "Propiedades y contactos ilimitados",
+      "4 plantillas de portal",
       "Sin marca de agua",
       "Soporte chat",
     ],
   },
   {
     key: "TEAM" as const,
-    name: "Pro",
-    priceMonthly: 39,
-    priceYearly: 374, // ~20% off
+    name: "Equipo",
+    priceMonthly: 29,
+    priceYearly: 290, // 2 meses gratis
     credits: 200,
     icon: Crown,
-    description: "Pro features con branding y dominio propio",
+    description: "Equipos pequeños con dominio y marca propia",
     features: [
       "Todo en Solo",
       "200 créditos IA / mes",
-      "6 plantillas premium",
+      "Hasta 5 usuarios",
       "Dominio propio",
       "Branding completo",
       "Marketing IA + posts",
@@ -87,17 +89,17 @@ const PLANS = [
   },
   {
     key: "AGENCY" as const,
-    name: "Agency",
-    priceMonthly: 199,
-    priceYearly: 1908, // ~20% off
-    credits: 99999,
+    name: "Agencia",
+    priceMonthly: 99,
+    priceYearly: 990, // 2 meses gratis
+    credits: 2000,
     icon: Users,
-    description: "Equipos y agencias con white-label + API",
+    description: "Agencias con white-label, créditos ilimitados y API",
     isCustom: false,
     features: [
-      "Todo en Pro",
-      "Créditos IA ilimitados",
-      "Multi-usuario (5+)",
+      "Todo en Equipo",
+      "Créditos IA ilimitados (uso justo)",
+      "Multi-usuario (hasta 99)",
       "White-label completo",
       "API + Webhooks",
       "Onboarding 1:1",

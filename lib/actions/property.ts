@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { PropertySchema, type PropertyInput } from "@/lib/validations";
+import { assertWithinPlanLimit } from "@/lib/plan-limits";
 
 function cleanOptionals<T extends Record<string, unknown>>(data: T) {
   const out: Record<string, unknown> = {};
@@ -19,6 +20,7 @@ export async function createProperty(
   input: PropertyInput
 ) {
   const user = await requireUser();
+  await assertWithinPlanLimit(user.id, "property");
   const data = PropertySchema.parse(input);
   const cleaned = cleanOptionals(data);
 
