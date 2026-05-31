@@ -289,7 +289,7 @@ export function AsistenteChat({
         role: "assistant",
         content:
           (r.fallbackUsed === "mock"
-            ? `Preview con filtro (Gemini sin cuota). `
+            ? `Preview con filtro (Modelo Pro sin cuota). `
             : `Listo · ${r.toolLabel}. `) +
           `Te quedan ${r.remaining} crédito${r.remaining === 1 ? "" : "s"}.`,
         image: {

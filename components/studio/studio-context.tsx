@@ -182,7 +182,7 @@ export function StudioProvider({
           options: options as Record<string, unknown> | undefined,
         });
         if (out.fallbackUsed === "mock") {
-          toast.warning("Preview con filtro (Gemini sin cuota)", {
+          toast.warning("Preview con filtro (Modelo Pro sin cuota)", {
             description:
               "Activa billing en aistudio.google.com para imagen IA real. Crédito usado igual.",
             duration: 6000,

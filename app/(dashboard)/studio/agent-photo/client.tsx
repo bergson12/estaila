@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { GeneratingBar } from "@/components/shared/generating-bar";
+import { modelLabel } from "@/lib/ai/model-labels";
 import { generateAgentPhoto } from "@/lib/actions/agent-photo";
 import {
   AGENT_PHOTO_COST,
@@ -389,10 +391,11 @@ export function AgentPhotoClient({
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">Resultado</p>
               <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/30">
                 {generating ? (
-                  <span className="flex flex-col items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex w-full max-w-[240px] flex-col items-center gap-3 px-6 text-center text-xs text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    Generando… (10-40s)
-                  </span>
+                    Generando tu foto profesional…
+                    <GeneratingBar durationMs={35000} />
+                  </div>
                 ) : result ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={result} alt="resultado" className="h-full w-full object-cover" />
@@ -422,7 +425,7 @@ export function AgentPhotoClient({
               </div>
               {modelUsed && (
                 <p className="text-[11px] text-muted-foreground">
-                  Generado con <span className="font-medium text-foreground">{modelUsed}</span>
+                  Generado con <span className="font-medium text-foreground">{modelLabel(modelUsed)}</span>
                 </p>
               )}
             </div>

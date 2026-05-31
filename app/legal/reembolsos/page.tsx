@@ -109,7 +109,7 @@ export default function ReembolsosPage() {
           </p>
           <p>
             <strong>Excepción</strong>: si una generación falla por error
-            técnico de nuestro lado (Gemini timeout, servidor caído), los
+            técnico de nuestro lado (timeout del Modelo Pro, servidor caído), los
             créditos se reembolsan <strong>automáticamente</strong> a tu cuenta.
             No tienes que pedirlo.
           </p>

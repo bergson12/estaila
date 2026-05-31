@@ -11,6 +11,7 @@ import { BeforeAfter } from "./before-after";
 import { PhotoAnalysis } from "./photo-analysis";
 import { PostActions } from "./post-actions";
 import { useStudio } from "./studio-context";
+import { GeneratingBar } from "@/components/shared/generating-bar";
 
 export function CanvasView({
   onRegenerate,
@@ -146,6 +147,7 @@ function ProcessingAnimation() {
           La IA está trabajando en tu foto
         </p>
       </motion.div>
+      <GeneratingBar className="mt-1 w-48 max-w-[70vw]" />
     </>
   );
 }

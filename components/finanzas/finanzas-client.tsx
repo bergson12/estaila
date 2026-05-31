@@ -576,7 +576,7 @@ function NewTransactionDialog({
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     {scanning
-                      ? "Gemini está extrayendo los datos"
+                      ? "El Modelo Pro está extrayendo los datos"
                       : "Revisa los campos autocompletados"}
                   </p>
                 </div>

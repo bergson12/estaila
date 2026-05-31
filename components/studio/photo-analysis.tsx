@@ -184,7 +184,7 @@ function AnalysisContent({
           <p className="mt-0.5 text-xs text-muted-foreground">
             {isQuota ? (
               <>
-                Créditos Gemini agotados. Recarga en{" "}
+                Créditos del Modelo Pro agotados. Recarga en{" "}
                 <a
                   href="https://ai.studio/projects"
                   target="_blank"
@@ -197,7 +197,7 @@ function AnalysisContent({
               </>
             ) : isAuth ? (
               <>
-                La key Gemini no es válida. Verifica en{" "}
+                La conexión con el Modelo Pro falló. Verifica en{" "}
                 <a
                   href="https://aistudio.google.com/apikey"
                   target="_blank"
@@ -231,9 +231,9 @@ function AnalysisContent({
           </div>
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2 text-sm font-semibold">
-              Análisis con Gemini Vision
+              Análisis con Modelo Pro
               <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
-                Nanobanana
+                Visión
               </span>
             </p>
             <p className="mt-0.5 text-xs italic text-muted-foreground line-clamp-2">
