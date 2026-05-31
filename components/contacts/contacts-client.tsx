@@ -407,8 +407,8 @@ export function ContactsClient({
       />
 
       {/* Filters bar */}
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card/40 p-3 backdrop-blur-md">
-        <div className="relative max-w-md flex-1">
+      <div className="mb-4 flex flex-col gap-2 rounded-xl border border-border bg-card/40 p-3 backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:max-w-md sm:flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
