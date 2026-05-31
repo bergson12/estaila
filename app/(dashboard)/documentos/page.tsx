@@ -14,6 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
+import { ensureUploadedDocSchema } from "@/lib/documents";
+import { DocumentsManager } from "@/components/documentos/documents-manager";
 import { cn, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +31,9 @@ const TEMPLATE_META: Record<string, { label: string; color: string }> = {
 export default async function DocumentosPage() {
   const user = await requireUser();
 
-  const [pdfsRecent, pdfStats, propsWithDocs] = await Promise.all([
+  await ensureUploadedDocSchema();
+  const [pdfsRecent, pdfStats, propsWithDocs, uploadedDocs, contactList] =
+    await Promise.all([
     prisma.pdfGeneration.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
@@ -55,6 +59,17 @@ export default async function DocumentosPage() {
         slug: true,
         _count: { select: { pdfs: true } },
       },
+    }),
+    prisma.uploadedDocument.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.contact.findMany({
+      where: { userId: user.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+      take: 500,
     }),
   ]);
 
@@ -110,6 +125,13 @@ export default async function DocumentosPage() {
           sub="Brochure · Financiero · Inversión · Minimal"
         />
       </div>
+
+      {/* Documentos subidos (upload + lista con estados) */}
+      <DocumentsManager
+        docs={uploadedDocs}
+        properties={propsWithDocs.map((p) => ({ id: p.id, title: p.title }))}
+        contacts={contactList}
+      />
 
       {/* Recent PDFs */}
       <Card className="mt-6 rounded-2xl border-border p-6">

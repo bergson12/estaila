@@ -48,3 +48,37 @@ export async function saveUpload(
     mime: result.contentType,
   };
 }
+
+// Documentos: además de imágenes, acepta PDF y Word (.doc/.docx). Límite 25MB.
+const ALLOWED_DOC_MIME = new Set([
+  ...ALLOWED_MIME,
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+const MAX_DOC_BYTES = 25 * 1024 * 1024; // 25MB
+
+export async function saveDocumentUpload(
+  file: File,
+  userId: string
+): Promise<UploadResult> {
+  if (!ALLOWED_DOC_MIME.has(file.type)) {
+    throw new Error(`Tipo de archivo no permitido: ${file.type || "desconocido"}`);
+  }
+  if (file.size > MAX_DOC_BYTES) {
+    throw new Error("Archivo demasiado grande (máx 25MB)");
+  }
+
+  const result: StorageResult = await uploadFile(file, {
+    filename: file.name,
+    contentType: file.type,
+    prefix: `docs/${userId.slice(0, 8)}`,
+  });
+
+  return {
+    url: result.url,
+    filename: result.key.split("/").pop() ?? result.key,
+    size: result.size,
+    mime: result.contentType,
+  };
+}

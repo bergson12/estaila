@@ -746,6 +746,25 @@ model PropertyView {
   @@index([propertyId, createdAt])
 }
 
+// Documentos subidos por el agente (PDF/DOCX/imágenes) con estado y vínculos.
+// Tabla creada en runtime vía ensureUploadedDocSchema() (patrón Turso).
+model UploadedDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String?
+  contactId  String?
+  name       String
+  fileUrl    String
+  mimeType   String?
+  kind       String   @default("OTRO") // PROPUESTA | CONTRATO | RECIBO | OTRO
+  status     String   @default("PENDIENTE") // PENDIENTE | ENVIADO | FIRMADO | CERRADO | RECHAZADO
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
 model Photo {
   id          String   @id @default(cuid())
   propertyId  String?
