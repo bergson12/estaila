@@ -52,8 +52,12 @@ jobs:
           fi
           echo "Secrets OK — DATABASE_URL es libsql:// y el token está presente."
 
+      # --ignore-scripts: idéntico al job de backup que SÍ funciona. Evita que
+      # el postinstall (prisma generate) corra durante el install y reviente
+      # (pnpm 11 bloquea build scripts de deps → engine ausente). Generamos el
+      # cliente en un paso aparte, explícito.
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Generate Prisma client
         run: pnpm exec prisma generate
