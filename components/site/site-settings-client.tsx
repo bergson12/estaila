@@ -27,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/compress-image";
 import { saveSite, suggestSlug, togglePublished } from "@/lib/actions/site";
+import { SocialIcon } from "@/components/shared/social-icons";
 
 type Initial = {
   slug: string;
@@ -877,7 +878,14 @@ export function SiteSettingsClient({
                 className="font-mono tabular-nums"
               />
             </Field>
-            <Field label="WhatsApp">
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <SocialIcon network="whatsapp" className="h-3.5 w-3.5" />
+                  WhatsApp
+                </span>
+              }
+            >
               <Input
                 value={form.whatsapp}
                 onChange={(e) => set("whatsapp", e.target.value)}
@@ -893,21 +901,42 @@ export function SiteSettingsClient({
                 placeholder="contacto@…"
               />
             </Field>
-            <Field label="Instagram (URL)">
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <SocialIcon network="instagram" className="h-3.5 w-3.5" />
+                  Instagram (URL)
+                </span>
+              }
+            >
               <Input
                 value={form.instagramUrl}
                 onChange={(e) => set("instagramUrl", e.target.value)}
                 placeholder="https://instagram.com/…"
               />
             </Field>
-            <Field label="Facebook (URL)">
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <SocialIcon network="facebook" className="h-3.5 w-3.5" />
+                  Facebook (URL)
+                </span>
+              }
+            >
               <Input
                 value={form.facebookUrl}
                 onChange={(e) => set("facebookUrl", e.target.value)}
                 placeholder="https://facebook.com/…"
               />
             </Field>
-            <Field label="TikTok (URL)">
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <SocialIcon network="tiktok" className="h-3.5 w-3.5" />
+                  TikTok (URL)
+                </span>
+              }
+            >
               <Input
                 value={form.tiktokUrl}
                 onChange={(e) => set("tiktokUrl", e.target.value)}
@@ -1004,7 +1033,7 @@ function Field({
   label,
   children,
 }: {
-  label: string;
+  label: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (

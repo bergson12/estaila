@@ -5,7 +5,7 @@
  * List + Create/Edit dialog + Link manager + theme picker + QR + copy public link.
  */
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -19,10 +19,8 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
-  Camera,
   Globe,
   GripVertical,
-  Hash,
   Home,
   Link as LinkIcon,
   Loader2,
@@ -37,15 +35,26 @@ import {
   Sparkles,
   Star,
   Trash2,
-  Video,
   X,
-  type LucideIcon,
 } from "lucide-react";
+import { SocialIcon, type SocialNetwork } from "@/components/shared/social-icons";
 
-const Facebook = Hash;
-const Instagram = Camera;
-const Twitter = Hash;
-const Youtube = Video;
+// Iconos de marca reales (SVG simple-icons) en vez de sustitutos de lucide.
+function brand(network: SocialNetwork) {
+  function BrandIcon({ className }: { className?: string; strokeWidth?: number }) {
+    return <SocialIcon network={network} className={className} />;
+  }
+  return BrandIcon;
+}
+const Facebook = brand("facebook");
+const Instagram = brand("instagram");
+const Twitter = brand("x");
+const Youtube = brand("youtube");
+const Tiktok = brand("tiktok");
+const Linkedin = brand("linkedin");
+const Whatsapp = brand("whatsapp");
+const Threads = brand("threads");
+const Pinterest = brand("pinterest");
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,7 +89,10 @@ import { cn } from "@/lib/utils";
 import { CardQrFullscreen } from "@/components/marketing/card-qr-fullscreen";
 import { CardAnalyticsDialog } from "@/components/marketing/card-analytics-dialog";
 
-const ICONS: Record<string, LucideIcon> = {
+const ICONS: Record<
+  string,
+  ComponentType<{ className?: string; strokeWidth?: number }>
+> = {
   Link: LinkIcon,
   Globe,
   Mail,
@@ -90,6 +102,11 @@ const ICONS: Record<string, LucideIcon> = {
   Instagram,
   Facebook,
   Twitter,
+  Tiktok,
+  Linkedin,
+  Whatsapp,
+  Threads,
+  Pinterest,
   Youtube,
   MapPin,
   ExternalLink,
