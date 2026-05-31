@@ -8,6 +8,8 @@ import {
   Car,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Globe,
   Layers,
   Loader2,
@@ -17,8 +19,9 @@ import {
   Phone,
   Ruler,
   Send,
+  X,
 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -134,6 +137,188 @@ function poiDistance(p: POI) {
     : `${(p.distanceM / 1000).toFixed(1)}km`;
 }
 
+/* ---------- Galería: imagen principal + tira de miniaturas + flechas + zoom ---------- */
+function Gallery({
+  photos,
+  title,
+  opLabel,
+}: {
+  photos: string[];
+  title: string;
+  opLabel: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [zoom, setZoom] = useState(false);
+  const count = photos.length;
+
+  const go = useCallback(
+    (delta: number) => setIdx((i) => (i + delta + count) % count),
+    [count]
+  );
+
+  // Lightbox: navegación con teclado + bloqueo de scroll mientras está abierto.
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(false);
+      else if (e.key === "ArrowLeft") go(-1);
+      else if (e.key === "ArrowRight") go(1);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [zoom, go]);
+
+  if (count === 0) {
+    return (
+      <div className="grid h-[clamp(300px,42vw,460px)] place-items-center rounded-[18px] bg-zinc-100 text-zinc-300">
+        <Building2 className="h-16 w-16" strokeWidth={1.25} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Imagen principal */}
+      <div className="relative overflow-hidden rounded-[18px] bg-zinc-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photos[idx]}
+          alt={`${title} — foto ${idx + 1}`}
+          onClick={() => setZoom(true)}
+          className="h-[clamp(320px,46vw,520px)] w-full cursor-zoom-in object-cover"
+        />
+        <span className="absolute left-4 top-4 rounded-full bg-[var(--brand)] px-3 py-1.5 font-display text-xs font-bold text-white">
+          {opLabel}
+        </span>
+        {count > 1 && (
+          <>
+            <NavArrow side="left" onClick={() => go(-1)} />
+            <NavArrow side="right" onClick={() => go(1)} />
+            <span className="pointer-events-none absolute bottom-4 right-4 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium tabular-nums text-white backdrop-blur-sm">
+              {idx + 1} / {count}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Tira de miniaturas */}
+      {count > 1 && (
+        <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
+          {photos.map((url, i) => (
+            <button
+              key={url + i}
+              type="button"
+              onClick={() => setIdx(i)}
+              aria-label={`Ver foto ${i + 1}`}
+              className={cn(
+                "relative aspect-[4/3] w-[clamp(84px,11vw,128px)] shrink-0 overflow-hidden rounded-[12px] bg-zinc-100 outline-offset-2 transition",
+                i === idx
+                  ? "outline outline-2 outline-[var(--brand)]"
+                  : "opacity-60 hover:opacity-100"
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {zoom && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Galería de fotos"
+          onClick={() => setZoom(false)}
+          className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-sm duration-200 animate-in fade-in-0 motion-reduce:animate-none"
+        >
+          <div className="flex items-center justify-between px-5 py-4">
+            <span className="text-sm font-medium tabular-nums text-white/80">
+              {idx + 1} / {count}
+            </span>
+            <button
+              type="button"
+              aria-label="Cerrar galería"
+              onClick={() => setZoom(false)}
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </div>
+          <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 pb-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photos[idx]}
+              alt={`${title} — foto ${idx + 1}`}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-full max-w-full rounded-lg object-contain"
+            />
+            {count > 1 && (
+              <>
+                <NavArrow
+                  side="left"
+                  variant="dark"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    go(-1);
+                  }}
+                />
+                <NavArrow
+                  side="right"
+                  variant="dark"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    go(1);
+                  }}
+                />
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NavArrow({
+  side,
+  onClick,
+  variant = "light",
+}: {
+  side: "left" | "right";
+  onClick: (e: React.MouseEvent) => void;
+  variant?: "light" | "dark";
+}) {
+  const Icon = side === "left" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      aria-label={side === "left" ? "Foto anterior" : "Foto siguiente"}
+      onClick={onClick}
+      className={cn(
+        "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full shadow-md transition-colors",
+        side === "left" ? "left-3" : "right-3",
+        variant === "dark"
+          ? "bg-white/15 text-white hover:bg-white/25"
+          : "bg-white/90 text-zinc-800 hover:bg-white"
+      )}
+    >
+      <Icon className="h-5 w-5" strokeWidth={2.25} />
+    </button>
+  );
+}
+
 export function PublicPropertyView(props: {
   property: PublicPropertyData;
   agent: PublicAgent;
@@ -162,11 +347,7 @@ function BasicView({
   trackingRef: string | null;
   brandColor?: string | null;
 }) {
-  const [mainIdx, setMainIdx] = useState(0);
   const photos = property.photos;
-  const hasPhotos = photos.length > 0;
-  const thumbs = photos.slice(1, 4);
-  const extraCount = Math.max(0, photos.length - 4);
 
   const opLabel = OP_LABEL[property.operation] ?? property.operation;
   const catLabel = CAT_LABEL[property.category] ?? property.category;
@@ -186,11 +367,6 @@ function BasicView({
   function scrollToLead() {
     document
       .getElementById("contact-form")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  function scrollToGallery() {
-    document
-      .getElementById("galeria")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -271,71 +447,8 @@ function BasicView({
           </div>
         </motion.div>
 
-        {/* ===================== GALLERY (main + thumbs) ===================== */}
-        <div
-          className={cn(
-            "grid gap-3",
-            thumbs.length > 0 ? "md:grid-cols-[1fr_280px]" : "grid-cols-1"
-          )}
-        >
-          <div className="relative overflow-hidden rounded-[18px] bg-zinc-100">
-            {hasPhotos ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={photos[mainIdx]}
-                alt={property.title}
-                className="h-[clamp(300px,42vw,460px)] w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-[clamp(300px,42vw,460px)] items-center justify-center text-zinc-300">
-                <Building2 className="h-16 w-16" strokeWidth={1.25} />
-              </div>
-            )}
-            <span className="absolute left-4 top-4 rounded-full bg-[var(--brand)] px-3 py-1.5 font-display text-xs font-bold text-white">
-              {opLabel}
-            </span>
-          </div>
-
-          {thumbs.length > 0 && (
-            <div className="grid grid-rows-3 gap-3">
-              {thumbs.map((url, i) => {
-                const idx = i + 1;
-                const isLast = i === thumbs.length - 1;
-                return (
-                  <button
-                    type="button"
-                    key={url + idx}
-                    onClick={() => setMainIdx(idx)}
-                    className={cn(
-                      "relative h-full min-h-[100px] overflow-hidden rounded-[14px] bg-zinc-100 outline-offset-2 transition-all",
-                      mainIdx === idx &&
-                        "outline outline-[3px] outline-[var(--brand)]"
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt={`Foto ${idx + 1}`}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    {isLast && extraCount > 0 && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          scrollToGallery();
-                        }}
-                        className="absolute inset-0 grid place-items-center bg-zinc-900/55 font-display text-[15px] font-bold text-white"
-                      >
-                        +{extraCount} fotos
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* ===================== GALLERY ===================== */}
+        <Gallery photos={photos} title={property.title} opLabel={opLabel} />
 
         {/* ===================== SPECS ROW ===================== */}
         <div className="mt-6 flex flex-wrap gap-3">
@@ -385,35 +498,6 @@ function BasicView({
                 <p className="mt-3.5 whitespace-pre-line text-base leading-[1.7] text-zinc-600">
                   {property.description}
                 </p>
-              </section>
-            )}
-
-            {photos.length > 1 && (
-              <section id="galeria" className="mt-11 scroll-mt-24">
-                <h2 className="text-2xl font-bold tracking-tight">
-                  Galería · {photos.length} fotos
-                </h2>
-                <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
-                  {photos.map((url, i) => (
-                    <button
-                      type="button"
-                      key={url + i}
-                      onClick={() => {
-                        setMainIdx(i);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="group aspect-[4/3] overflow-hidden rounded-[14px] bg-zinc-100"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={url}
-                        alt={`Foto ${i + 1}`}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </button>
-                  ))}
-                </div>
               </section>
             )}
 
