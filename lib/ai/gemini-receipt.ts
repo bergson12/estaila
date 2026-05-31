@@ -13,6 +13,7 @@ export type ReceiptData = {
   fecha: string | null; // YYYY-MM-DD
   proveedor: string | null;
   categoria: string | null; // subtipo de transacción
+  notes: string | null; // datos importantes que no caben en otros campos (ITBIS, ref, etc.)
 };
 
 export type ReceiptResult =
@@ -61,14 +62,24 @@ export async function extractReceipt(imageUrl: string): Promise<ReceiptResult> {
 
   const model = process.env.GEMINI_OCR_MODEL || "gemini-2.5-flash";
   const prompt = [
-    "Eres un OCR de facturas y recibos para un agente inmobiliario.",
-    "Extrae los datos de la imagen y responde SOLO un JSON válido con estas claves exactas:",
-    `{"concepto": string, "monto": number, "moneda": "USD"|"DOP", "fecha": "YYYY-MM-DD", "proveedor": string, "categoria": "${CATEGORIES.join('"|"')}"}`,
-    'Reglas: "monto" es el TOTAL final a pagar (incluye ITBIS) como número sin símbolos ni separadores de miles.',
-    'Si ves RD$, DOP o "pesos" usa "DOP"; si ves US$, USD o "dólares" usa "USD".',
-    '"concepto" es una descripción corta (proveedor + servicio).',
-    'Elige la "categoria" más razonable de la lista. Si un dato no aparece, usa null.',
-  ].join(" ");
+    "Eres un OCR financiero para un agente inmobiliario en República Dominicana.",
+    "La imagen puede ser CUALQUIERA de estos: una factura de consumo (supermercado/tienda), un recibo de punto de venta o tarjeta (CARDNET, Visa), una transferencia bancaria (app del banco, ACH, TDC), o cualquier comprobante de pago. SIEMPRE extrae lo más importante; nunca te rindas.",
+    "Responde SOLO un JSON válido con estas claves exactas:",
+    `{"concepto": string, "monto": number, "moneda": "USD"|"DOP", "fecha": "YYYY-MM-DD", "proveedor": string, "categoria": "${CATEGORIES.join('"|"')}", "notes": string}`,
+    "REGLAS:",
+    '- "monto": el TOTAL final pagado (busca TOTAL, TOTALRD, "Monto total", "Monto"). Número sin símbolos ni separadores de miles (ej: 4283.85, NO "RD$4,283.85").',
+    '- "concepto": SIEMPRE genera uno útil aunque el documento no tenga un campo de concepto:',
+    '   * Recibo de tarjeta/POS (CARDNET, Visa): "Compra en {comercio}" (ej: "Compra en Tropigas Santiago").',
+    '   * Factura de tienda/supermercado: "Compra {tienda}" (ej: "Compra Bohío Market").',
+    '   * Transferencia bancaria: usa el concepto o el beneficiario (ej: "Pago BDH - Ballista Contreras" o "Transferencia a Méndez Méndez Nailea").',
+    '   NUNCA devuelvas null en "concepto" si hay un comercio, beneficiario o total visible.',
+    '- "proveedor": el comercio, banco o beneficiario/destino.',
+    '- "moneda": RD$/DOP/pesos → "DOP"; US$/USD/dólares → "USD". Por defecto "DOP".',
+    '- "fecha": fecha del documento en formato YYYY-MM-DD.',
+    '- "categoria": la opción más razonable de la lista.',
+    '- "notes": resumen corto de datos importantes que no caben en los otros campos: proveedor, RNC/NCF, ITBIS, número de aprobación/referencia, últimos dígitos de tarjeta, banco origen/destino, y los artículos principales si es una factura. Ej: "ITBIS RD$48.81 · Aprob. 453324 · Tarjeta ****5799".',
+    '- Si un dato no aparece, usa null (EXCEPTO "concepto" y "monto": esfuérzate al máximo por derivarlos).',
+  ].join("\n");
 
   try {
     const res = await fetch(
@@ -84,7 +95,7 @@ export async function extractReceipt(imageUrl: string): Promise<ReceiptResult> {
           ],
           generationConfig: {
             temperature: 0.1,
-            maxOutputTokens: 500,
+            maxOutputTokens: 800,
             responseMimeType: "application/json",
           },
         }),
@@ -162,12 +173,30 @@ function normalize(o: Record<string, unknown>): ReceiptData {
     return f && /^\d{4}-\d{2}-\d{2}$/.test(f) ? f : null;
   })();
 
+  const proveedor = toStr(o.proveedor);
+
+  // "concepto" SIEMPRE útil: si el modelo no lo dio, se deriva del proveedor o la fecha.
+  let concepto = toStr(o.concepto);
+  if (!concepto) {
+    concepto = proveedor
+      ? `Compra ${proveedor}`
+      : fecha
+        ? `Transacción ${fecha}`
+        : "Transacción";
+  }
+
+  const notes =
+    typeof o.notes === "string" && o.notes.trim()
+      ? o.notes.trim().slice(0, 500)
+      : null;
+
   return {
-    concepto: toStr(o.concepto),
+    concepto,
     monto: toNum(o.monto),
     moneda,
     fecha,
-    proveedor: toStr(o.proveedor),
+    proveedor,
     categoria,
+    notes,
   };
 }

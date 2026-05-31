@@ -504,7 +504,8 @@ function NewTransactionDialog({
         if (r.data.moneda) setCurrency(r.data.moneda);
         if (r.data.fecha) setDate(r.data.fecha);
         if (r.data.categoria) setType(r.data.categoria);
-        toast.success("Factura leída — revisa los campos antes de guardar");
+        if (r.data.notes) setNotes(r.data.notes);
+        toast.success("Comprobante leído — revisa los campos antes de guardar");
       } else {
         toast.error(r.error);
       }
