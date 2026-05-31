@@ -1169,7 +1169,7 @@ async function main() {
       tagline: "Tu próximo hogar te está esperando",
       about:
         "Asesor inmobiliario en República Dominicana. Más de 50 propiedades vendidas con clientes satisfechos en todo el país.",
-      primaryColor: "#3B82F6",
+      primaryColor: "#00BF63",
       phone: "+1 809-555-0001",
       whatsapp: "+1 809-555-0001",
       email: DEMO_EMAIL,
