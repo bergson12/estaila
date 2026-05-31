@@ -15,7 +15,7 @@ import { requireUser } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { isPayPalConfigured, isPayPalSubsReady } from "@/lib/paypal";
 import { isLemonConfigured } from "@/lib/lemonsqueezy";
-import { CREDIT_PACKS } from "@/lib/billing-config";
+import { CREDIT_PACKS, PLAN_PRICE_SCALE } from "@/lib/billing-config";
 import {
   startSubscriptionAction,
   buyCreditPackAction,
@@ -203,6 +203,13 @@ export default async function PricingPage({
         </div>
       </div>
 
+      {/* Oferta de lanzamiento */}
+      <div className="mb-6 flex justify-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-center text-xs font-semibold text-primary">
+          🔥 Precio fundador — solo los primeros 100 agentes · bloquea tu tarifa
+        </span>
+      </div>
+
       {/* Cycle toggle (LS-only) */}
       {lsReady && (
         <div className="mb-8 flex items-center justify-center">
@@ -219,6 +226,15 @@ export default async function PricingPage({
             cycle === "yearly" && lsReady ? p.priceYearly : p.priceMonthly;
           const priceLabel =
             cycle === "yearly" && lsReady ? "/año" : "/mes";
+          // Precio regular (tarifa al escalar) para tachar como oferta fundador.
+          const scaleMonthly =
+            PLAN_PRICE_SCALE[p.key as keyof typeof PLAN_PRICE_SCALE];
+          const regular =
+            !isFree && scaleMonthly != null
+              ? cycle === "yearly" && lsReady
+                ? scaleMonthly * 10
+                : scaleMonthly
+              : null;
 
           const isCustom = "isCustom" in p && p.isCustom === true;
           return (
@@ -244,13 +260,18 @@ export default async function PricingPage({
                   {p.name}
                 </span>
               </div>
-              <div className="mt-3 flex items-baseline gap-1">
+              <div className="mt-3 flex items-baseline gap-1.5">
                 {isCustom ? (
                   <span className="font-mono text-3xl font-bold tracking-tight">
                     Custom
                   </span>
                 ) : (
                   <>
+                    {regular != null && (
+                      <span className="font-mono text-lg font-medium text-muted-foreground line-through">
+                        US${regular}
+                      </span>
+                    )}
                     <span className="font-mono text-4xl font-bold tabular-nums">
                       US${price}
                     </span>
@@ -258,6 +279,11 @@ export default async function PricingPage({
                   </>
                 )}
               </div>
+              {regular != null && (
+                <span className="mt-1.5 inline-flex w-fit items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Precio fundador
+                </span>
+              )}
               {cycle === "yearly" && !isFree && !isCustom && lsReady && (
                 <p className="mt-1 text-[11px] text-emerald-600">
                   Ahorras US${p.priceMonthly * 12 - p.priceYearly}/año

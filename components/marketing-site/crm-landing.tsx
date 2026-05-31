@@ -114,32 +114,33 @@ const COPY = {
       ],
     },
     pricing: {
-      eyebrow: "PRECIOS",
-      title: "Empieza gratis. Sube cuando estés vendiendo más.",
-      sub: "Sin contratos largos. Cancela cuando quieras. Anual ahorra 20%.",
+      eyebrow: "PRECIOS DE FUNDADOR",
+      title: "Precio fundador para los primeros 100 agentes.",
+      sub: "Bloquea tu tarifa de por vida. Sin contratos largos, cancela cuando quieras.",
       monthly: "Mensual",
       yearly: "Anual −20%",
-      annualNote: "2 meses gratis facturando anual",
+      annualNote: "Precio fundador por tiempo limitado · sube a tarifa normal al llegar a 100 agentes",
+      offer: "🔥 Oferta de lanzamiento — solo los primeros 100 agentes",
       plans: [
         {
           name: "Free", price: 0 as number | "custom", tag: "Para probar",
-          features: ["CRM básico", "5 créditos IA / mes", "Hasta 10 propiedades", "1 plantilla de portal", "Marca de agua"],
+          features: ["CRM básico", "10 créditos IA / mes", "Hasta 5 propiedades", "Hasta 10 contactos", "1 plantilla de portal", "Marca de agua"],
           cta: "Empezar gratis", featured: false,
         },
         {
-          name: "Solo", price: 15 as number | "custom", tag: "Agente independiente",
-          features: ["CRM completo", "60 créditos IA / mes", "Propiedades ilimitadas", "Las 4 plantillas básicas", "Sin marca de agua", "Soporte chat"],
+          name: "Solo", price: 12 as number | "custom", tag: "Agente independiente",
+          features: ["CRM completo", "60 créditos IA / mes", "Propiedades y contactos ilimitados", "Las 4 plantillas", "Sin marca de agua", "Soporte chat"],
           cta: "Probar Solo", featured: false,
         },
         {
-          name: "Pro", price: 39 as number | "custom", tag: "Más popular",
-          features: ["Todo en Solo", "200 créditos IA / mes", "6 plantillas premium", "Dominio propio", "Branding completo", "Marketing IA + posts", "Soporte prioritario"],
-          cta: "Probar Pro", featured: true,
+          name: "Equipo", price: 29 as number | "custom", tag: "Más popular",
+          features: ["Todo en Solo", "200 créditos IA / mes", "Hasta 5 usuarios", "Dominio propio", "Branding completo", "Marketing IA + posts", "Soporte prioritario"],
+          cta: "Probar Equipo", featured: true,
         },
         {
-          name: "Agency", price: 199 as number | "custom", tag: "Equipos y agencias",
-          features: ["Todo en Pro", "Créditos IA ilimitados", "Multi-usuario (5+)", "White-label completo", "API + Webhooks", "Onboarding 1:1", "Account manager"],
-          cta: "Hablar con ventas", featured: false,
+          name: "Agencia", price: 99 as number | "custom", tag: "Equipos y agencias",
+          features: ["Todo en Equipo", "Créditos IA ilimitados (uso justo)", "Multi-usuario (hasta 99)", "White-label completo", "API + Webhooks", "Onboarding 1:1", "Account manager"],
+          cta: "Empezar ahora", featured: false,
         },
       ],
     },
@@ -322,17 +323,18 @@ const COPY = {
       ],
     },
     pricing: {
-      eyebrow: "PRICING",
-      title: "Start free. Upgrade when you're selling more.",
-      sub: "No long contracts. Cancel anytime. Yearly saves 20%.",
+      eyebrow: "FOUNDER PRICING",
+      title: "Founder pricing for the first 100 agents.",
+      sub: "Lock your rate for life. No long contracts, cancel anytime.",
       monthly: "Monthly",
       yearly: "Yearly −20%",
-      annualNote: "2 months free on annual billing",
+      annualNote: "Limited-time founder pricing · goes to standard rate at 100 agents",
+      offer: "🔥 Launch offer — first 100 agents only",
       plans: [
-        { name: "Free", price: 0 as number | "custom", tag: "To try", features: ["Basic CRM", "5 AI credits / mo", "Up to 10 properties", "1 portal template", "Watermark"], cta: "Start free", featured: false },
-        { name: "Solo", price: 15 as number | "custom", tag: "Independent agent", features: ["Full CRM", "60 AI credits / mo", "Unlimited properties", "4 basic templates", "No watermark", "Chat support"], cta: "Try Solo", featured: false },
-        { name: "Pro", price: 39 as number | "custom", tag: "Most popular", features: ["Everything in Solo", "200 AI credits / mo", "6 premium templates", "Custom domain", "Full branding", "AI marketing + posts", "Priority support"], cta: "Try Pro", featured: true },
-        { name: "Agency", price: 199 as number | "custom", tag: "Teams & agencies", features: ["Everything in Pro", "Unlimited AI credits", "Multi-user (5+)", "Full white-label", "API + Webhooks", "1:1 onboarding", "Account manager"], cta: "Talk to sales", featured: false },
+        { name: "Free", price: 0 as number | "custom", tag: "To try", features: ["Basic CRM", "10 AI credits / mo", "Up to 5 properties", "Up to 10 contacts", "1 portal template", "Watermark"], cta: "Start free", featured: false },
+        { name: "Solo", price: 12 as number | "custom", tag: "Independent agent", features: ["Full CRM", "60 AI credits / mo", "Unlimited properties & contacts", "4 templates", "No watermark", "Chat support"], cta: "Try Solo", featured: false },
+        { name: "Equipo", price: 29 as number | "custom", tag: "Most popular", features: ["Everything in Solo", "200 AI credits / mo", "Up to 5 users", "Custom domain", "Full branding", "AI marketing + posts", "Priority support"], cta: "Try Equipo", featured: true },
+        { name: "Agencia", price: 99 as number | "custom", tag: "Teams & agencies", features: ["Everything in Equipo", "Unlimited AI credits (fair use)", "Multi-user (up to 99)", "Full white-label", "API + Webhooks", "1:1 onboarding", "Account manager"], cta: "Get started", featured: false },
       ],
     },
     testimonials: {
@@ -899,7 +901,15 @@ function Pricing({ t }: { t: Copy }) {
       <div className="mx-auto max-w-[1280px]">
         <SectionHead eyebrow={t.pricing.eyebrow} title={t.pricing.title} sub={t.pricing.sub} />
 
-        <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {t.pricing.offer && (
+          <div className="mt-6 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-center text-xs font-semibold text-primary">
+              {t.pricing.offer}
+            </span>
+          </div>
+        )}
+
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {t.pricing.plans.map((p, i) => (
             <PricingCard
               key={p.name}
@@ -915,6 +925,9 @@ function Pricing({ t }: { t: Copy }) {
     </section>
   );
 }
+
+// Precio "regular" (tarifa al escalar a 100 usuarios) para tachar como oferta fundador.
+const FOUNDER_REGULAR: Record<string, number> = { Solo: 15, Equipo: 39, Agencia: 150 };
 
 function PricingCard({
   plan,
@@ -954,13 +967,16 @@ function PricingCard({
           )}
         </div>
       </div>
-      <div className="mt-6 flex items-baseline gap-1.5">
+      <div className="mt-6 flex items-baseline gap-2">
         {isCustom ? (
-          <>
-            <span className="text-4xl font-semibold tracking-tight">Custom</span>
-          </>
+          <span className="text-4xl font-semibold tracking-tight">Custom</span>
         ) : (
           <>
+            {FOUNDER_REGULAR[plan.name] != null && (
+              <span className="text-xl font-medium text-muted-foreground line-through">
+                ${FOUNDER_REGULAR[plan.name]}
+              </span>
+            )}
             <span className="text-5xl font-semibold tracking-tight">
               ${plan.price}
             </span>
@@ -968,6 +984,11 @@ function PricingCard({
           </>
         )}
       </div>
+      {!isCustom && FOUNDER_REGULAR[plan.name] != null && (
+        <span className="mt-1.5 inline-flex w-fit items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+          Precio fundador
+        </span>
+      )}
       <ul className="mt-7 flex-1 space-y-2.5 border-t border-border pt-6">
         {plan.features.map((f) => (
           <li key={f} className="flex items-start gap-2.5 text-sm">
