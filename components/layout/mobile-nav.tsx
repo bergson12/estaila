@@ -1,31 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  Activity,
   ArrowLeft,
-  Bot,
-  Briefcase,
-  Building2,
-  Calendar,
   CreditCard,
-  FileClock,
-  Globe,
-  KanbanSquare,
-  LayoutDashboard,
   LogOut,
-  Megaphone,
   Menu,
-  Receipt,
-  Settings,
   Shield,
   Sparkles,
-  TrendingUp,
-  Users,
-  Wallet,
 } from "lucide-react";
+import { NAV_GROUPS, ADMIN_NAV, type NavItemDef } from "./nav-config";
 import {
   Sheet,
   SheetContent,
@@ -38,30 +23,6 @@ import { Button } from "@/components/ui/button";
 import { cn, initials } from "@/lib/utils";
 import { signOutClean } from "@/lib/auth-client";
 import { toast } from "sonner";
-
-const NAV = [
-  { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
-  { label: "Propiedades", href: "/propiedades", icon: Building2 },
-  { label: "Agenda", href: "/agenda", icon: Calendar },
-  { label: "Contactos", href: "/contactos", icon: Users },
-  { label: "Pipeline", href: "/pipeline", icon: KanbanSquare },
-  { label: "Marketing", href: "/marketing", icon: Megaphone },
-  { label: "Finanzas", href: "/finanzas", icon: Wallet },
-  { label: "Mi Sitio", href: "/sitio", icon: Globe },
-  { label: "Mi Empresa", href: "/empresa", icon: Briefcase },
-  { label: "Asistente IA", href: "/asistente", icon: Bot },
-  { label: "Studio IA", href: "/studio", icon: Sparkles },
-] as const;
-
-const ADMIN_NAV = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Usuarios", href: "/admin/users", icon: Users },
-  { label: "Revenue", href: "/admin/revenue", icon: TrendingUp },
-  { label: "Billing", href: "/admin/billing", icon: Receipt },
-  { label: "Generaciones IA", href: "/admin/generations", icon: Activity },
-  { label: "Auditoría", href: "/admin/audit", icon: FileClock },
-  { label: "Configuración", href: "/admin/settings", icon: Settings },
-] as const;
 
 type MobileNavUser = {
   name: string;
@@ -90,7 +51,6 @@ export function MobileNav({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const adminMode = pathname.startsWith("/admin");
-  const items = adminMode ? ADMIN_NAV : NAV;
   const orgBrand = !adminMode ? branding : null;
 
   function go(href: string) {
@@ -110,6 +70,28 @@ export function MobileNav({
     if (href === "/" || href === "/admin") return pathname === href;
     return pathname === href || pathname.startsWith(href + "/");
   }
+
+  const renderItem = (it: NavItemDef) => {
+    const Icon = it.icon;
+    const active = isActive(it.href);
+    return (
+      <li key={it.href}>
+        <button
+          type="button"
+          onClick={() => go(it.href)}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            active
+              ? "bg-primary/10 text-primary"
+              : "text-foreground/85 hover:bg-card/60 hover:text-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+          <span className="truncate">{it.label}</span>
+        </button>
+      </li>
+    );
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -181,31 +163,20 @@ export function MobileNav({
           </button>
         )}
 
-        {/* Nav */}
+        {/* Nav — agrupada igual que el sidebar desktop (fuente: nav-config) */}
         <nav className="flex-1 overflow-y-auto px-2 py-3">
-          <ul className="space-y-0.5">
-            {items.map((it) => {
-              const Icon = it.icon;
-              const active = isActive(it.href);
-              return (
-                <li key={it.href}>
-                  <button
-                    type="button"
-                    onClick={() => go(it.href)}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground/85 hover:bg-card/60 hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span className="truncate">{it.label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          {adminMode ? (
+            <ul className="space-y-0.5">{ADMIN_NAV.map(renderItem)}</ul>
+          ) : (
+            NAV_GROUPS.map((group, gi) => (
+              <div key={group.label} className={cn(gi > 0 && "mt-4")}>
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                  {group.label}
+                </p>
+                <ul className="space-y-0.5">{group.items.map(renderItem)}</ul>
+              </div>
+            ))
+          )}
 
           {/* Admin shortcut */}
           {!adminMode && user.role === "ADMIN" && (

@@ -6,36 +6,17 @@ import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useSidebarCollapsed } from "@/lib/stores/sidebar-collapsed";
 import {
-  LayoutDashboard,
-  Building2,
-  Calendar,
-  Users,
-  KanbanSquare,
-  Megaphone,
-  Wallet,
-  Sparkles,
-  Bot,
-  Settings,
-  LogOut,
-  CreditCard,
-  Globe,
-  Shield,
-  TrendingUp,
-  Activity,
-  Receipt,
-  FileClock,
   ArrowLeft,
-  Briefcase,
-  FileText,
-  BarChart3,
-  LifeBuoy,
-  Star,
-  Images,
-  type LucideIcon,
+  Building2,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  Shield,
 } from "lucide-react";
+import { NAV_GROUPS, ADMIN_NAV } from "./nav-config";
 import { cn, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -66,55 +47,6 @@ type OrgBrandingProp = {
   secondaryColor: string;
   accentColor: string;
 } | null;
-
-type NavItemDef = { label: string; href: string; icon: LucideIcon };
-type NavGroup = { label: string; items: readonly NavItemDef[] };
-
-const NAV_GROUPS: readonly NavGroup[] = [
-  {
-    label: "Principal",
-    items: [
-      { label: "Dashboard", href: "/inicio", icon: LayoutDashboard },
-      { label: "Propiedades", href: "/propiedades", icon: Building2 },
-      { label: "Agenda", href: "/agenda", icon: Calendar },
-      { label: "Contactos", href: "/contactos", icon: Users },
-      { label: "Pipeline", href: "/pipeline", icon: KanbanSquare },
-    ],
-  },
-  {
-    label: "Herramientas",
-    items: [
-      { label: "Asistente IA", href: "/asistente", icon: Bot },
-      { label: "Studio IA", href: "/studio", icon: Sparkles },
-      { label: "Marketing", href: "/marketing", icon: Megaphone },
-      { label: "Documentos", href: "/documentos", icon: FileText },
-    ],
-  },
-  {
-    label: "Negocio",
-    items: [
-      { label: "Finanzas", href: "/finanzas", icon: Wallet },
-      { label: "Análisis", href: "/analisis", icon: BarChart3 },
-      { label: "Mi Sitio", href: "/sitio", icon: Globe },
-      { label: "Mi Empresa", href: "/empresa", icon: Briefcase },
-    ],
-  },
-];
-
-const ADMIN_NAV = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Usuarios", href: "/admin/users", icon: Users },
-  { label: "Revenue", href: "/admin/revenue", icon: TrendingUp },
-  { label: "Billing", href: "/admin/billing", icon: Receipt },
-  { label: "Tickets", href: "/admin/soporte", icon: LifeBuoy },
-  { label: "Generaciones IA", href: "/admin/generations", icon: Activity },
-  { label: "Reseñas", href: "/admin/reviews", icon: Star },
-  { label: "Fotos muestra", href: "/admin/muestras", icon: Images },
-  { label: "Auditoría", href: "/admin/audit", icon: FileClock },
-  { label: "Configuración", href: "/admin/settings", icon: Settings },
-] as const;
-
-const STUDIO_HREF = "/studio";
 
 function isActive(pathname: string, href: string) {
   if (href === "/inicio") return pathname === "/inicio";
