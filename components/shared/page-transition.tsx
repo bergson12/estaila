@@ -20,14 +20,13 @@ export function PageTransition({ children }: { children: ReactNode }) {
   if (reduced) return <>{children}</>;
 
   return (
+    // Crossfade SOLO opacidad (sin desplazamiento) y rápido: suaviza el swap
+    // RSC al navegar sin dar sensación de "carga/parpadeo". Sin loading.tsx,
+    // Next mantiene la página previa hasta que la nueva está lista.
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.16, ease: "linear" } }}
       className="min-h-full"
     >
       {children}

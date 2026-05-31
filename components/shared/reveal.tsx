@@ -15,8 +15,8 @@ import type { ReactNode } from "react";
 export function Reveal({
   children,
   delay = 0,
-  duration = 0.5,
-  y = 14,
+  duration = 0.35,
+  y = 8,
   once = true,
   className,
   as: Tag = "div",
@@ -79,7 +79,7 @@ export function Stagger({
 
 export function StaggerItem({
   children,
-  y = 12,
+  y = 8,
   className,
 }: {
   children: ReactNode;
@@ -95,7 +95,7 @@ export function StaggerItem({
         visible: {
           opacity: 1,
           y: 0,
-          transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+          transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
         },
       }}
       className={className}
