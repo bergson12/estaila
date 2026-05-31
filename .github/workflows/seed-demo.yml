@@ -1,0 +1,82 @@
+name: Seed demo data → Turso (prod)
+
+# Siembra la cuenta demo (demo@estaila.com) + tester + propiedades Trihaus en
+# la DB de producción (Turso). El TURSO_AUTH_TOKEN vive SOLO en GitHub Secrets;
+# nunca toca una máquina local ni el chat.
+#
+# Trigger: push a la rama `ops/seed-demo` (one-shot) o botón "Run workflow".
+
+on:
+  push:
+    branches: [ops/seed-demo]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+          run_install: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Falla RUIDOSAMENTE si faltan los secrets: sin esto, lib/db cae a
+      # file:./dev.db y "sembraría" una sqlite efímera de CI (NO prod) en
+      # silencio. Mejor reventar con instrucciones claras.
+      - name: Verify secrets present
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          if [[ "$DATABASE_URL" != libsql://* ]]; then
+            echo "::error::DATABASE_URL secret ausente o no es libsql://. Configura los repo secrets DATABASE_URL + TURSO_AUTH_TOKEN (Settings → Secrets → Actions)."
+            exit 1
+          fi
+          if [[ -z "$TURSO_AUTH_TOKEN" ]]; then
+            echo "::error::TURSO_AUTH_TOKEN secret ausente."
+            exit 1
+          fi
+          echo "Secrets OK — DATABASE_URL es libsql:// y el token está presente."
+
+      # --ignore-scripts: idéntico al job de backup que SÍ funciona. Evita que
+      # el postinstall (prisma generate) corra durante el install y reviente
+      # (pnpm 11 bloquea build scripts de deps → engine ausente). Generamos el
+      # cliente en un paso aparte, explícito.
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+
+      - name: Seed base demo (demo@estaila.com + tester + datos CRM)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          ALLOW_DEMO_SEED: "true"
+        run: npx tsx prisma/seed.ts
+
+      - name: Seed Trihaus properties (desde manifiesto)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: npx tsx scripts/seed-trihaus-from-manifest.ts
+
+      - name: Summary
+        run: |
+          echo "=== Seed demo completado ==="
+          echo "Login demo: demo@estaila.com / demo123 (plan AGENCY)"
+          echo "Portal público: https://www.estaila.com/p/demo"
