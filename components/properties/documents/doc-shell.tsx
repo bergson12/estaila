@@ -51,10 +51,10 @@ export function DocShell({
           </div>
         </div>
 
-        {/* Body: 2-col layout */}
-        <div className="flex flex-1 overflow-hidden">
+        {/* Body: apilado en móvil (form arriba, scroll) · 2 columnas en lg+ */}
+        <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Form column */}
-          <div className="hide-scrollbar w-[380px] shrink-0 overflow-y-auto border-r bg-muted/20 p-5 print:hidden">
+          <div className="hide-scrollbar max-h-[42vh] w-full shrink-0 overflow-y-auto border-b bg-muted/20 p-5 print:hidden lg:max-h-none lg:w-[380px] lg:border-b-0 lg:border-r">
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Datos del documento
             </p>

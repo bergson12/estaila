@@ -388,13 +388,13 @@ export function ProposalWizard({
   if (!content) return null;
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setStep("form")}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <Button variant="ghost" size="sm" onClick={() => setStep("form")} className="self-start sm:self-auto">
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
           Volver
         </Button>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onGenerate} disabled={generating}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <Button variant="outline" size="sm" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
             {generating ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (
@@ -402,7 +402,7 @@ export function ProposalWizard({
             )}
             Regenerar
           </Button>
-          <Button variant="outline" size="sm" onClick={onCopy}>
+          <Button variant="outline" size="sm" onClick={onCopy} className="w-full sm:w-auto">
             {copied ? (
               <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
             ) : (
@@ -414,12 +414,12 @@ export function ProposalWizard({
             variant="outline"
             size="sm"
             onClick={onWhatsApp}
-            className="text-emerald-600 dark:text-emerald-400"
+            className="w-full text-emerald-600 dark:text-emerald-400 sm:w-auto"
           >
             <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
             WhatsApp
           </Button>
-          <Button size="sm" onClick={onExportPdf} disabled={exporting}>
+          <Button size="sm" onClick={onExportPdf} disabled={exporting} className="w-full sm:w-auto">
             {exporting ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : (

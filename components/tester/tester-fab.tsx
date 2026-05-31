@@ -22,7 +22,7 @@ export function TesterFab() {
   return (
     <Link
       href={href}
-      className="fixed bottom-24 right-5 z-50 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+      className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] right-4 z-40 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95 md:bottom-[5.5rem]"
       title="Dejar una reseña de este módulo"
     >
       <FlaskConical className="h-4 w-4" />

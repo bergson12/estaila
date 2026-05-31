@@ -428,7 +428,8 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
             onClick={() => setOpen(true)}
             aria-label="Asistente IA · Ahorra tiempo"
             className={cn(
-              "group fixed bottom-20 right-5 z-40 flex items-center overflow-hidden rounded-full shadow-lg transition-all md:bottom-5",
+              // Mobile: flota POR ENCIMA del tab bar (safe-area). Desktop: esquina.
+              "group fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-40 flex items-center overflow-hidden rounded-full shadow-lg transition-all md:bottom-6 md:right-6",
               "bg-gradient-to-br from-primary via-primary to-primary/70 text-primary-foreground",
               "shadow-primary/30 hover:shadow-xl hover:shadow-primary/50",
               fabCollapsed
@@ -467,7 +468,7 @@ export function EstailaChatbot({ plan = "FREE" }: { plan?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-5 right-5 z-40 flex h-[640px] w-[420px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/30"
+            className="fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/30 inset-x-2 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] top-[4.25rem] sm:inset-x-auto sm:top-auto sm:bottom-5 sm:right-5 sm:h-[640px] sm:max-h-[calc(100dvh-2.5rem)] sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary/10 to-transparent px-3.5 py-2.5">

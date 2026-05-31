@@ -291,9 +291,9 @@ export function TemplatesManager({
         </div>
 
         {/* Body */}
-        <div className="grid flex-1 grid-cols-[260px_1fr_220px] overflow-hidden">
+        <div className="grid flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[240px_1fr_220px] lg:overflow-hidden">
           {/* Left: template list */}
-          <aside className="hide-scrollbar flex flex-col overflow-y-auto border-r bg-muted/20">
+          <aside className="hide-scrollbar flex max-h-[40vh] flex-col overflow-y-auto border-b bg-muted/20 lg:max-h-none lg:border-b-0 lg:border-r">
             <div className="space-y-1.5 p-3">
               <button
                 type="button"
@@ -439,8 +439,8 @@ export function TemplatesManager({
                 </div>
 
                 {/* Editor */}
-                <div className="grid flex-1 grid-cols-2 gap-0 overflow-hidden">
-                  <div className="flex flex-col overflow-hidden border-r">
+                <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-2">
+                  <div className="flex min-h-[260px] flex-col overflow-hidden border-b lg:min-h-0 lg:border-b-0 lg:border-r">
                     <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Cuerpo HTML
                     </div>
@@ -456,7 +456,7 @@ export function TemplatesManager({
                       className="flex-1 resize-none border-0 bg-background p-4 font-mono text-[11.5px] leading-relaxed focus:outline-none disabled:cursor-not-allowed disabled:bg-muted/20"
                     />
                   </div>
-                  <div className="flex flex-col overflow-hidden">
+                  <div className="flex min-h-[260px] flex-col overflow-hidden lg:min-h-0">
                     <div className="border-b bg-muted/30 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Vista previa (HTML)
                     </div>

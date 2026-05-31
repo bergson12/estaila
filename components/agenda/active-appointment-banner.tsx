@@ -108,7 +108,7 @@ export function ActiveAppointmentBanner() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="fixed bottom-24 left-4 z-50 flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-medium text-amber-700 shadow-lg backdrop-blur-md dark:text-amber-300"
+            className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-4 z-40 flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs font-medium text-amber-700 shadow-lg backdrop-blur-md dark:text-amber-300 md:bottom-6"
           >
             <PulseDot />
             En cita
@@ -120,7 +120,7 @@ export function ActiveAppointmentBanner() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed left-1/2 top-[4.5rem] z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2"
+            className="fixed left-1/2 top-[4.5rem] z-40 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2"
           >
             <div className="flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2.5 shadow-lg backdrop-blur-xl sm:px-4">
               <PulseDot />

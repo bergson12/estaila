@@ -160,8 +160,8 @@ export function DocumentsManager({
       </div>
 
       {/* Upload row */}
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-border bg-card/40 p-3">
-        <div className="min-w-[120px] flex-1">
+      <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-card/40 p-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="w-full sm:min-w-[120px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Tipo
           </label>
@@ -177,7 +177,7 @@ export function DocumentsManager({
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-[140px] flex-1">
+        <div className="w-full sm:min-w-[140px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Propiedad (opcional)
           </label>
@@ -198,7 +198,7 @@ export function DocumentsManager({
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-[140px] flex-1">
+        <div className="w-full sm:min-w-[140px] sm:flex-1">
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Contacto (opcional)
           </label>
@@ -219,7 +219,7 @@ export function DocumentsManager({
             </SelectContent>
           </Select>
         </div>
-        <Button asChild disabled={uploading} className="h-9">
+        <Button asChild disabled={uploading} className="h-9 w-full sm:w-auto">
           <label className="cursor-pointer">
             {uploading ? (
               <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
